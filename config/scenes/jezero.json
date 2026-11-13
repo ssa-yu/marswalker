@@ -1,0 +1,133 @@
+{
+ "scene": "jezero",
+ "title": "Jezero Crater",
+ "subtitle": "Validation scene: Perseverance ground data",
+ "base": {
+  "lon": 77.45088572,
+  "lat": 18.44462715,
+  "label": "assumed",
+  "note": "Habitat placed at Octavia E. Butler Landing = first Perseverance waypoint (site 3, drive 0, sol 13)."
+ },
+ "aoi": {
+  "xmin": -1700,
+  "ymin": -1000,
+  "xmax": 700,
+  "ymax": 1400,
+  "rule": "MVP_PLAN 5.2: 2400 m square containing base (>= 300 m from edge), 100 m sliding steps, maximising Perseverance waypoints with sol <= 400 (118 of 122 inside).",
+  "label": "derived"
+ },
+ "fetch_margin_m": 300,
+ "context": {
+  "half_size_m": 6000
+ },
+ "regional": {
+  "half_size_m": 60000,
+  "trek_zoom": 9
+ },
+ "grid": {
+  "ortho_res_m": 0.25,
+  "dtm_res_m": 1.0,
+  "slope_res_m": 3.0
+ },
+ "sources": {
+  "ortho": {
+   "kind": "strip_window",
+   "extent": "fetch",
+   "url": "https://planetarymaps.usgs.gov/mosaic/mars2020_trn/HiRISE/JEZ_hirise_soc_006_orthoMosaic_25cm_Eqc_latTs0_lon0_first.tif",
+   "title": "HiRISE orthoimage mosaic 0.25 m (Mars 2020 TRN)",
+   "mission": "MRO / HiRISE; USGS Astrogeology",
+   "label": "measured",
+   "ref": "fergason2020",
+   "resources": false
+  },
+  "dtm_fine": {
+   "kind": "strip_window",
+   "extent": "fetch",
+   "url": "https://planetarymaps.usgs.gov/mosaic/mars2020_trn/HiRISE/JEZ_hirise_soc_006_DTM_MOLAtopography_DeltaGeoid_1m_Eqc_latTs0_lon0_blend40.tif",
+   "title": "HiRISE DTM mosaic 1 m (Mars 2020 TRN)",
+   "mission": "MRO / HiRISE; USGS Astrogeology",
+   "label": "measured",
+   "ref": "fergason2020",
+   "resources": false
+  },
+  "dtm_prior": {
+   "kind": "download",
+   "url": "https://planetarymaps.usgs.gov/mosaic/mars2020_trn/CTX/JEZ_ctx_B_soc_008_DTM_MOLAtopography_DeltaGeoid_20m_Eqc_latTs0_lon0.tif",
+   "title": "CTX DTM mosaic 20 m (Mars 2020 TRN)",
+   "mission": "MRO / CTX; USGS Astrogeology",
+   "label": "measured",
+   "ref": "fergason2020",
+   "resources": false
+  },
+  "prior_ortho": {
+   "kind": "download",
+   "url": "https://planetarymaps.usgs.gov/mosaic/mars2020_trn/CTX/JEZ_ctx_B_soc_008_orthoMosaic_6m_Eqc_latTs0_lon0.tif",
+   "title": "CTX orthoimage mosaic 6 m (Mars 2020 TRN)",
+   "mission": "MRO / CTX; USGS Astrogeology",
+   "label": "measured",
+   "ref": "fergason2020",
+   "resources": false
+  },
+  "mola": {
+   "kind": "strip_window",
+   "extent": "context",
+   "url": "https://planetarymaps.usgs.gov/mosaic/Mars_MGS_MOLA_DEM_mosaic_global_463m.tif",
+   "title": "MOLA MEGDR DEM 463 m",
+   "mission": "MGS / MOLA; USGS Astrogeology mosaic",
+   "label": "measured",
+   "ref": "smith2001",
+   "resources": false
+  },
+  "post_landing": {
+   "kind": "cog_window",
+   "extent": "fetch",
+   "url": "https://astrogeo-ard.s3-us-west-2.amazonaws.com/mars/mro/hirise/uncontrolled/ESP_071077_1985_RED/ESP_071077_1985_RED.tif",
+   "title": "HiRISE ESP_071077_1985 RED, 2021-09-24 (sol ~212)",
+   "mission": "MRO / HiRISE; USGS ARD (uncontrolled RDR)",
+   "label": "measured",
+   "ref": "mcewen2007",
+   "resources": false,
+   "note": "Independent of the TRN basemap: registered to it by one global shift estimated on terrain features; rover tracks are then compared with the traverse.",
+   "sol_at_image": 212,
+   "sol_note": "2021-09-24 15:53 UTC = sol 212 (landing 2021-02-18 = sol 0, 1 sol = 1.02749 d)"
+  },
+  "waypoints": {
+   "kind": "download",
+   "url": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json",
+   "ext": ".json",
+   "cache": "data_raw/jezero/M20_waypoints.json",
+   "title": "Perseverance waypoints (MMGIS)",
+   "mission": "Mars 2020 / JPL",
+   "label": "measured",
+   "ref": "m2020_mmgis",
+   "resources": false
+  },
+  "traverse": {
+   "kind": "download",
+   "url": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_traverse.json",
+   "ext": ".json",
+   "title": "Perseverance traverse (MMGIS)",
+   "mission": "Mars 2020 / JPL",
+   "label": "measured",
+   "ref": "m2020_mmgis",
+   "resources": false
+  }
+ },
+ "trek_layers": [
+  "themis_day",
+  "mola_hrsc"
+ ],
+ "rover": {
+  "waypoint_sol_max": 400,
+  "photo_cameras": [
+   "NAVCAM_LEFT",
+   "FRONT_HAZCAM_LEFT_A",
+   "MCZ_LEFT"
+  ],
+  "photos_per_waypoint": 4,
+  "photo_waypoints_max": 60
+ },
+ "status": "active",
+ "order": 1,
+ "ground_data": "Ground data: Perseverance waypoints, traverse and raw images (NASA/JPL-Caltech)."
+}

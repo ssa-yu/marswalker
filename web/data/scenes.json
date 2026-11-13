@@ -1,0 +1,11 @@
+{
+ "scenes": [
+  {
+   "id": "jezero",
+   "title": "Jezero Crater",
+   "subtitle": "Validation scene: Perseverance ground data",
+   "status": "active",
+   "order": 1
+  }
+ ]
+}

@@ -1,0 +1,16 @@
+# conda env create -p ./.conda-env -f environment.yml   (conda-forge only; PyPI was too slow from our network)
+channels: [conda-forge]
+dependencies:
+  - python=3.12
+  - gdal
+  - rasterio
+  - numpy
+  - scipy
+  - scikit-image
+  - pillow
+  - matplotlib
+  - pyproj
+  - shapely
+  - pyogrio
+  - pytest
+  - playwright-python

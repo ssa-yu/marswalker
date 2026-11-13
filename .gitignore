@@ -1,0 +1,9 @@
+data_raw/
+data_work/
+.venv/
+.conda-env/
+__pycache__/
+*.pyc
+.DS_Store
+.pytest_cache/
+*.sparse.tif

@@ -1,0 +1,111 @@
+{
+ "summary": [
+  {
+   "name": "C3 HiRISE DTM vs orthoimage (pipeline consistency)",
+   "value": "offset 0.34 m, r 0.37",
+   "pass": true
+  },
+  {
+   "name": "C1 waypoint elevation vs DTM (chain only, not independent)",
+   "value": "MAE 0.018 m, max 0.154 m, n=122",
+   "pass": true
+  },
+  {
+   "name": "C2a rover visible in 2021 HiRISE vs published waypoint (independent)",
+   "value": "2.04 m apart (waypoint 7_2050)",
+   "pass": true
+  },
+  {
+   "name": "C2b traverse vs dark band along path (post vs pre control)",
+   "value": "post peak 2.5 m off (z 7); pre control 2.2 m (z 5)",
+   "pass": null
+  },
+  {
+   "name": "Ground photos located (site/drive exact match)",
+   "value": "478 images at 121 of 122 AOI waypoints",
+   "pass": null
+  },
+  {
+   "name": "Slope > 15° share of AOI (reference vs prior)",
+   "value": "1.54% vs 1.08%",
+   "pass": null
+  }
+ ],
+ "details": {
+  "C3_dtm_vs_ortho": {
+   "best_sun_azimuth_deg": 270,
+   "r_zero_shift": 0.37,
+   "offset_m": [
+    -0.3,
+    0.15
+   ],
+   "offset_mag_m": 0.34
+  },
+  "C1_waypoint_elevation_chain": {
+   "n": 122,
+   "mean_m": -0.003,
+   "mae_m": 0.018,
+   "max_abs_m": 0.154,
+   "note": "waypoint elevations were derived from the same HiRISE terrain model: proves the coordinate chain only"
+  },
+  "C2a_rover_in_hirise": {
+   "waypoint": "7_2050",
+   "waypoint_sol": 210,
+   "next_drive_sol": 237,
+   "image_sol": 212,
+   "waypoint_xy_m": [
+    -492.84,
+    -642.66
+   ],
+   "detected_rover_xy_m": [
+    -493.37,
+    -644.63
+   ],
+   "offset_m": [
+    -0.53,
+    -1.98
+   ],
+   "distance_m": 2.04,
+   "blob_area_m2": 3.1,
+   "contrast_robust_z": 7.0,
+   "method": "brightest new object (post minus pre, high-pass normalised) within 15 m of the parked waypoint; blob centroid"
+  },
+  "C2b_traverse_vs_dark_band": {
+   "traverse_points": 2213,
+   "sol_max": 212,
+   "post_peak_offset_m": [
+    -2.5,
+    -0.5
+   ],
+   "post_peak_z": 7.0,
+   "post_peak_value": 0.269,
+   "control_pre_peak_offset_m": [
+    -2.0,
+    1.0
+   ],
+   "control_pre_peak_z": 4.6,
+   "control_pre_peak_value": 0.178,
+   "method": "mean darkness of a 2 m band centred on the traverse vs 3-6 m to each side, both images high-pass normalised; trial offsets +-15 m",
+   "reading": "the pre-landing basemap shows a weaker dark band at nearly the same offset: the rover tends to drive on darker, smoother ground, so this signal is not purely tracks"
+  },
+  "slope_percent_area": {
+   "ref_gt10": 4.47,
+   "ref_gt15": 1.54,
+   "ref_gt20": 0.68,
+   "ref_gt25": 0.34,
+   "prior_gt10": 1.54,
+   "prior_gt15": 1.08,
+   "prior_gt20": 0.68,
+   "prior_gt25": 0.17
+  }
+ },
+ "x3": {
+  "checks": {
+   "1_single_global_shift_recorded": true,
+   "2_quadrants_within_20m": true,
+   "3_ref_vs_mola": false,
+   "4_prior_vs_mola_std": false
+  },
+  "pass": false
+ }
+}
