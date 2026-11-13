@@ -329,9 +329,12 @@ function renderParams() {
     ['Loop energy budget', `${P.loop_budget} units (planning ${Math.round(P.planning_frac * 100)}%, reserve ${Math.round((1 - P.planning_frac) * 100)}%)`],
     ['Sensing radius', `${P.sense_radius_m} m`], ['Cost per metre firm / rough / sand', `${P.cost_factor.firm} / ${P.cost_factor.rough} / ${P.cost_factor.sand}`],
     ['Revisit penalty on the way home', `×${1 + P.revisit_penalty}`], ['Home margin (floor; learned above it)', `×${P.home_margin}`],
-    ['Goal distance', `${Math.round(P.goal_min_frac * 100)}–${Math.round(P.outbound_frac * 100)}% of planning budget`],
+    P.goal_rule === 'v2_sector_band'
+      ? ['Goal rule (v2)', `8 sectors in turn (${P.sector_order.join(', ')}); distance bands near 100–600 m, mid 600–1200 m, far >1200 m (8 loops each); most unseen area; cost ≤ ${Math.round(P.outbound_frac * 100)}% of planning budget`]
+      : ['Goal distance', `${Math.round(P.goal_min_frac * 100)}–${Math.round(P.outbound_frac * 100)}% of planning budget`],
     ['Slope baseline / rough / rover-blocked', `${TP.slope_baseline_m} m / ≥${TP.slope_rough_deg}° / ≥${TP.slope_block_rover_deg}°`],
-    ['Sand', `ripple index ≥ P${TP.ripple_percentile} (needs a person to confirm)`],
+    TP.sand_method ? ['Sand', 'sand-field indicator v2: ripple-field texture over tens of metres, fixed thresholds (needs a person to confirm)']
+      : ['Sand', `ripple index ≥ P${TP.ripple_percentile} (needs a person to confirm)`],
   ];
   $('#params').innerHTML = '<table>' + rows.map((r) => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join('') + '</table><p class="hint"><span class="badge assumed">assumed</span> All values are proposals waiting to be locked; none was tuned on route comparisons.</p>';
 }

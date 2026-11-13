@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marswalk Recon · Step 3</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="lib/maplibre-gl.css">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="astronaut.css">
+</head>
+<body>
+<header id="top">
+  <div class="brand"><span class="logo">&#9679;</span> Marswalk Recon <span class="muted">· Jezero Crater</span></div>
+  <nav id="pages" aria-label="Pages">
+    <a class="btn" href="index.html">Map data</a>
+    <a class="btn" href="recon.html">Step 1 · Scout rover recon</a>
+    <a class="btn active" href="astronaut.html" aria-current="page">Step 3 · Astronaut walk</a>
+  </nav>
+  <button id="aboutBtn" class="btn">About this planner</button>
+</header>
+<div id="skelBanner" role="note">Step ③ skeleton · placeholder targets · planned values on prior terrain only · review: pending (heuristic, not yet reviewed)</div>
+<main>
+  <aside id="panel" aria-label="Walk planner controls">
+    <section>
+      <h2 class="title">Step 3 · Astronaut walk <span class="badge derived">planned</span></h2>
+      <p class="lead">Plan a walk from the habitat that visits as many stops as the suit's oxygen allows and always keeps enough oxygen to walk home.</p>
+    </section>
+    <section class="ctrl">
+      <h3>Oxygen budget <span class="badge assumed">assumed</span></h3>
+      <label for="cap" class="sl">Suit oxygen <b id="capLbl"></b> <span class="muted">nominal minutes</span></label>
+      <input id="cap" type="range" min="30" max="480" step="5" value="480">
+      <label for="res" class="sl">Emergency reserve kept <b id="resLbl"></b></label>
+      <input id="res" type="range" min="0" max="50" step="5" value="20">
+      <p class="hint">Usable for the walk: <b id="usableLbl"></b> nominal minutes. One nominal minute = the oxygen used in one minute of walking on firm ground.</p>
+    </section>
+    <section>
+      <h3>Stops <span class="badge placeholder">placeholder</span></h3>
+      <div id="targets"></div>
+      <p class="hint" id="targetRule"></p>
+    </section>
+    <section>
+      <h3>Planned walk <span class="badge derived">derived</span></h3>
+      <div id="summary"></div>
+    </section>
+    <section class="ctrl">
+      <h3>Walk replay</h3>
+      <div class="row">
+        <button id="play" class="btn" aria-label="Play">▶ Play</button>
+        <select id="speed" aria-label="Replay speed">
+          <option value="2">2 min / s</option><option value="6" selected>6 min / s</option><option value="20">20 min / s</option>
+        </select>
+      </div>
+      <label for="scrub" class="sl">Elapsed <b id="tLbl">0</b> min</label>
+      <input id="scrub" type="range" min="0" max="1000" step="1" value="0">
+    </section>
+    <section>
+      <h3>Map</h3>
+      <div class="row wrap ctrl">
+        <label><input type="checkbox" id="showClasses" checked> Prior terrain classes</label>
+      </div>
+      <div class="legend line">
+        <span><i style="background:#f4b740"></i>rough</span>
+        <span><i style="background:#ff5a4e"></i>sand</span>
+        <span><i style="background:#8a3fae"></i>blocked (≥ 25°)</span>
+        <span><i style="background:#43b0f1"></i>planned walk</span>
+      </div>
+      <p class="hint">Classes from the CTX 20 m terrain model (orbital prior, before any recon). CTX shows no sand class yet.</p>
+    </section>
+    <section>
+      <h3>Consistency check</h3>
+      <div id="parity" class="hint"></div>
+    </section>
+  </aside>
+  <div id="mapwrap">
+    <div id="map"></div>
+    <div id="hud" aria-live="polite">
+      <div class="hrow"><span>Oxygen left</span><b id="o2Val"></b></div>
+      <div class="bar" id="o2Bar"><div class="fill"></div><div class="res"></div></div>
+      <div class="hrow"><span>Return margin</span><b id="mgVal"></b></div>
+      <div class="bar" id="mgBar"><div class="fill"></div></div>
+      <div class="hrow small"><span>Elapsed / distance</span><b id="tdVal"></b></div>
+      <div class="hrow small"><span>Oxygen needed to get home</span><b id="homeVal"></b></div>
+      <div id="warn" hidden>Return margin low: head home soon</div>
+      <div class="hrow small muted">values <span class="badge derived">derived</span> · parameters <span class="badge assumed">assumed</span></div>
+    </div>
+    <div id="scale"><div id="scaleBar"></div><span id="scaleLabel"></span></div>
+    <div id="coords"></div>
+  </div>
+</main>
+<dialog id="about">
+  <form method="dialog"><button class="btn sm close" aria-label="Close">✕</button></form>
+  <div id="aboutBody"></div>
+</dialog>
+<canvas id="classCanvas" hidden></canvas>
+<script src="lib/maplibre-gl.js"></script>
+<script src="astronaut.js"></script>
+</body>
+</html>
