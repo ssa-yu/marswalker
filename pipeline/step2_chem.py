@@ -384,5 +384,47 @@ def export_web(out, cfg):
     write_json(WEB / "step2.json", W_)
 
 
+def run_v3(cfg=None):
+    """W3 chain step 4 (manager 2026-11-14): (i) recomputed ONCE with the version-3 rover's unlock set, same locked
+    rules; (ii) is not re-run (its saved block and labels are reused). -> step2_result_v3_r15.json"""
+    cfg = cfg or load_config()
+    if not cfg["enabled"]:
+        raise SystemExit("step2.enabled = false")
+    r = int(cfg["unlock_radius_m"])
+    f = OUT / f"step2_result_v3_r{r}.json"
+    if f.exists():
+        raise SystemExit(f"step 2 (i) with version 3 already run once: {f}")
+    base = read_json(OUT / f"step2_result_r{r}.json")
+    T, rmsep, info = build_targets()
+    unit_at = unit_lookup()
+    T_aoi = [t for t in T if t["in_aoi"]]
+    labs_ii = base["datasets"]["ii"]["labels"]
+    assert [f"{t['sol']}|{t['target']}" for t in T_aoi] == list(labs_ii), "AOI target set differs from the saved run"
+    lab_all = np.array([labs_ii[f"{t['sol']}|{t['target']}"] for t in T_aoi])
+    R = read_json(APP / "data_work/jezero/v3/recon_loops.json")
+    ext = R["extent_local_m"]; res = R["params"]["grid_res_m"]
+    xy = np.array([[t["x"], t["y"]] for t in T_aoi])
+    per_loop, blk_i, sub_i = {}, None, None
+    for k in RULES["loops"]:
+        m = unlocked_mask(xy, R["loops"], ext, res, cfg["unlock_radius_m"], k)
+        sub = [t for t, mm in zip(T_aoi, m) if mm]
+        b, lab_k = analyse(sub, rmsep, unit_at, f"unlocked_v3@{k}")
+        per_loop[k] = {"n_targets": b["n_targets"], "n_locations": b["n_locations"], "k": b["k"],
+                       "min_pair_sep_rmsep_by_k": b["min_pair_sep_rmsep_by_k"], "group_sizes": [g["n_targets"] for g in b["groups"]],
+                       "crosstab_unlocked_group_vs_all_data_group": crosstab(lab_k, lab_all[m]) if len(sub) else {},
+                       "units": dict(Counter((unit_at(t["x"], t["y"]) or {"symbol": "none"})["symbol"] for t in sub))}
+        if k == RULES["product_loop"]:
+            blk_i, sub_i = b, sub
+    out = dict(base)
+    out.update({"computed_at": time.strftime("%Y-%m-%d %H:%M:%S %Z"), "recon": "version 3 (data_work/jezero/v3)",
+                "disclosure": "version 3 designed after seeing version 2; (ii) reused from the version-2 run unchanged",
+                "datasets": {"i": blk_i, "ii": base["datasets"]["ii"]}, "unlock_by_loop": per_loop,
+                "samples": sample_sites(T_aoi, {"i_unlocked@30": (blk_i, sub_i), "ii_all": (base["datasets"]["ii"], T_aoi)}, unit_at)})
+    write_json(f, out)
+    log("jezero", "step2", f"v3 unlock: {blk_i['n_targets']} targets / {blk_i['n_locations']} places, k = {blk_i['k']}, {len(blk_i['stops'])} stops")
+    return out
+
+
 if __name__ == "__main__":
-    run()
+    import sys
+    run_v3() if "--v3" in sys.argv else run()

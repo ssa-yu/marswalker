@@ -41,6 +41,26 @@ Keys match the `ref` field in `config/scenes/*.json` and `web/data/<scene>/scene
 | GDAL / rasterio, NumPy, SciPy, scikit-image, Pillow, Matplotlib | pipeline | various open-source |
 | Playwright (Python) | headless screenshots for QA | Apache-2.0 |
 
+## Methods and related work
+
+Bibliographic details follow the team's literature report (`team/tech/exploration-algorithms.md`, checked against DBLP / IEEE Xplore / DOI pages unless noted).
+
+| Key | Reference | Used for |
+|---|---|---|
+| deans2009 | Deans, M., Fong, T., et al. (2009). Robotic scouting for human exploration. *Proc. AIAA SPACE 2009*, AIAA-2009-6781. https://publications.ri.cmu.edu/robotic-scouting-for-human-exploration | Concept: a robot scouts before the astronauts |
+| fong2010 | Fong, T., Abercromby, A., Bualat, M. G., Deans, M. C., Hodges, K. V., Hurtado, J. M., Landis, R., Lee, P., & Schreckenghost, D. (2010). Assessment of robotic recon for human exploration of the Moon. *Acta Astronautica*, 67(9–10), 1176–1188. https://doi.org/10.1016/j.actaastro.2010.06.029 | Evaluation design: astronaut traverses planned without recon vs re-planned with recon data (our route A vs route B) |
+| ntrs20090036808 | NASA NTRS record 20090036808. Which of the two papers above it corresponds to has not been checked against its title yet (*citation not verified against the publisher page*). | — |
+| yamauchi1997 | Yamauchi, B. (1997). A frontier-based approach for autonomous exploration. *Proc. IEEE CIRA'97*, 146–151. https://doi.org/10.1109/CIRA.1997.613851 | Rover v3: frontier candidates (R3) |
+| burgard2005 | Burgard, W., Moors, M., Stachniss, C., & Schneider, F. E. (2005). Coordinated multi-robot exploration. *IEEE Trans. Robotics*, 21(3), 376–386. https://doi.org/10.1109/TRO.2004.839232 | Rover v3: utility reduction for already-seen ground (R2) |
+| singh2009 | Singh, A., Krause, A., Guestrin, C., & Kaiser, W. J. (2009). Efficient informative sensing using multiple robots. *JAIR*, 34, 707–755. https://doi.org/10.1613/jair.2674 | Rover v3: sequential greedy gain / cost (R4) |
+| bircher2016 | Bircher, A., Kamel, M., Alexis, K., Oleynikova, H., & Siegwart, R. (2016). Receding horizon "next-best-view" planner for 3D exploration. *Proc. IEEE ICRA*, 1462–1468. | Rover v3: gain along the whole path, reselection on the way (R4, R5) |
+| sofman2006 | Sofman, B., Lin, E., Bagnell, J. A., Cole, J., Vandapel, N., & Stentz, A. (2006). Improving robot navigation through self-supervised online learning. *J. Field Robotics*, 23(11–12), 1059–1075. https://doi.org/10.1002/rob.20169 | Rover v3 and route B_v3: expected cost of unseen ground learned from what the rover has seen (R1) |
+| koenig1997 | Koenig, S., & Smirnov, Y. (1997). Sensor-based planning with the freespace assumption. *Proc. IEEE ICRA*, 3540–3545. | Why route B (unseen = orbital class) is optimistic |
+| gonzalez2002 | González-Baños, H. H., & Latombe, J.-C. (2002). Navigation strategies for exploring indoor environments. *IJRR*, 21(10–11), 829–848. (Score formula seen only in a secondary source: *citation not verified against the publisher page*.) | Concept of next-best-view with travel cost |
+| shen2020 | Shen, Z., Wilson, J. P., & Gupta, S. (2020). ε*+: An online coverage path planning algorithm for energy-constrained autonomous vehicles. *Global Oceans 2020*. https://doi.org/10.1109/IEEECONF38699.2020.9389353 | Rover v3: resume from the nearest uncovered ground after returning to base (R5) |
+| betke1995 | Betke, M., Rivest, R. L., & Singh, M. (1995). Piecemeal learning of an unknown environment. *Machine Learning*, 18(2–3), 231–254. https://doi.org/10.1007/BF00993411 | Theory: exploration that must return to base |
+| hubert1985 | Hubert, L., & Arabie, P. (1985). Comparing partitions. *Journal of Classification*, 2, 193–218. | Adjusted Rand index (step-2 group agreement) |
+
 ## Design references (challenge Resources, not used as data)
 
 - Curiosity's Proposed Path up Mount Sharp — https://science.nasa.gov/resource/curiositys-proposed-path-up-mount-sharp/ (route map style, later step)
