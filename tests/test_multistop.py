@@ -55,3 +55,63 @@ def test_hidden_sand_counts_fewer_stops_on_reference():
     assert e["actual_o2"] > e["pred_o2"]
     assert e["stops_reached_with_safe_return"] <= e["stops_reached_within_usable"] <= 2
     assert e["stops_reached_with_safe_return"] < 2 and e["first_step_true_margin_negative"] is not None
+
+
+# ---- round 7 confirmed definitions (manager 2026-11-14): secondary column and reading (ii) ----
+from pipeline.astro_plan import cost_grids, field  # noqa: E402
+from pipeline.multistop import own_map_home_cost_on, plan_fixed_order  # noqa: E402
+
+
+def test_own_map_home_cost_matches_traceback_on_reference():
+    plan_map = firm(120); ref = plan_map.copy(); ref[40:80, 50:70] = 2; plan_map[30:90, 40:45] = 3
+    base = (60, 20)
+    H = own_map_home_cost_on(plan_map, ref, base, RES)
+    o2p, _ = cost_grids(plan_map, RES); o2e, _ = cost_grids(np.minimum(ref, 2), RES)
+    m, cc = field(o2p, base)
+    for c in [(60, 100), (10, 110), (100, 60), (60, 20)]:
+        path = [tuple(int(v) for v in x) for x in m.traceback(c)]
+        s = sum(0.5 * (o2e[a] + o2e[b]) / RES * RES * (np.sqrt(2) if a[0] != b[0] and a[1] != b[1] else 1) for a, b in zip(path[:-1], path[1:]))
+        assert abs(H[c] - s) < 1e-6, (c, H[c], s)
+
+
+def test_reading_ii_uses_own_map_way_home_charged_on_reference():
+    # plan map thinks the straight way home is firm; on the reference that way is sand, a firm detour exists.
+    plan_map = firm(200); ref = plan_map.copy(); ref[90:110, 60:140] = 2
+    base = (100, 40); tg = [(100, 160)]
+    p = plan_multistop(plan_map, base, tg, RES, capacity=400)
+    e = evaluate_on_reference(p, plan_map, ref, RES)
+    # own-map way home goes straight through the sand: its reference cost is higher than the best reference way
+    o2e, _ = cost_grids(ref, RES); _, best_home = field(o2e, base)
+    own = own_map_home_cost_on(plan_map, ref, base, RES)
+    assert own[tg[0]] > best_home[tg[0]] + 1.0
+    k = p["stop_idx"][0]
+    assert abs(e["true_margin_at_stops"][0] - (p["usable_o2"] - walk(p["path_rc"], p["stop_idx"], ref, RES)["o2"][k] - own[tg[0]])) < 1e-6
+
+
+def test_secondary_column_keeps_A_order_and_subset():
+    a_map = firm(200); b_map = a_map.copy(); b_map[60:140, 100:110] = 2
+    base = (100, 100); tg = [(100, 170), (30, 30), (170, 50)]
+    pa = plan_multistop(a_map, base, tg, RES)
+    pb = plan_fixed_order(b_map, base, tg, pa["order"], RES)
+    assert pb["order"] == pa["order"] and len(pb["stop_idx"]) == len(pa["order"])
+    assert [pb["path_rc"][k] for k in pb["stop_idx"]] == [tg[j] for j in pa["order"]]
+    assert pb["path_rc"][0] == base and pb["path_rc"][-1] == base
+    w = walk(pb["path_rc"], pb["stop_idx"], b_map, RES)
+    assert abs(w["total_o2"] - pb["planned_o2"]) < 1e-6
+
+
+def test_round7_table_plumbing_on_synthetic_grid():
+    from pipeline.compare_ab import hazard_zones
+    from pipeline.round7 import run_table
+    prior = firm(150); ref = prior.copy(); ref[60:90, 20:70] = 2
+    first_t = np.full(prior.shape, -1, np.int32); first_t[60:75, 60:90] = 0
+    S = {"A": prior, "B@1": np.where(first_t >= 0, ref, prior).astype(np.uint8), "REF": ref}
+    zones, _ = hazard_zones(ref, prior, RES)
+    ext = [-150.0, -150.0, 150.0, 150.0]; base = (75, 75)
+    stops = [{"x": -100.0, "y": 0.0}, {"x": 60.0, "y": 80.0}]
+    t, paths = run_table(S, ref, zones, base, stops, ext, RES)
+    r = t["rows"]
+    assert set(r) == {"A", "B@1", "REF"} and "secondary_A_order" in r["B@1"]
+    assert r["B@1"]["secondary_A_order"]["order"] == r["A"]["main"]["order"]
+    assert r["REF"]["main"]["o2_error"] == 0 or abs(r["REF"]["main"]["o2_error"]) < 1e-6
+    assert r["A"]["main"]["stops_reached_with_safe_return"] <= r["A"]["main"]["n_planned_stops"]

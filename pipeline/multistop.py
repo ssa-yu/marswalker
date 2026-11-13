@@ -1,14 +1,20 @@
-"""U4 (round 7, DRAFT): multi-stop astronaut walk with a dwell time at every stop. Synthetic tests only.
+"""Round 7: multi-stop astronaut walk with a dwell time at every stop (definitions CONFIRMED by manager
+2026-11-14, direction.md 第七輪定義; status: confirmed; real-terrain run = pipeline/round7.py, once).
 
-Status: draft, not run on real terrain (TECH_LEAD_BRIEF 第七次更新 U4: definitions go to manager first).
 Reuses pipeline/astro_plan.py (locked walk model, least-O2 paths, unchanged) and adds:
-  dwell       every stop costs dwell_min minutes of time and dwell_min * dwell_o2_factor nominal minutes of O2
-              (draft: 18 min, factor 1 = the firm-ground walking rate; manager to confirm).
-  order rule  same as the step-3 skeleton: visit the most stops, then the least planned O2, subject to
-              "after the dwell at each stop the planned O2 used + planned O2 home <= usable O2";
+  dwell       every visited stop costs 18 minutes of time and 18 nominal minutes of O2 (rate = walking on firm
+              ground, 1x), assumed (no source for the O2 rate at rest).
+  order rule  (main column) each knowledge state picks its own order and subset: most stops, then least planned
+              O2, subject to "after the dwell at each stop, planned O2 used + planned O2 home <= usable O2";
               brute force over orders for <= 7 stops, greedy nearest-feasible beyond.
-  evaluation  the planned tour (same cells, same order, nothing replanned) walked on another class grid
-              (the reference): actual O2 / time, and how many stops are reached under two draft readings.
+              (secondary column) route B keeps route A's order and subset; only the legs between consecutive
+              stops are re-planned on B's map (plan_fixed_order).
+  evaluation  the planned tour (same cells, same order, nothing replanned) walked on the reference.
+              Stops reached, main reading (ii): stops at which, when the dwell ends, the astronaut could still
+              get home WITHIN the usable O2 by walking the least-O2 way home OF HIS OWN MAP, with that way home
+              charged on the reference (true return margin >= 0). Reading (i), listed beside it: stops whose
+              dwell ends before the actual O2 used passes the usable O2. Also the first point of the tour where
+              the true return margin (same definition) turns negative.
 """
 from __future__ import annotations
 
@@ -17,10 +23,12 @@ import math
 
 import numpy as np
 
+from skimage.graph import MCP_Geometric
+
 from .astro_plan import PARAMS, cost_grids, field, step_len, usable_o2
 
-DWELL = {"dwell_min": 18.0, "dwell_o2_factor": 1.0, "status": "draft (manager to confirm)",
-         "source": "MVP_PLAN draft value 18 min (decisions 2026-11-14)"}
+DWELL = {"dwell_min": 18.0, "dwell_o2_factor": 1.0, "status": "confirmed (manager 2026-11-14)", "label": "assumed",
+         "source": "MVP_PLAN value 18 min (decisions 2026-11-14); O2 rate at rest = firm-ground walking rate (no source)"}
 
 
 def plan_multistop(cls, base_rc, targets_rc, res, dwell=DWELL, capacity=None, reserve=None, P=PARAMS, brute_max=7):
@@ -90,21 +98,78 @@ def walk(path, stop_idx, cls_eval, res, dwell=DWELL, P=PARAMS, home=None, U=None
     return out
 
 
-def evaluate_on_reference(plan, cls_plan, cls_ref, res, dwell=DWELL, P=PARAMS):
-    """Draft quantities for round 7 (manager to confirm which are reported)."""
+def plan_fixed_order(cls, base_rc, targets_rc, order, res, dwell=DWELL, capacity=None, reserve=None, P=PARAMS):
+    """Secondary column: visit `order` (indices into targets_rc) as given; legs re-planned on cls."""
+    o2c, _ = cost_grids(cls, res, P)
+    U = usable_o2(capacity, reserve, P)
+    base_rc = tuple(base_rc)
+    pts = [base_rc] + [tuple(targets_rc[j]) for j in order] + [base_rc]
+    path, stop_idx, planned = [base_rc], [], 0.0
+    dw_o = float(dwell["dwell_min"]) * float(dwell["dwell_o2_factor"])
+    for i, (a, b) in enumerate(zip(pts[:-1], pts[1:])):
+        m, cc = field(o2c, a)
+        if not np.isfinite(cc[b]):
+            return None
+        seg = [tuple(int(v) for v in x) for x in m.traceback(b)]
+        path += seg[1:]
+        planned += float(cc[b])
+        if i < len(order):
+            stop_idx.append(len(path) - 1)
+    planned += dw_o * len(order)
+    _, home = field(o2c, base_rc)
+    return {"usable_o2": U, "order": list(order), "skipped": [j for j in range(len(targets_rc)) if j not in order],
+            "planned_o2": planned, "path_rc": path, "stop_idx": stop_idx, "dwell": dwell, "home_field_o2": home,
+            "brute_force": None, "fixed_order": True}
+
+
+def own_map_home_cost_on(cls_plan, cls_eval, base_rc, res, P=PARAMS):
+    """For every cell: O2 of walking home along the least-O2 way of the PLAN map (cls_plan), charged on cls_eval
+    (blocked charged at the sand rate). inf where the plan map has no way home."""
+    o2p, _ = cost_grids(cls_plan, res, P)
+    o2e, _ = cost_grids(np.minimum(cls_eval, 2), res, P)
+    m = MCP_Geometric(o2p, fully_connected=True)
+    cc, tb = m.find_costs([tuple(base_rc)])
+    off = np.asarray(m.offsets)
+    H, W = cls_plan.shape
+    rr, cc_ = np.mgrid[0:H, 0:W]
+    ok = np.isfinite(cc) & (tb >= 0)
+    t = np.where(ok, tb, 0)
+    pr = np.where(ok, rr - off[t, 0], rr); pc = np.where(ok, cc_ - off[t, 1], cc_)
+    pr = np.clip(pr, 0, H - 1); pc = np.clip(pc, 0, W - 1)
+    L = res * np.where((pr != rr) & (pc != cc_), math.sqrt(2.0), np.where((pr != rr) | (pc != cc_), 1.0, 0.0))
+    step = np.where(ok, 0.5 * (o2e + o2e[pr, pc]) / res * L, 0.0)
+    acc = step.ravel().copy()
+    ptr = (pr * W + pc).ravel()
+    for _ in range(int(math.ceil(math.log2(H * W))) + 1):          # pointer jumping: sum of steps to the base
+        acc = acc + acc[ptr]
+        ptr = ptr[ptr]
+    out = acc.reshape(H, W)
+    out[~np.isfinite(cc)] = np.inf
+    return out
+
+
+def evaluate_on_reference(plan, cls_plan, cls_ref, res, dwell=DWELL, P=PARAMS, home_own_on_ref=None):
+    """Round-7 quantities of one planned tour, walked on the reference (nothing replanned)."""
     U = plan["usable_o2"]
-    o2c_ref, _ = cost_grids(np.minimum(cls_ref, 2), res, P)
-    _, home_ref = field(o2c_ref, plan["path_rc"][0])
+    base = plan["path_rc"][0]
+    if home_own_on_ref is None:
+        home_own_on_ref = own_map_home_cost_on(cls_plan, cls_ref, base, res, P)
     pred = walk(plan["path_rc"], plan["stop_idx"], cls_plan, res, dwell, P)
-    act = walk(plan["path_rc"], plan["stop_idx"], cls_ref, res, dwell, P, home=home_ref, U=U)
+    act = walk(plan["path_rc"], plan["stop_idx"], cls_ref, res, dwell, P, home=home_own_on_ref, U=U)
     o = act["o2"]
-    # (i) stops whose dwell ends before the actual O2 used passes the usable O2
-    reached_within_usable = sum(1 for k in plan["stop_idx"] if o[k] <= U + 1e-9)
-    # (ii) stops after whose dwell the astronaut could still get home on the reference within the usable O2
-    reached_safe_return = sum(1 for k in plan["stop_idx"] if act["true_margin"][k] >= -1e-9)
+    reached_within_usable = sum(1 for k in plan["stop_idx"] if o[k] <= U + 1e-9)            # reading (i)
+    reached_safe_return = sum(1 for k in plan["stop_idx"] if act["true_margin"][k] >= -1e-9)  # reading (ii), main
     neg = [k for k, m in enumerate(act["true_margin"]) if m < -1e-9]
-    return {"pred_o2": pred["total_o2"], "actual_o2": act["total_o2"], "pred_time_min": pred["total_time_min"],
-            "actual_time_min": act["total_time_min"], "n_planned_stops": len(plan["stop_idx"]),
-            "actual_within_budget": bool(act["total_o2"] <= U + 1e-9),
+    first = None
+    if neg:
+        k = neg[0]
+        first = {"step": k, "rc": list(plan["path_rc"][k]), "elapsed_min": act["time_min"][k], "o2_used": o[k],
+                 "after_n_stops": sum(1 for s in plan["stop_idx"] if s <= k)}
+    return {"pred_o2": pred["total_o2"], "actual_o2": act["total_o2"], "o2_error": act["total_o2"] - pred["total_o2"],
+            "pred_time_min": pred["total_time_min"], "actual_time_min": act["total_time_min"],
+            "n_planned_stops": len(plan["stop_idx"]),
+            "pred_within_budget": bool(pred["total_o2"] <= U + 1e-9), "actual_within_budget": bool(act["total_o2"] <= U + 1e-9),
             "stops_reached_within_usable": reached_within_usable, "stops_reached_with_safe_return": reached_safe_return,
+            "true_margin_at_stops": [act["true_margin"][k] for k in plan["stop_idx"]],
+            "first_true_margin_negative": first,
             "first_step_true_margin_negative": neg[0] if neg else None}
