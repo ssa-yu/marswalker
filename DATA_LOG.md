@@ -347,7 +347,7 @@ README (result summary, Limitations with every item listed in TECH_LEAD_BRIEF T4
 
 #### T5 Navcam viewing directions (`pipeline/photo_heading.py`, runs after `export` in `pipeline.run`)
 
-256 of 256 Navcam images in `web/data/jezero/photos.json` got `view` = azimuths of the rays through the centre and the left/right edges (mid-height) of the delivered frame, from the CAHV camera model rotated by the `attitude` quaternion (method of S6-2). Check against S6-2: the edge azimuths reproduce the verified spans of the 3 passing images within 0.2–2.1° at the edges (e.g. 245.8–293.1° vs 246.0–292.9°). `mast_az` / `mast_el` renamed `mast_az_rover_frame` / `mast_el_rover_frame` and no longer shown as a direction. Map-data page: 45 m wedges (layer "Navcam viewing directions", derived); photo cards show "looking toward N° from north". Front Hazcam and Mastcam-Z: no direction. Screenshots `qa/screenshots/T5_navcam_*.png`.
+256 of 256 Navcam images in `web/data/jezero/photos.json` got `view` = azimuths of the rays through the centre and the left/right edges (mid-height) of the delivered frame, from the CAHV camera model rotated by the `attitude` quaternion (method of S6-2). Check against S6-2: the edge azimuths match the azimuth spans of the detected skyline in the 3 passing images within 0.0–2.1° (e.g. 245.8–293.1° vs 246.0–292.9°; the S6 spans end at the outermost skyline column used, not at the frame edge). `mast_az` / `mast_el` renamed `mast_az_rover_frame` / `mast_el_rover_frame` and no longer shown as a direction. Map-data page: 45 m wedges (layer "Navcam viewing directions", derived); photo cards show "looking toward N° from north". Front Hazcam and Mastcam-Z: no direction. Screenshots `qa/screenshots/T5_navcam_*.png`.
 
 #### Not done this round
 
