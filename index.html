@@ -11,14 +11,17 @@
 </head>
 <body>
 <header id="top">
-  <div class="brand"><span class="logo">&#9679;</span> Marswalk Recon <span class="muted">· Jezero Crater</span></div>
+  <a class="brand" href="index.html"><span class="logo">&#9679;</span> Marswalk Recon <span class="muted">· Jezero Crater</span></a>
   <nav id="pages" aria-label="Pages">
     <a class="btn active" href="index.html" aria-current="page">Astronaut map</a>
     <a class="btn" href="recon.html">Step 1 · Scout rover recon</a>
     <a class="btn" href="data.html">Map data</a>
+    <a class="btn demo" href="scratch/">Interactive demo</a>
   </nav>
-  <button id="tableBtn" class="btn">Before vs after recon: full table</button>
-  <button id="aboutBtn" class="btn">About &amp; Limitations</button>
+  <div class="actions">
+    <button id="tableBtn" class="btn"><span class="long">Before vs after recon: </span>full table</button>
+    <button id="aboutBtn" class="btn">About<span class="long"> &amp; Limitations</span></button>
+  </div>
 </header>
 <div id="skelBanner" role="note">Walk routes planned before and after a simulated rover recon, checked on HiRISE reference terrain · sand classes heuristic, not yet reviewed · review: pending</div>
 <main>

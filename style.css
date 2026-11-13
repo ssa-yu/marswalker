@@ -6,17 +6,24 @@
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 13px/1.45 var(--font); }
-header#top { display: flex; align-items: center; gap: 16px; padding: 8px 14px; background: var(--panel); border-bottom: 1px solid var(--line); height: 48px; }
-.brand { font-weight: 650; font-size: 15px; white-space: nowrap; }
+body { display: flex; flex-direction: column; }
+/* Shared top bar: identical markup on every page (brand, nav#pages, .actions); see tests/test_nav.py */
+header#top { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 6px 16px; padding: 7px 14px; background: var(--panel); border-bottom: 1px solid var(--line); min-height: 48px; }
+header#top .brand { flex: none; font-weight: 650; font-size: 15px; white-space: nowrap; color: var(--text); text-decoration: none; }
+nav#pages { display: flex; gap: 6px; flex: none; }
+nav#pages a, header#top .actions .btn { white-space: nowrap; text-decoration: none; }
+nav#pages .btn.demo { border-style: dashed; }
+header#top .actions { display: flex; gap: 6px; margin-left: auto; flex: none; }
+@media (max-width: 1279px) { header#top .brand .muted, header#top .long { display: none; } }
+nav#scenes { display: flex; gap: 6px; flex-wrap: wrap; margin: 2px 0 6px; }
 .brand .logo { color: var(--accent); }
 .muted { color: var(--muted); font-weight: 400; font-size: 12px; }
-nav#scenes { display: flex; gap: 6px; flex: 1; }
 .btn { background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; cursor: pointer; font: inherit; }
 .btn:hover { border-color: var(--accent); }
 .btn.active { background: var(--accent); border-color: var(--accent); color: #1a0f08; font-weight: 600; }
 .btn.sm { padding: 3px 8px; font-size: 12px; }
 .btn .tag { font-size: 10px; opacity: .8; margin-left: 4px; }
-main { display: flex; height: calc(100% - 48px); }
+main { display: flex; flex: 1; min-height: 0; }
 aside#panel { width: 330px; flex: none; overflow-y: auto; background: var(--panel); border-right: 1px solid var(--line); padding: 10px 12px 30px; }
 aside#panel h3 { margin: 14px 0 6px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 #sceneInfo h2 { margin: 2px 0 2px; font-size: 17px; }
@@ -68,7 +75,8 @@ a { color: var(--accent2); }
 .maplibregl-popup-tip { border-top-color: var(--panel) !important; border-bottom-color: var(--panel) !important; }
 .maplibregl-ctrl-attrib { font-size: 10px; }
 @media (max-width: 760px) {
-  header#top { height: auto; flex-wrap: wrap; } main { flex-direction: column; height: auto; }
+  header#top { padding: 6px 10px; gap: 6px 10px; } nav#pages { flex: 1 1 100%; flex-wrap: wrap; } header#top .actions { margin-left: 0; }
+  main { flex-direction: column; height: auto; flex: none; } #mapwrap { flex: none; }
   aside#panel, aside#photoPanel { width: 100%; max-height: 45vh; } #mapwrap { height: 60vh; }
   .brand .muted { display: none; }
 }
