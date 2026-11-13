@@ -1,0 +1,48 @@
+{
+ "method": "(written before running): take every SIM 3464 GeoContacts line inside the main AOI (densified to\n2 m spacing). Build two edge-strength images of the HiRISE reference over the AOI at 4 m: (a) gradient\nmagnitude of the orthoimage smoothed with sigma 8 m, (b) DTM slope (6 m baseline) smoothed with sigma 8 m;\neach normalised to z-scores. For every trial shift (dx, dy) in [-200, 200] m at 4 m steps, score = mean edge\nz-score sampled under the shifted contacts. Best shift = argmax; report it, its score, and the score at (0,0).\nPeak width (score >= 90 % of the peak) is reported as the uncertainty. No shift is applied to any layer.",
+ "n_points_2m": 1448,
+ "contact_types": {
+  "certain": 1392,
+  "approximate": 56
+ },
+ "results": {
+  "ortho_gradient": {
+   "best_shift_to_add_to_SIM3464_m": [
+    64.0,
+    -124.0
+   ],
+   "best_shift_magnitude_m": 139.5,
+   "score_at_best": 0.356,
+   "score_at_zero": -0.016,
+   "peak_90pct_extent_m": {
+    "dx": [
+     60.0,
+     80.0
+    ],
+    "dy": [
+     -180.0,
+     -120.0
+    ]
+   }
+  },
+  "dtm_slope": {
+   "best_shift_to_add_to_SIM3464_m": [
+    -36.0,
+    84.0
+   ],
+   "best_shift_magnitude_m": 91.4,
+   "score_at_best": 0.38,
+   "score_at_zero": -0.108,
+   "peak_90pct_extent_m": {
+    "dx": [
+     -44.0,
+     -28.0
+    ],
+    "dy": [
+     76.0,
+     92.0
+    ]
+   }
+  }
+ }
+}

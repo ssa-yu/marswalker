@@ -1,0 +1,117 @@
+{
+ "rule": "X3 item 2 (locked): after one global shift, each quadrant registration within 20 m",
+ "grid_m": 18.0,
+ "method": "R770 vs HiRISE ortho at 18 m, high-pass sigma 4 px, phase correlation (same as Q3)",
+ "products": {
+  "frt00005c5e": {
+   "native_pixel_m_in_file_crs": [
+    18.0,
+    18.0
+   ],
+   "global_shift_m": [
+    -169.2,
+    252.0
+   ],
+   "r_before": -0.02,
+   "r_after": 0.547,
+   "quadrant_residual_after_shift_m": [
+    [
+     0.0,
+     -1.8
+    ],
+    [
+     -4.5,
+     -0.0
+    ],
+    [
+     4.5,
+     2.7
+    ],
+    [
+     2.7,
+     21.6
+    ]
+   ],
+   "quadrant_dev_m": [
+    1.8,
+    4.5,
+    5.2,
+    21.8
+   ],
+   "quadrant_shift_on_unshifted_m (UL, UR, LL, LR)": [
+    [
+     -171.0,
+     251.1
+    ],
+    [
+     -174.6,
+     263.7
+    ],
+    [
+     -160.2,
+     259.2
+    ],
+    [
+     -167.4,
+     281.7
+    ]
+   ],
+   "pass_20m": false
+  },
+  "hrl000040ff": {
+   "native_pixel_m_in_file_crs": [
+    36.0,
+    36.0
+   ],
+   "global_shift_m": [
+    -197.1,
+    209.7
+   ],
+   "r_before": 0.006,
+   "r_after": 0.549,
+   "quadrant_residual_after_shift_m": [
+    [
+     -1.8,
+     -5.4
+    ],
+    [
+     -2.7,
+     -0.0
+    ],
+    [
+     6.3,
+     -1.8
+    ],
+    [
+     -4.5,
+     1.8
+    ]
+   ],
+   "quadrant_dev_m": [
+    5.7,
+    2.7,
+    6.6,
+    4.8
+   ],
+   "quadrant_shift_on_unshifted_m (UL, UR, LL, LR)": [
+    [
+     -201.6,
+     198.0
+    ],
+    [
+     -201.6,
+     198.0
+    ],
+    [
+     -186.3,
+     210.6
+    ],
+    [
+     -205.2,
+     222.3
+    ]
+   ],
+   "pass_20m": true
+  }
+ }
+}

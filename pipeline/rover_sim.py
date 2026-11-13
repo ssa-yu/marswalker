@@ -63,7 +63,38 @@ PARAMS = {
     "soft_check_every_steps": 20,
     "overlap_buffer_m": 6.0,
     "n_loops": 30,
+    "goal_rule": "v2_sector_band",   # S3 version 2 (DATA_LOG round 5); "v1" = original ring rule
+    "sector_order": ["N", "S", "E", "W", "NE", "SW", "SE", "NW"],
+    "bands_m": {"near": [100.0, 600.0], "mid": [600.0, 1200.0], "far": [1200.0, 1e9]},
+    "band_order": ["near", "mid", "far"],
 }
+SECTOR_BEARING = {"N": 0, "NE": 45, "E": 90, "SE": 135, "S": 180, "SW": 225, "W": 270, "NW": 315}
+
+
+def choose_goal_v2(li, cand, gain, gain_min, home, sector, dist, P):
+    """S3 goal rule v2: loop li -> (sector, band) schedule; highest gain, ties -> cheaper. Returns (rc, how)."""
+    order = P["sector_order"]
+    sec = order[(li - 1) % len(order)]
+    band = P["band_order"][((li - 1) // len(order)) % len(P["band_order"])]
+    lo, hi = P["bands_m"][band]
+    elig = cand & (gain >= gain_min)
+    inband = (dist >= lo) & (dist < hi)
+    tries = [(elig & (sector == sec) & inband, f"{sec}/{band}"),
+             (elig & (sector == sec), f"{sec}/any-band")]
+    k = order.index(sec)
+    for j in range(1, len(order)):
+        s2 = order[(k + j) % len(order)]
+        tries.append((elig & (sector == s2) & inband, f"fallback {s2}/{band}"))
+    tries.append((elig, "fallback any"))
+    for m, how in tries:
+        if m.any():
+            g = np.where(m, gain, -1.0)
+            best = g.max()
+            tie = m & (g >= best - 1.0)
+            hc = np.where(tie, home, np.inf)
+            return np.unravel_index(np.argmin(hc), hc.shape), how
+    return None, "none"
+
 CLASSES = ["firm", "rough", "sand", "blocked"]
 N8 = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
 
@@ -163,6 +194,11 @@ def simulate(T, P, base_rc, log_fn=print):
     near_base = (np.hypot(yy - base_rc[0], xx - base_rc[1]) * res) <= P["base_free_radius_m"]
     lat = int(P["goal_lattice_m"] / res)
     lattice = np.zeros((H, W), bool); lattice[lat // 2::lat, lat // 2::lat] = True
+    dxm = (xx - base_rc[1]) * res; dym = (base_rc[0] - yy) * res
+    dist = np.hypot(dxm, dym)
+    bearing = (np.degrees(np.arctan2(dxm, dym)) + 360) % 360
+    names = list(SECTOR_BEARING)
+    sector = np.array(names)[((bearing + 22.5) // 45).astype(int) % 8]
     gw = int(round(math.sqrt(math.pi) * P["goal_gain_radius_m"] / res))  # square of equal area
     max_step = max(P["cost_factor"].values()) * res * math.sqrt(2)
     loops, gain0 = [], None
@@ -174,17 +210,26 @@ def simulate(T, P, base_rc, log_fn=print):
         unobs = uniform_filter(un, gw, mode="constant") * gw * gw * res * res
         unobs_wide = uniform_filter(un, 3 * gw, mode="constant") * 9 * gw * gw * res * res
         cand = lattice & np.isfinite(home) & (home <= P["outbound_frac"] * Bp) & (bel.cost < np.inf)
-        ring = cand & (home >= P["goal_min_frac"] * Bp)
-        if ring.any():
-            cand = ring
-        if not cand.any():
-            log_fn(f"loop {li}: no reachable candidate"); break
-        score = np.where(cand, unobs + 0.25 * unobs_wide, -1)
-        g = np.unravel_index(np.argmax(score), score.shape)
-        if gain0 is None:
-            gain0 = float(unobs[g])
-        if unobs[g] < P["gain_stop_frac"] * gain0:
-            log_fn(f"loop {li}: nothing left to explore (gain {unobs[g]:.0f} m2)"); break
+        how = "v1"
+        if P.get("goal_rule", "v1") == "v1":
+            ring = cand & (home >= P["goal_min_frac"] * Bp)
+            if ring.any():
+                cand = ring
+            if not cand.any():
+                log_fn(f"loop {li}: no reachable candidate"); break
+            score = np.where(cand, unobs + 0.25 * unobs_wide, -1)
+            g = np.unravel_index(np.argmax(score), score.shape)
+            if gain0 is None:
+                gain0 = float(unobs[g])
+            if unobs[g] < P["gain_stop_frac"] * gain0:
+                log_fn(f"loop {li}: nothing left to explore (gain {unobs[g]:.0f} m2)"); break
+        else:
+            gain = unobs + 0.25 * unobs_wide
+            if gain0 is None:
+                gain0 = float(np.where(cand, gain, -1).max())
+            g, how = choose_goal_v2(li, cand, gain, P["gain_stop_frac"] * gain0, home, sector, dist, P)
+            if g is None:
+                log_fn(f"loop {li}: nothing left to explore"); break
         path = [tuple(x) for x in mh.traceback(g)]
         planned_cost = {c: bel.cost[c] for c in path}
         mode = "out"; cur = base_rc; spent = 0.0
@@ -214,9 +259,11 @@ def simulate(T, P, base_rc, log_fn=print):
                 break
             # ---- hard energy rule ---------------------------------------------------------------------
             if not safety:
-                if spent + safe_home_cost() + max_step >= B:
+                # 2 x max_step: the next step costs <= max_step AND can lengthen the way home by <= max_step.
+                # (round-5 fix: with 1 x max_step the v2 run overshot the budget by <= 4.8 units in 5 loops.)
+                if spent + safe_home_cost() + 2 * max_step >= B:
                     refresh_known()
-                    if spent + safe_home_cost() + max_step >= B:
+                    if spent + safe_home_cost() + 2 * max_step >= B:
                         kp, kc = plan(bel.known_cost(), cur, base_rc)
                         rp = hist[::-1]
                         rc_ = path_cost(bel.cost, rp, res)
@@ -319,7 +366,7 @@ def simulate(T, P, base_rc, log_fn=print):
             overlap = float(np.mean(dist[ret[:, 0], ret[:, 1]] <= P["overlap_buffer_m"]))
         else:
             overlap = None
-        rec = {"id": li, "goal_rc": [int(g[0]), int(g[1])], "t0": t0_loop, "t1": t,
+        rec = {"id": li, "goal_rc": [int(g[0]), int(g[1])], "goal_rule": how, "t0": t0_loop, "t1": t,
                "cost_total": round(spent, 1), "budget": B, "length_m": round(L, 1),
                "new_observed_m2": round(new_cells_loop * res * res, 0),
                "observed_total_m2": round(float(bel.observed.sum()) * res * res, 0),

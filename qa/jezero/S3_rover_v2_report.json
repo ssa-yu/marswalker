@@ -1,0 +1,157 @@
+{
+ "v1": {
+  "observed_aoi_pct": 23.7,
+  "loops": 30,
+  "km": 79.9,
+  "by_direction_within_1200m_pct": {
+   "N": 42.8,
+   "NE": 20.8,
+   "E": 1.9,
+   "SE": 15.7,
+   "S": 15.2,
+   "SW": 34.2,
+   "W": 62.0,
+   "NW": 60.9
+  },
+  "by_direction_whole_aoi_pct": {
+   "N": 29.8,
+   "NE": 17.8,
+   "E": 1.9,
+   "SE": 15.7,
+   "S": 15.2,
+   "SW": 21.1,
+   "W": 30.0,
+   "NW": 26.2
+  },
+  "by_band_pct": {
+   "0-600 m": 51.7,
+   "600-1200 m": 29.7,
+   ">1200 m": 1.2
+  },
+  "unlocked_sites_r15": 12,
+  "unlocked_units": {
+   "Njf": 9,
+   "Nle": 3
+  },
+  "unlocked_by_loop": [
+   [
+    1,
+    1
+   ],
+   [
+    5,
+    3
+   ],
+   [
+    10,
+    5
+   ],
+   [
+    20,
+    7
+   ],
+   [
+    30,
+    12
+   ]
+  ]
+ },
+ "v2": {
+  "observed_aoi_pct": 11.3,
+  "loops": 30,
+  "km": 46.5,
+  "by_direction_within_1200m_pct": {
+   "N": 11.7,
+   "NE": 23.2,
+   "E": 27.1,
+   "SE": 22.2,
+   "S": 27.8,
+   "SW": 16.8,
+   "W": 14.1,
+   "NW": 10.4
+  },
+  "by_direction_whole_aoi_pct": {
+   "N": 8.2,
+   "NE": 19.9,
+   "E": 27.1,
+   "SE": 22.1,
+   "S": 27.8,
+   "SW": 10.3,
+   "W": 6.7,
+   "NW": 4.3
+  },
+  "by_band_pct": {
+   "0-600 m": 49.8,
+   "600-1200 m": 3.3,
+   ">1200 m": 0.0
+  },
+  "unlocked_sites_r15": 22,
+  "unlocked_units": {
+   "Njf": 22
+  },
+  "unlocked_by_loop": [
+   [
+    1,
+    2
+   ],
+   [
+    5,
+    10
+   ],
+   [
+    10,
+    12
+   ],
+   [
+    20,
+    19
+   ],
+   [
+    30,
+    22
+   ]
+  ],
+  "goal_rule_used": [
+   "N/near",
+   "S/near",
+   "E/near",
+   "W/near",
+   "NE/near",
+   "SW/near",
+   "SE/near",
+   "NW/near",
+   "N/mid",
+   "S/mid",
+   "E/mid",
+   "W/mid",
+   "NE/mid",
+   "SW/mid",
+   "SE/mid",
+   "NW/mid",
+   "N/any-band",
+   "S/any-band",
+   "E/any-band",
+   "W/far",
+   "NE/far",
+   "SW/any-band",
+   "SE/any-band",
+   "NW/any-band",
+   "N/near",
+   "S/near",
+   "E/near",
+   "W/near",
+   "NE/near",
+   "SW/near"
+  ]
+ },
+ "aoi_sites": 59,
+ "all_site_units": {
+  "Njf": 35,
+  "Nle": 24
+ },
+ "reachable_upper_bound": {
+  "round_trip_le_4000": 59,
+  "round_trip_le_3000_planning": 59,
+  "note": "habitat->site->habitat on HiRISE reference classes (full knowledge, v2 classes), same path both ways"
+ }
+}

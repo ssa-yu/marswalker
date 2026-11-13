@@ -29,9 +29,12 @@ Label: measured = instrument data as published; derived = computed by us from me
 | CRISM MTRDR summary parameters (4 products: frt00005c5e, frt0001fb74, hrl000040ff, frt000047a3; _su cubes, 0.6 GB) | MRO CRISM; PDS Geosciences | https://pds-geosciences.wustl.edu/mro/mro-m-crism-5-rdr-mptargeted-v1/mrocr_4001/mtrdr/ | Step-2 verification Q3 only | measured (parameters derived by the CRISM team) | no | verification only |
 | Mars rock samples list (30 samples) | NASA Science | https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples/ | Q2 sample locations (test set only) | measured | no | verification only |
 | Deahn et al. 2026 crater-rim map (crater_rim_mapping_v4.gdb) | Mars 2020 team; Zenodo 10.5281/zenodo.20976631 | https://doi.org/10.5281/zenodo.20976631 | Q9 rim window facts only | measured (expert mapping) | no | verification only (rim scene waits for Shan) |
-| AI4MARS | NASA JPL, Zenodo | https://zenodo.org/records/15995036 | Terrain classes on rover photos (later step) | measured labels | no | planned |
 | Curiosity's Proposed Path up Mount Sharp | NASA | https://science.nasa.gov/resource/curiositys-proposed-path-up-mount-sharp/ | Design reference for route maps | — | yes | reference only |
 | NASA Worldview | NASA | https://worldview.earthdata.nasa.gov/ | Design reference for layer list | — | yes | reference only |
+| JPL Horizons Sun azimuth/elevation at Jezero (2026-11-15, 2 min) | JPL Solar System Dynamics | https://ssd.jpl.nasa.gov/api/horizons.api | Step 3 daylight window (Q6); shadow check | derived (ephemeris) | no | stored locally (`data_raw/jezero/horizons/`), not in the web yet |
+| SuperCam PDS calibrated-spectra labels + masterlist (2 labels, masterlist header) | Mars 2020 SuperCam; PDS Geosciences | https://pds-geosciences.wustl.edu/m2020/urn-nasa-pds-mars2020_supercam/ | S6-5 check: site/drive in labels | measured | no | checked only (not stored in app) |
+| AI4MARS (status update) | NASA JPL, Zenodo | https://zenodo.org/records/15995036 | Terrain classes on rover photos (later step) | measured labels (crowd; Perseverance has no expert test set) | no | planned; contents verified by remote zip listing, not downloaded |
+| DONKI SEP / WSA-ENLIL | NASA CCMC via api.nasa.gov | https://api.nasa.gov/ | Step 3 space-weather scenario (Q7) | archived | no | not fetched (DEMO_KEY rate limit) |
 
 ## Log
 
@@ -126,3 +129,79 @@ Deviations from MVP_PLAN P6 (made before any comparison number existed): goal sc
 | Rover loop budget | 4,000 energy units (1 unit = 1 m firm; rough 2.5, sand 6), 75 % planning / 25 % reserve, home margin ≥ 1.15, revisit penalty ×2.5 | assumed (no rover power model) | assumed | — |
 | Astronaut budget | MVP_PLAN 5.6 unchanged: 2.5 km/h, O2 480 nominal min, 20 % reserve, factors firm/rough/sand speed 1/0.6/0.35, effort 1/1.5/2.1 | team prototype; Apollo 15 20 % reserve (not re-verified) | assumed | teammates: sources |
 | Unlock radius (link rule (i), only if Shan picks it) | 15 m = sensing radius | SuperCam LIBS distance in the table: median 3.1 m, p90 5.2 m, max 6.5 m; location precision = rover waypoint | assumed | — |
+
+### 2026-11-14 round 5 (S1–S6, tech-lead)
+
+#### S3 rover goal rule, version 2 — written here BEFORE the run (run once, after S1 v2 classes)
+
+Inputs allowed (direction.md 車的目標選擇 "可以用"): AOI boundary, habitat position, the rover's own belief map (prior CTX classes + what it has observed), its own observed mask. Not loaded by the planner: waypoints, traverse, sols, SuperCam, photos, samples, Deahn map, unrevealed HiRISE (test: `tests/test_recon.py::test_planner_loads_no_perseverance_files`). Unlock counts are reported only, never used to change this rule.
+
+1. Candidate goals: 40 m lattice cells that are passable on the belief map and whose belief cost from the habitat is ≤ outbound_frac (0.45) × planning budget (no minimum distance any more; v1 required 25–45 % of the budget, which only allowed goals 750–1350 m away).
+2. Each candidate gets a **sector** (8 compass sectors of 45° centred on N, NE, E, … by bearing from the habitat) and a **distance band** by straight-line distance from the habitat: near 100–600 m, mid 600–1200 m, far > 1200 m.
+3. Loop k uses sector `ORDER[(k−1) mod 8]` with ORDER = N, S, E, W, NE, SW, SE, NW (opposite sectors alternate), and band `BANDS[((k−1) // 8) mod 3]` = near (loops 1–8), mid (9–16), far (17–24), near (25–30) …
+4. Gain of a candidate = unobserved area within 150 m + 0.25 × unobserved area within 450 m (same as v1). Among candidates in (sector, band) whose gain ≥ 5 % of the first loop's gain, pick the highest gain; ties (within 1 m²) → lower belief cost from the habitat.
+5. Fallbacks, in this order, when (sector, band) has no eligible candidate: same sector, any band; then the next sector in ORDER with the scheduled band; then any candidate. Each loop records which rule picked its goal.
+6. Everything else is unchanged from v1 (outbound replanning, soft turn-back, different-way-home penalty, adaptive margin, hard energy rule, budget 4,000, sensing radius 15 m).
+Reported after the run: coverage by 8 directions within 1200 m and over the whole AOI, near/mid/far coverage, unlocked SuperCam sites (15 m) next to v1's 12/59 with the SIM 3464 unit of each, and how many of the 59 sites are within reach of one loop's budget at all (upper bound).
+
+#### S1 sand classification, version 2 (proposed; heuristic, not yet reviewed — needs Shan / teammate sign-off)
+
+Round 1 of at most 2 (direction.md 沙地的修正與放行). Code `pipeline/sandfield.py` (SAND_V2), wired into `pipeline/terrain.py`.
+- Method: question changed from "is this pixel a bright ripple crest?" to "is this patch, over tens of metres, a field of parallel ripples?". HiRISE image at 0.5 m divided by its 25 m local mean; two difference-of-Gaussian bands — fine 0.5–1.5 m (2–3 m ripples) and coarse 1.5–5 m (large ripples/TARs); per band the orientation coherence of the structure tensor (window σ 6 m / 12 m) and the RMS band contrast. Sand if (fine coherence ≥ 0.45 and fine contrast ≥ 0.040) or (coarse coherence ≥ 0.50 and coarse contrast ≥ 0.050); 2 m grid; closing + opening with a 4 m disc; holes < 400 m² filled; patches < 400 m² dropped; slope < 15°. All thresholds are fixed numbers (no percentiles).
+- How the numbers were set: on DEVELOPMENT crops drawn with seed 777 (not the check seed). Two settings were looked at: coherence 0.50/0.55 (dev non-sand sheet still had ripple fields under the cross: 3 of 16) → 0.45/0.50 (dev sheets clean). No route, recon or unlock number was looked at.
+- Roughness now uses the locked fixed value 0.059 m (was P85, same number in the main AOI).
+- Class priority (proposed): blocked > sand > rough > firm; then 3×3 majority; blocked re-imposed.
+
+| Class share of AOI (reference, HiRISE) | v1 (withdrawn) | v2 (proposed) |
+|---|---|---|
+| firm | 75.5 % | 48.6 % |
+| rough | 15.3 % | 10.8 % |
+| sand | 8.9 % | 40.3 % |
+| blocked | 0.4 % | 0.4 % |
+| prior (CTX), unchanged | firm 97.9 / rough 1.9 / sand 0 / blocked 0.2 % | same |
+
+Check figures v2 (seed 20261114; each crop 60 m at 0.25 m, plain | orange translucent fill, cross at centre; question: "is the ground under the cross part of a continuous sand/ripple field?"):
+`qa/jezero/S1_sand_check_v2_A_sand.png` (24 classified sand), `S1_sand_check_v2_B_notsand.png` (24 classified not sand), `S1_sand_check_v2_C_v1crops.png` (the 12 v1 crops), `S1_sand_overview_v2.png` (whole AOI, v1 | v2), `S1_terrain_classes_v2.png`, points in `S1_sand_check_v2_points.json`.
+tech-lead self-check (not a review): A — cross clearly not on sand: A08 (bright/dark contact on the plain), A16 (edge of the bright scarp, NW corner); borderline A12 → 2 ≤ 4. B — cross clearly on sand: B16 (patch of small ripples); borderline B20, B22 → 1 ≤ 2. The three must-flip points (x 9,y −747; x −1199,y 261; x −1591,y −309) are now sand (C09, C11, C12). Known failure mode: a single long, high-contrast brightness edge (scarp, crater rim, albedo contact) also scores high coherence.
+- Hazard zone (for the A/B table; not computed): connected sand/blocked components. With v2 sand the AOI has 193 components; 157 ≥ 400 m² holding 99.9 % of the area, and one belt of 1.84 km². Proposal: keep 400 m² (= smallest sand patch) but note that "number of zones entered" becomes coarse (one giant zone); the "metres on hazard terrain" row will carry most of the signal.
+
+#### S2 does the CTX 6 m image show the sand fields? (`spikes/s2_ctx_sand.py`, rule written in its header before running)
+
+Same indicator on the CTX orthoimage with the band moved to the shortest scale CTX carries (DoG 6–18 m, window 30 m), same fixed coherence/contrast thresholds, nothing tuned on HiRISE. Scored on 60 m blocks (block = sand if ≥ 50 % HiRISE v2 sand; 38.4 % of blocks): CTX AUC 0.48, precision 0.04, recall 0.002 (maps 1.6 % of the AOI, mostly the dark scarp); control = HiRISE averaged to 6 m: AUC 0.55, recall 0.08. Decision rule (AUC ≥ 0.80 and recall ≥ 0.5 with precision ≥ 0.7): **not met → the prior keeps no sand class**; figure `qa/jezero/S2_ctx_vs_hirise_sand.png` for Limitations. Observation, not tested: to the eye the large sand belt is faintly visible on CTX as a smoother, slightly darker band; only a manual CTX-only mapping could capture it (decision for manager).
+
+#### S3 result — the single run of goal rule v2 (on sand v2 classes, proposed), 2026-11-14 (simulated, review pending)
+
+30 loops, 46.5 km, 544 s. Observed 11.3 % of the AOI (v1 rule on v1 classes: 23.7 %, 79.9 km). Reported only; nothing was changed because of these numbers.
+
+| Observed share | N | NE | E | SE | S | SW | W | NW |
+|---|---|---|---|---|---|---|---|---|
+| v1, within 1200 m | 42.8 | 20.8 | 1.9 | 15.7 | 15.2 | 34.2 | 62.0 | 60.9 |
+| v2, within 1200 m | 11.7 | 23.2 | 27.1 | 22.2 | 27.8 | 16.8 | 14.1 | 10.4 |
+| v2, whole AOI | 8.2 | 19.9 | 27.1 | 22.1 | 27.8 | 10.3 | 6.7 | 4.3 |
+
+By distance from the habitat (v1 → v2): 0–600 m 51.7 → 49.8 %; 600–1200 m 29.7 → 3.3 %; > 1200 m 1.2 → 0.0 %. Directions are now within 10–28 % of each other, but the rover rarely gets beyond ~600 m: with sand now 40 % of the reference terrain at cost ×6 (locked), a 4,000-unit loop is used up close to home (loops 17–19 and 22–24 fell back to "any band" because no mid/far goal fitted). Goal choices per loop are in `recon_loops.json` (`goal_rule`).
+SuperCam sites unlocked (15 m, AOI 59 sites): v2 22 (loops 1/5/10/20/30: 2/10/12/19/22), all in SIM 3464 unit Njf; v1 12 (9 Njf, 3 Nle). AOI sites: 35 Njf, 24 Nle. Upper bound: all 59 sites have a habitat→site→habitat round trip ≤ 3,000 units on the reference classes (full knowledge), so reach is not the limit. Report `qa/jezero/S3_rover_v2_report.json`, figure `qa/jezero/S3_coverage_v1_v2.png`, screenshots `qa/screenshots/S3_recon_v2_*.png`.
+**Defect found:** 5 loops ended 1.3–4.8 units over the 4,000 budget (1, 12, 13, 20, 24; each after a "safety return"). Cause: the hard energy rule kept a margin of one step, but one step can also lengthen the way home by one step. Fixed in `rover_sim.py` (margin 2 × max step) with a synthetic regression test; the run above was NOT repeated (one run per version) — the acceptance test is marked xfail with this reason, and the rerun after S1 is locked will use the fixed code.
+Test added: `test_planner_loads_no_perseverance_files` (static: rover_sim.py names no waypoint/traverse/SuperCam/photo/sample/Deahn file; dynamic: a simulation opens no file at all).
+
+#### S5 Step 3 skeleton: astronaut walk planner (`pipeline/astro_plan.py`, `web/astronaut.html`) — planned values, review pending
+
+- What it does: least-oxygen path on a class grid (8-connected; a step costs the mean of the two cells' per-metre O2 times the step length; skimage MCP_Geometric in Python, Dijkstra in the browser); stop order = visits the most stops, then the least O2, subject to "after each stop the astronaut can still walk home within the usable O2" (brute force over orders, ≤ 7 stops; greedy nearest-feasible beyond); stops that do not fit are skipped and reported. Per-step timeline: elapsed time, distance, O2 used, O2 needed to get home (cheapest route), return margin = usable O2 left − O2 needed to get home.
+- Parameters (locked R3, assumed): 2.5 km/h on firm; speed factor firm/rough/sand 1/0.6/0.35; O2 factor 1/1.5/2.1; blocked ≥ 25°; suit O2 480 nominal min, reserve 20 % → 384 usable. Unit: 1 nominal minute = O2 of one minute walking on firm ground. Interface-only warning threshold: margin < 15 % of usable O2 (assumed).
+- Knowledge state on real terrain: prior only (CTX 20 m classes, `class_prior` of terrain_2m.npz) on a 4 m grid (each 4 m cell takes the most costly 2 m class). Planned values only: no evaluation on the HiRISE reference terrain, no route A vs B, no comparison numbers.
+- Targets: PLACEHOLDER (step 2 not decided). Rule written before the first run: the four points of the 300 m comparison lattice aligned to the base nearest to 600 m east, west, north and south of the base (nearest passable cell if blocked) → P1 (602, −2), P2 (2, 598), P3 (−598, −2), P4 (2, −602) m (4 m cell centres). No science values, no Perseverance measurement or sample locations.
+- Default plan (Python): all 4 stops, 3.75 km, 89.9 min walking, 89.9 of 384 usable O2, lowest margin 294 min. Browser planner reproduces it (O2 diff 0.004 min, same order); shown on the page as a consistency check.
+- Tests (`tests/test_astro.py`, synthetic grids only, 7 pass): analytic all-firm round trip; sand band costs more / detour never costs more; wall with a gap (path goes through the gap, never on blocked cells); unreachable stop skipped; stop beyond the O2 budget skipped; more O2 never visits fewer stops; best order is the cheaper loop. Every plan: ends at base, O2 ≤ usable, margin ≥ 0 at every step.
+- Web: oxygen and reserve sliders (recompute in the browser), include/exclude stops, walk replay (play/pause, scrubber, speed), "Oxygen left" bar (reserve hatched) and "Return margin" bar, low-margin warning, skeleton banner. Output `web/data/jezero/astronaut/` (astronaut.json 2.7 kB + class_prior_4m.png 1.4 kB). Screenshots `qa/screenshots/S5_astronaut_*.png` (`tools/screenshot_astronaut.py`, 0 console errors).
+
+#### S6 supplementary checks (tech-lead, 2026-11-14; details in team/tech/feasibility-step2-analysis.md "第五輪補件")
+
+Scripts `spikes/s6_*.py`, outputs `qa/jezero/S6_*.{png,json}`. No web change.
+
+- SIM 3464 vs HiRISE offset: not determined. Metadata: base map = CTX 6 m mosaic (Caltech, Feb 2018), publication scale 1:75,000, no positional accuracy stated. Edge-matching of the AOI contacts (method fixed before running) gave contradictory shifts (ortho gradient +64 E/−124 N m; DTM slope −36 E/+84 N m), so no number is claimed. Layer stays "not registered to HiRISE".
+- Photo azimuth (J5): verified on 3 Navcam images (sols 48, 73, 174) by matching the photo skyline to the CTX DTM horizon: true azimuth = camera-model (CAHVORE) A vector rotated by the `attitude` quaternion (w,x,y,z; rover → north-east-down); best azimuth offset ≤ 1.0°, RMS ≤ 0.18°. `mastAz` is rover-relative (off by the rover heading, 156–295° here) and must not be drawn as a heading. 3 other images not informative (skyline blocked). Front Hazcam / Mastcam-Z not verified.
+- CRISM four-quadrant check (X3-2 rule, ≤ 20 m): frt00005c5e quadrant deviations 8.9/11.8/19.9/31.7 m, hrl000040ff 7.7/7.7/17.8/42.0 m → both fail with the Q3 method (nearest resampling). With bilinear resampling hrl000040ff passes (≤ 6.6 m) and frt00005c5e still fails (21.8 m); verdict kept on the original method. Correction: hrl000040ff native pixel is 36 m (Q3 recorded 18 m).
+- SuperCam PDS label: each calibrated-spectra label carries ROVER_NAV_FRAME SITE/DRIVE and the rover pose in the site frame (no target coordinates); the masterlist EDR file names also encode site/drive, so measurements can be placed on waypoints by site/drive instead of by sol (not re-done this round).
+- Horizons (Q6): east longitude must be entered negative for Mars (stated by Horizons; Sun elevation 76.22° vs rover telemetry 76.02° at sol 11). Local true solar time derived from the hour angle (Horizons gives n.a.). AOI shadow from the HiRISE DTM: < 5 % whenever the Sun is ≥ 10° high (LTST ~6.5–17.5 h); 7–20 % at 5°, 28–64 % at 2°. Recommendation: remaining-daylight only.
+- DONKI (Q7): not done — api.nasa.gov DEMO_KEY returned 429 (hourly limit used up), CCMC endpoint timed out; .env not read.
+- AI4MARS (Q8): v0.6, CC-BY-4.0, 16.2 GB merged zip; Perseverance Navcam 4,573 (+2,122 early-named) images, 3,827 NAV labels (2,191 at 72 main-AOI waypoints), 8,508 geology labels; no expert test set for Perseverance; paper baseline (Curiosity only) 94.97 % overall; no public weights found. Not downloaded.

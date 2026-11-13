@@ -1,0 +1,138 @@
+{
+ "label": "derived (planned values on the prior; heuristic, not yet reviewed)",
+ "review": "pending",
+ "status": "step 3 skeleton",
+ "knowledge_state": "prior (CTX 20 m DTM classes, before any recon). Planned values only; not evaluated on the HiRISE reference terrain.",
+ "params": {
+  "status": "locked (manager 2026-11-14)",
+  "label": "assumed",
+  "speed_kmh": 2.5,
+  "o2_capacity_nominal_min": 480.0,
+  "reserve_frac": 0.2,
+  "speed_factor": {
+   "firm": 1.0,
+   "rough": 0.6,
+   "sand": 0.35
+  },
+  "o2_factor": {
+   "firm": 1.0,
+   "rough": 1.5,
+   "sand": 2.1
+  },
+  "source": "MVP_PLAN 5.6 (team prototype; teammates are checking the original sources)"
+ },
+ "ui": {
+  "margin_warn_frac": 0.15,
+  "label": "assumed (interface threshold only)"
+ },
+ "per_metre": {
+  "time_min": [
+   0.024,
+   0.04000000000000001,
+   0.06857142857142857
+  ],
+  "o2_nominal_min": [
+   0.024,
+   0.06000000000000001,
+   0.14400000000000002
+  ],
+  "classes": [
+   "firm",
+   "rough",
+   "sand",
+   "blocked"
+  ]
+ },
+ "grid": {
+  "res_m": 4.0,
+  "shape": [
+   600,
+   600
+  ],
+  "extent_local_m": [
+   -1700,
+   -1000,
+   700,
+   1400
+  ],
+  "class_png": "class_prior_4m.png",
+  "class_png_values": "0 firm, 1 rough, 2 sand, 3 blocked; each 4 m cell = most costly 2 m class inside"
+ },
+ "base": {
+  "lon": 77.45088572,
+  "lat": 18.44462715,
+  "k_coslat": 0.9486298677413421,
+  "R": 3396190.0,
+  "rc": [
+   350,
+   425
+  ],
+  "label": "assumed"
+ },
+ "targets": [
+  {
+   "id": "P1",
+   "rc": [
+    350,
+    575
+   ],
+   "xy_m": [
+    602.0,
+    -2.0
+   ],
+   "label": "placeholder target — step ② not decided"
+  },
+  {
+   "id": "P2",
+   "rc": [
+    200,
+    425
+   ],
+   "xy_m": [
+    2.0,
+    598.0
+   ],
+   "label": "placeholder target — step ② not decided"
+  },
+  {
+   "id": "P3",
+   "rc": [
+    350,
+    275
+   ],
+   "xy_m": [
+    -598.0,
+    -2.0
+   ],
+   "label": "placeholder target — step ② not decided"
+  },
+  {
+   "id": "P4",
+   "rc": [
+    500,
+    425
+   ],
+   "xy_m": [
+    2.0,
+    -602.0
+   ],
+   "label": "placeholder target — step ② not decided"
+  }
+ ],
+ "target_rule": "Four points of the 300 m comparison lattice aligned to the base, nearest to 600 m east, west, north and south of the base (nearest passable cell if blocked). Placeholder only: step 2 (where it is worth sending the astronaut) is not decided.",
+ "reference_plan_python": {
+  "usable_o2": 384.0,
+  "order": [
+   0,
+   1,
+   2,
+   3
+  ],
+  "skipped": [],
+  "o2_total": 89.89,
+  "time_total_min": 89.89,
+  "dist_total_m": 3745.6,
+  "min_margin": 294.11,
+  "note": "computed by pipeline/astro_plan.py at the default slider values; the page recomputes the same plan in JS and shows the difference"
+ }
+}

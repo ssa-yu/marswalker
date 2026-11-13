@@ -1,0 +1,136 @@
+{
+ "hypotheses": {
+  "H1": "model frame = local level (x north, y east, z down)",
+  "H2": "model in rover frame; rotate by attitude quaternion (w,x,y,z) to local level"
+ },
+ "figure_shows": "H2",
+ "rule": "best delta within +-2 deg and RMS < 0.5 deg",
+ "images": {
+  "NLF_0190_0683808901_487EBY_N0070000NCAM00209_07_0LLJ": {
+   "waypoint": "7_0",
+   "sol": 190,
+   "mastAz": 265.39,
+   "mastEl": 0.490087,
+   "n_skyline_columns": 166,
+   "az_span_deg": [
+    173.8,
+    197.3
+   ],
+   "best_delta_deg": 45.0,
+   "rms_at_best_deg": 1.068,
+   "rms_at_zero_deg": 1.116,
+   "H2_median_az_deg": 186.4,
+   "elevation_offset_at_zero_deg": -1.89,
+   "H2_pass": false,
+   "H1": {
+    "median_az_deg": 278.1,
+    "elevation_offset_at_zero_deg": -6.92
+   }
+  },
+  "NLF_0017_0668451937_008EBY_N0030578NCAM00195_04_0LLJ": {
+   "waypoint": "3_578",
+   "sol": 17,
+   "mastAz": 349.813,
+   "mastEl": -2.94699,
+   "n_skyline_columns": 199,
+   "az_span_deg": [
+    48.8,
+    73.2
+   ],
+   "best_delta_deg": 146.0,
+   "rms_at_best_deg": 1.468,
+   "rms_at_zero_deg": 2.277,
+   "H2_median_az_deg": 60.9,
+   "elevation_offset_at_zero_deg": 3.81,
+   "H2_pass": false,
+   "H1": {
+    "median_az_deg": 347.7,
+    "elevation_offset_at_zero_deg": 0.64
+   }
+  },
+  "NLE_0073_0673428672_997ECM_N0032430NCAM00407_00_0LLJ": {
+   "waypoint": "3_2430",
+   "sol": 73,
+   "mastAz": 140.961,
+   "mastEl": 0.534764,
+   "n_skyline_columns": 200,
+   "az_span_deg": [
+    284.8,
+    309.3
+   ],
+   "best_delta_deg": 1.0,
+   "rms_at_best_deg": 0.177,
+   "rms_at_zero_deg": 0.191,
+   "H2_median_az_deg": 297.0,
+   "elevation_offset_at_zero_deg": 0.1,
+   "H2_pass": true,
+   "H1": {
+    "median_az_deg": 140.9,
+    "elevation_offset_at_zero_deg": 5.36
+   }
+  },
+  "NLG_0174_0682382706_381ECM_N0061648NCAM00513_00_1I3J": {
+   "waypoint": "6_1648",
+   "sol": 174,
+   "mastAz": 29.9028,
+   "mastEl": 2.04892,
+   "n_skyline_columns": 200,
+   "az_span_deg": [
+    301.4,
+    349.0
+   ],
+   "best_delta_deg": -0.5,
+   "rms_at_best_deg": 0.132,
+   "rms_at_zero_deg": 0.153,
+   "H2_median_az_deg": 325.2,
+   "elevation_offset_at_zero_deg": 0.13,
+   "H2_pass": true,
+   "H1": {
+    "median_az_deg": 29.8,
+    "elevation_offset_at_zero_deg": 3.76
+   }
+  },
+  "NLF_0048_0671209093_534ECM_N0031850NCAM00406_01_195J": {
+   "waypoint": "3_1850",
+   "sol": 48,
+   "mastAz": 88.0845,
+   "mastEl": -1.38877,
+   "n_skyline_columns": 200,
+   "az_span_deg": [
+    246.0,
+    292.9
+   ],
+   "best_delta_deg": 0.5,
+   "rms_at_best_deg": 0.111,
+   "rms_at_zero_deg": 0.149,
+   "H2_median_az_deg": 269.3,
+   "elevation_offset_at_zero_deg": -0.1,
+   "H2_pass": true,
+   "H1": {
+    "median_az_deg": 88.0,
+    "elevation_offset_at_zero_deg": 5.04
+   }
+  },
+  "NLE_0072_0673345813_602ECM_N0032346NCAM00410_00_0LLJ": {
+   "waypoint": "3_2346",
+   "sol": 72,
+   "mastAz": 103.812,
+   "mastEl": -0.625494,
+   "n_skyline_columns": 200,
+   "az_span_deg": [
+    280.8,
+    305.3
+   ],
+   "best_delta_deg": -21.5,
+   "rms_at_best_deg": 0.367,
+   "rms_at_zero_deg": 1.047,
+   "H2_median_az_deg": 293.0,
+   "elevation_offset_at_zero_deg": 2.64,
+   "H2_pass": false,
+   "H1": {
+    "median_az_deg": 103.8,
+    "elevation_offset_at_zero_deg": 6.58
+   }
+  }
+ }
+}

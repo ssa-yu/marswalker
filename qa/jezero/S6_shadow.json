@@ -1,0 +1,111 @@
+{
+ "source": "JPL Horizons API (observer table, Sun, coord@499, -77.45088572 / 18.44462715 / -2.6 km), 2026-11-15 12:00 to 11-16 02:00 UTC, 2-min step",
+ "lon_convention": "verified: Horizons states 'Input east-longitude as negative for IAU west-positive body #499'; with -77.45 the Sun elevation at 2021-03-02 00:31 UTC = 76.22 deg vs SuperCam telemetry solar_el 76.02 deg (sol 11, masterlist)",
+ "ltst": "derived from hour angle (not a Horizons output for Mars sites)",
+ "cases": [
+  {
+   "when": "morning",
+   "utc": "2026-Nov-15 12:56",
+   "ltst_h": 5.95,
+   "sun_az_deg": 80.9,
+   "sun_el_deg": 2.2,
+   "shadow_frac_aoi": 0.2793,
+   "self_shadow_frac": 0.1489
+  },
+  {
+   "when": "morning",
+   "utc": "2026-Nov-15 13:10",
+   "ltst_h": 6.18,
+   "sun_az_deg": 82.0,
+   "sun_el_deg": 5.4,
+   "shadow_frac_aoi": 0.0733,
+   "self_shadow_frac": 0.038
+  },
+  {
+   "when": "morning",
+   "utc": "2026-Nov-15 13:32",
+   "ltst_h": 6.53,
+   "sun_az_deg": 83.6,
+   "sun_el_deg": 10.5,
+   "shadow_frac_aoi": 0.0085,
+   "self_shadow_frac": 0.0043
+  },
+  {
+   "when": "morning",
+   "utc": "2026-Nov-15 14:14",
+   "ltst_h": 7.21,
+   "sun_az_deg": 86.6,
+   "sun_el_deg": 20.1,
+   "shadow_frac_aoi": 0.0002,
+   "self_shadow_frac": 0.0001
+  },
+  {
+   "when": "morning",
+   "utc": "2026-Nov-15 14:58",
+   "ltst_h": 7.93,
+   "sun_az_deg": 89.8,
+   "sun_el_deg": 30.3,
+   "shadow_frac_aoi": 0.0,
+   "self_shadow_frac": 0.0
+  },
+  {
+   "when": "max",
+   "utc": "2026-Nov-15 19:08",
+   "ltst_h": 11.99,
+   "sun_az_deg": 178.6,
+   "sun_el_deg": 80.9,
+   "shadow_frac_aoi": 0.0,
+   "self_shadow_frac": 0.0
+  },
+  {
+   "when": "evening",
+   "utc": "2026-Nov-15 23:20",
+   "ltst_h": 16.07,
+   "sun_az_deg": 270.2,
+   "sun_el_deg": 30.2,
+   "shadow_frac_aoi": 0.002,
+   "self_shadow_frac": 0.0008
+  },
+  {
+   "when": "evening",
+   "utc": "2026-Nov-16 00:04",
+   "ltst_h": 16.79,
+   "sun_az_deg": 273.5,
+   "sun_el_deg": 20.1,
+   "shadow_frac_aoi": 0.0094,
+   "self_shadow_frac": 0.0044
+  },
+  {
+   "when": "evening",
+   "utc": "2026-Nov-16 00:46",
+   "ltst_h": 17.47,
+   "sun_az_deg": 276.5,
+   "sun_el_deg": 10.4,
+   "shadow_frac_aoi": 0.0452,
+   "self_shadow_frac": 0.0211
+  },
+  {
+   "when": "evening",
+   "utc": "2026-Nov-16 01:08",
+   "ltst_h": 17.83,
+   "sun_az_deg": 278.1,
+   "sun_el_deg": 5.4,
+   "shadow_frac_aoi": 0.2038,
+   "self_shadow_frac": 0.0891
+  },
+  {
+   "when": "evening",
+   "utc": "2026-Nov-16 01:22",
+   "ltst_h": 18.05,
+   "sun_az_deg": 279.2,
+   "sun_el_deg": 2.2,
+   "shadow_frac_aoi": 0.6353,
+   "self_shadow_frac": 0.288
+  }
+ ],
+ "rise_set_transit_utc": [
+  "2026-Nov-15 00:53  s  279.761637  -0.174860",
+  "2026-Nov-15 12:46 *r   80.179375  -0.060683",
+  "2026-Nov-15 19:09 *t  180.122553  80.897176"
+ ]
+}

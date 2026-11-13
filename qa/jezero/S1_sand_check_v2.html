@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sand Check v2</title>
+<style>
+:root { --bg: #fafaf7; --fg: #1d1d1b; --muted: #666; --line: #ddd; }
+@media (prefers-color-scheme: dark) { :root { --bg: #161616; --fg: #eee; --muted: #aaa; --line: #333; } }
+body { background: var(--bg); color: var(--fg); font: 16px/1.5 system-ui, sans-serif; margin: 0 auto; max-width: 1200px; padding: 16px; }
+img { width: 100%; height: auto; border: 1px solid var(--line); }
+.muted { color: var(--muted); }
+li { margin: .3em 0; }
+</style>
+</head>
+<body>
+<h1>Sand classification check, version 2</h1>
+<p class="muted">Marswalk Recon · Jezero · heuristic, not yet reviewed · seed 20261114</p>
+<h2>What to answer</h2>
+<ol>
+<li>For every small crop (A01–A24, B01–B24, C01–C12): is the ground under the <b>blue cross</b> part of a continuous field of sand ripples? Answer <b>yes / no / unsure</b>. Only list the ones you disagree with the orange fill.</li>
+<li>Each crop is 60 m wide, shown twice: plain image on the left, orange = "classified sand" on the right.</li>
+<li>Pass rule (fixed in advance): sheet B (classified not sand) at most 2 clear "yes"; sheet A (classified sand) at most 4 clear "no"; C09, C11 and C12 must be sand.</li>
+</ol>
+<h2>Whole study area (2.4 km × 2.4 km)</h2>
+<img src="S1_sand_overview_v2.png" alt="Whole-area sand overlay, version 1 versus version 2">
+<h2>Sheet A · classified sand</h2>
+<img src="S1_sand_check_v2_A_sand.png" alt="24 crops classified sand">
+<h2>Sheet B · classified not sand</h2>
+<img src="S1_sand_check_v2_B_notsand.png" alt="24 crops classified not sand">
+<h2>Sheet C · the 12 crops of the version-1 check</h2>
+<img src="S1_sand_check_v2_C_v1crops.png" alt="12 crops from the version-1 check">
+</body>
+</html>
