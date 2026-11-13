@@ -438,3 +438,16 @@ Settings commit `5f6cfaf` (04:45:54); all three runs started 04:46:00, compariso
 
 B@k − A hazard m (mean) by loops 1 / 5 / 10 / 20 / 30: 8,000: +9 / −61 / −218 / −172 / −275; 16,000: +9 / −137 / −205 / −237 / −303; sand ×3: −20 / −44 / −94 / −176 / −234 (locked: +9 / −96 / −169 / −252 / −251). Near the habitat (300–600 m, n = 8) share of possible gain B@30 O2 / hazard m: 8,000 73 % / 76 %; 16,000 83 % / 86 %; sand ×3 68 % / 68 % (locked 46 % / 53 %); beyond 1,200 m: 19 % / 20 %, 23 % / 24 %, 17 % / 17 % (locked 23 % / 23 %). Within 1200 m by direction (N NE E SE S SW W NW): 8,000 29.5 51.9 37.2 30.7 31.0 24.3 30.4 22.2; 16,000 33.3 57.2 34.6 29.4 31.1 30.0 38.9 31.6; sand ×3 25.4 27.8 33.1 29.7 27.7 21.0 17.4 12.6. Goals reached: 21 / 30 / 20 of 30 (locked 12).
 Observations (no change follows): doubling or quadrupling the budget raises coverage to 19.8 % / 24.1 % but the recovered share only to 27 % / 30 %, and after 30 loops route B still underestimates the walk by about 100 nominal minutes in every setting; with 8,000 the curve is not monotonic (B@20 worse than B@10). The 16,000 run drove only 5 km more than 8,000 because it reached all 30 goals and came home early.
+
+#### U7 result — exploratory B*, run once on the main AOI (2026-11-14 05:20:00 CST, 3.4 s), `exploratory, designed after seeing the first comparison`
+Code committed before the run (`1656923`), after T6 and T7. 63 targets, 0 unreachable. Output `data_work/jezero/bstar/compare_bstar.json`. Not on the web page and not in any headline (BRIEF U7).
+
+| | p_k (sand share of seen, non-blocked cells) | Planned O2 | Actual O2 | Error | Hazard m | Crossings | Length m | Actual ≤ 384 | vs A: O2 / hazard m | vs B@k: O2 / hazard m / error |
+|---|---|---|---|---|---|---|---|---|---|---|
+| B*@1 | 0.486 | 162.3 | 187.6 | +25.3 | 1080 | 9.59 | 2205 | 63 | −7.1 / −77 | −8.1 / −85 / −119.4 |
+| B*@5 | 0.330 | 114.1 | 166.0 | +51.9 | 900 | 9.44 | 2213 | 63 | −28.7 / −256 | −19.4 / −161 / −81.7 |
+| B*@10 | 0.357 | 110.2 | 146.8 | +36.6 | 727 | 8.05 | 2299 | 63 | −47.8 / −430 | −28.3 / −261 / −84.5 |
+| B*@20 | 0.363 | 108.6 | 143.3 | +34.7 | 696 | 7.60 | 2323 | 63 | −51.3 / −460 | −23.5 / −207 / −75.9 |
+| B*@30 | 0.378 | 109.0 | 142.8 | +33.8 | 696 | 6.78 | 2320 | 63 | −51.8 / −460 | −23.7 / −209 / −74.4 |
+
+For reference (frozen T2): A 50.8 / 194.6 / +143.8 / 1156; B@30 58.3 / 166.5 / +108.2 / 905; REF 83.5 / 83.5 / 0 / 147. B*@30 recovers 47 % of the possible O2 gain and 46 % of the hazard-metre gain (B@30: 25 % / 25 %). Exploratory only; the rule was written by manager after seeing round 6.
