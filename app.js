@@ -88,6 +88,18 @@ function addVectors(map, sc, base) {
     getJSON(base + sc.rover.photos.url).then((ph) => {
       S.photos = ph;
       const fc = { type: 'FeatureCollection', features: ph.waypoints.map((w) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [w.lon, w.lat] }, properties: { id: w.id, sol: w.sol, n: w.images.length } })) };
+      // T5: Navcam viewing directions (derived: camera model rotated by the rover attitude; other cameras not drawn)
+      const views = [];
+      ph.waypoints.forEach((w) => w.images.forEach((im) => {
+        const v = im.view; if (!v || im.camera !== 'NAVCAM_LEFT') return;
+        let a0 = v.edge_left_deg, a1 = v.edge_right_deg; if (a1 < a0) a1 += 360;
+        const r = 45, ring = [[w.lon, w.lat]], k = Math.cos(w.lat * Math.PI / 180), R = 3396190;
+        for (let a = a0; a <= a1 + 1e-9; a += Math.max(1, (a1 - a0) / 12)) { const t = a * Math.PI / 180; ring.push([w.lon + (r * Math.sin(t)) / (R * k) * 180 / Math.PI, w.lat + (r * Math.cos(t)) / R * 180 / Math.PI]); }
+        ring.push([w.lon, w.lat]);
+        views.push({ type: 'Feature', geometry: { type: 'Polygon', coordinates: [ring] }, properties: { id: w.id, img: im.imageid, az: v.heading_deg } });
+      }));
+      map.addSource('photo-views', { type: 'geojson', data: { type: 'FeatureCollection', features: views } });
+      map.addLayer({ id: 'photo-views', type: 'fill', source: 'photo-views', paint: { 'fill-color': '#ffd166', 'fill-opacity': 0.12, 'fill-outline-color': 'rgba(255,209,102,0.6)' } });
       map.addSource('photos', { type: 'geojson', data: fc });
       map.addLayer({ id: 'photos', type: 'circle', source: 'photos', paint: { 'circle-radius': ['interpolate', ['linear'], ['zoom'], 13, 4, 18, 8], 'circle-color': '#ffd166', 'circle-stroke-color': '#3a1d00', 'circle-stroke-width': 1.5 } });
       const pop = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 8 });
@@ -121,6 +133,7 @@ const VECTORS = [
   { id: 'traverse', title: 'Perseverance traverse', label: 'measured', layers: ['traverse', 'traverse-casing'], rover: 'traverse' },
   { id: 'waypoints', title: 'Perseverance waypoints', label: 'measured', layers: ['waypoints'], rover: 'waypoints' },
   { id: 'photos', title: 'Ground photos (click a yellow dot)', label: 'measured', layers: ['photos'], rover: 'photos' },
+  { id: 'photoviews', title: 'Navcam viewing directions (45 m wedges)', label: 'derived', layers: ['photo-views'], rover: 'photos' },
   { id: 'geology', title: 'Geologic units (USGS SIM 3464)', label: 'measured', layers: ['geology-fill', 'geology-line'], geo: true, off: true },
 ];
 
@@ -142,10 +155,10 @@ function renderPanel(sc) {
   vec.forEach((v) => {
     const r = v.rover && sc.rover[v.rover];
     const extra = v.id === 'photos' && r ? ` — ${r.n_images} photos at ${r.n_waypoints}/${r.n_waypoints_aoi} AOI waypoints` : '';
-    const src = r ? `${esc(r.source.title)} · ${esc(r.source.mission)}` : v.id === 'base' ? esc(sc.base.note) : v.geo ? `${esc(sc.geology.source.title)} · <i>challenge Resources item</i><br>${esc(sc.geology.note)}<div class="legend line">${sc.geology.units.map((u) => `<span style="padding:0;flex:none;margin-right:8px" title="${esc(u[1])}"><i style="position:static;display:inline-block;width:10px;height:9px;margin-right:3px;background:${u[2]}"></i>${esc(u[0])}</span>`).join('')}</div>` : esc(sc.aoi.rule || '');
+    const src = v.id === 'photoviews' ? 'Derived from the Raw Images metadata: camera model rotated by the rover attitude; checked on 3 Navcam skylines against the CTX horizon (within 1°). Navcam only.' : r ? `${esc(r.source.title)} · ${esc(r.source.mission)}` : v.id === 'base' ? esc(sc.base.note) : v.geo ? `${esc(sc.geology.source.title)} · <i>challenge Resources item</i><br>${esc(sc.geology.note)}<div class="legend line">${sc.geology.units.map((u) => `<span style="padding:0;flex:none;margin-right:8px" title="${esc(u[1])}"><i style="position:static;display:inline-block;width:10px;height:9px;margin-right:3px;background:${u[2]}"></i>${esc(u[0])}</span>`).join('')}</div>` : esc(sc.aoi.rule || '');
     h += `<div class="layer"><div class="row"><input type="checkbox" id="v_${v.id}" data-vec="${v.id}" ${v.off ? '' : 'checked'}>` +
       `<label class="name" for="v_${v.id}">${esc(v.title)}${extra}</label><span class="badge ${v.label}">${v.label}</span></div>` +
-      `<div class="src">${src}</div>` + (v.id === 'photos' && r ? `<div class="src">Placed by exact site/drive match with a waypoint. Viewing direction not drawn (camera azimuth not verified).</div>` : '') + '</div>';
+      `<div class="src">${src}</div>` + (v.id === 'photos' && r ? `<div class="src">Placed by exact site/drive match with a waypoint. Navcam viewing directions are drawn as wedges (derived); Front Hazcam and Mastcam-Z directions are not verified and not drawn.</div>` : '') + '</div>';
   });
   order.concat(Object.keys(groups).filter((g) => !order.includes(g))).forEach((g) => {
     if (!groups[g]) return;
@@ -274,7 +287,7 @@ function openPhotos(id) {
   w.images.forEach((im) => {
     h += `<div class="photo"><a href="${esc(im.page)}" target="_blank" rel="noopener"><img loading="lazy" src="${esc(S.base + im.local)}" alt="${esc(im.title)}" onerror="this.onerror=null;this.src='${esc(im.url_medium)}'"></a>` +
       `<div class="meta"><b>${esc(im.camera.replace(/_/g, ' '))}</b> · Sol ${im.sol} · ${esc((im.date_utc || '').slice(0, 10))} UTC` +
-      `${im.mast_az != null ? ` · mast az ${im.mast_az.toFixed(0)}° (rover frame, unverified)` : ''}<br>Credit: ${esc(im.credit)} · <a href="${esc(im.page)}" target="_blank" rel="noopener">raw image page</a> · ${esc(im.imageid)}</div></div>`;
+      `${im.view ? ` · looking toward ${im.view.heading_deg.toFixed(0)}° from north (field ${im.view.edge_left_deg.toFixed(0)}–${im.view.edge_right_deg.toFixed(0)}°) <span class="badge derived">derived</span>` : ''}<br>Credit: ${esc(im.credit)} · <a href="${esc(im.page)}" target="_blank" rel="noopener">raw image page</a> · ${esc(im.imageid)}</div></div>`;
   });
   $('#photoBody').innerHTML = h; $('#photoPanel').hidden = false; S.map.resize();
 }
@@ -305,7 +318,7 @@ function renderAbout() {
 <li>The CTX prior was moved by one global image-registration shift (${sc.alignment.prior_shift_m.join(' m E, ')} m N) and a vertical offset of ${sc.alignment.prior_vertical_offset_m} m so it sits on the HiRISE frame; HiRISE is the positional reference. Thresholds (X3) were fixed after the first Arcadia measurements and before any route numbers existed.</li>
 ${sc.alignment.x3.pass ? '' : `<li><b>The locked X3 elevation checks against MOLA do not pass here</b> (HiRISE − MOLA ${sc.alignment.mola.reference_minus_mola.mean_m} ± ${sc.alignment.mola.reference_minus_mola.std_m} m; CTX − MOLA std ${sc.alignment.mola.shifted_prior_minus_mola.std_m} m; limits 10 m). The CTX-to-HiRISE registration itself passes. The thresholds were not relaxed and the result stays a fail. A supplementary check written down before it was run compares the DTMs directly with 1,067 individual MOLA laser shots (PEDR, no horizontal shift fitted): HiRISE − MOLA −2.6 ± 7.4 m, CTX − MOLA −3.3 ± 7.2 m, within the same limits. It is reported next to the original result, not instead of it. The same shots also disagree with the 463 m MOLA mosaic itself (best agreement when that mosaic is moved about 330 m west and 230 m north), which points at the gridded mosaic rather than at our sampling.</li>`}
 <li>Perseverance waypoint elevations agree with the HiRISE DTM to centimetres because they were derived from the same terrain model; that only proves our coordinate chain, not the DTM. The independent check is a HiRISE image from 2021-09-24 (sol ~212) that shows the parked rover itself about 2 m from its published waypoint.</li>
-<li>Photo viewing directions are not drawn: the mast azimuth is in the rover frame and its conversion has not been verified.</li>
+<li>Photo viewing directions: only Navcam is drawn. The direction comes from the camera model in the image metadata rotated by the rover attitude; this was checked on 3 Navcam images by matching the photo skyline to the horizon computed from the CTX terrain model (within 1°). The <i>mastAz</i> value in the metadata is relative to the rover body and is not a compass bearing. Front Hazcam and Mastcam-Z were not checked and have no direction on the map.</li>
 <li>Arcadia Planitia (the ice-resource candidate region) is paused by team decision; it has no ground photos at all (nearest landers are more than 2,000 km away).</li>
 <li>MapLibre draws Mars coordinates with Earth Web Mercator maths; the scale bar and coordinates are computed on the Mars sphere (R = 3,396.19 km). Image layers are resampled so they line up with this display.</li>
 <li>Positioning checks and terrain readings are <i>${esc(sc.review)}</i> by a person.</li>

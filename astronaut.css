@@ -31,3 +31,17 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 .astro-marker { width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 3px solid #43b0f1; box-shadow: 0 0 0 2px #000; }
 @media (max-width: 760px) { main { height: auto; } #hud { width: 220px; } #skelBanner { white-space: normal; height: auto; } }
 .pt-lbl { color: #fff; font-size: 11.5px; font-weight: 600; text-shadow: 0 0 3px #000, 0 0 3px #000; white-space: nowrap; pointer-events: none; }
+.cA { color: #ff9f43; } .cB { color: #43b0f1; } .cAp { color: #c38bff; } .cR { color: #e9e4dc; }
+table.cmp { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
+table.cmp th, table.cmp td { border-bottom: 1px solid var(--line); padding: 3px 4px; text-align: right; }
+table.cmp td:first-child, table.cmp th:first-child { text-align: left; color: var(--muted); }
+#kBtns { flex-wrap: wrap; }
+.bar.neg { outline: 1px solid var(--bad); }
+dialog.wide { max-width: 1300px; width: calc(100% - 32px); background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 16px 22px; }
+dialog.wide::backdrop { background: rgba(0,0,0,.6); }
+dialog.wide h3 { color: var(--accent2); margin: 14px 0 4px; font-size: 14px; }
+table.full { border-collapse: collapse; width: 100%; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+table.full th, table.full td { border-bottom: 1px solid var(--line); padding: 3px 5px; text-align: right; vertical-align: bottom; }
+table.full th:first-child, table.full td:first-child { text-align: left; }
+table.full tr.hl td { background: rgba(67,176,241,.12); }
+@media (max-width: 760px) { table.full { font-size: 10px; } dialog.wide { padding: 10px; overflow-x: auto; } }
