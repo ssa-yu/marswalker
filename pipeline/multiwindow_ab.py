@@ -307,15 +307,81 @@ def window_row(cmp_json, recon_json):
     return r
 
 
+STATS = {"quantities": {"main": "hazard_m", "secondary": "actual_o2"}, "state": "B@30",
+         "per_window": "mean over the window's targets of (B@30 - A) (= T2 column 'vs A')",
+         "bootstrap": "95 % percentile interval of the median of the window values; windows resampled with replacement, "
+                      "10,000 draws, seed 20261114 (tech-lead proposal written before any window number, DATA_LOG T6 settings)",
+         "test": "Wilcoxon signed-rank, exact, two-sided, only with 6 windows all of the same sign (direction.md 嚴謹度 3)",
+         "sets": {"all": "every window that ran", "excl_main": "the same without the main AOI (0,0) (manager 2026-11-14)"}}
+
+
+def window_stats(vals):
+    v = np.array(vals, float)
+    n = len(v)
+    out = {"n": n, "values": [round(float(x), 2) for x in v], "n_negative": int((v < 0).sum()), "n_positive": int((v > 0).sum()),
+           "median": round(float(np.median(v)), 2) if n else None}
+    if n >= 2:
+        rng = np.random.default_rng(20261114)
+        bm = np.median(v[rng.integers(0, n, size=(10000, n))], axis=1)
+        out["median_ci95_bootstrap"] = [round(float(x), 2) for x in np.percentile(bm, [2.5, 97.5])]
+    same_sign = n > 0 and (out["n_negative"] == n or out["n_positive"] == n)
+    if n >= 6 and same_sign:
+        from scipy.stats import wilcoxon
+        out["wilcoxon_exact_two_sided_p"] = float(wilcoxon(v, alternative="two-sided", method="exact").pvalue)
+    else:
+        out["wilcoxon_exact_two_sided_p"] = None
+        out["p_not_reported_because"] = (f"{n} windows (< 6)" if n < 6 else "signs differ")
+    return out
+
+
 def table():
     rows = {"0,0": window_row(read_json(APP / "data_work/jezero/compare_ab.json"), None)}
+    not_run = {}
     for i, j in WINDOWS:
         p = OUT / f"{i}_{j}" / "compare_ab.json"
         if p.exists():
             rows[f"{i},{j}"] = window_row(read_json(p), None)
-    write_json(OUT / "t6_table.json", {"label": "derived; descriptive only (no test computed)", "windows": rows})
-    log("jezero", "mwab", f"table: {list(rows)}")
-    return rows
+        else:
+            not_run[f"{i},{j}"] = "no comparison (see DATA_LOG)"
+    st = {}
+    for qn, q in STATS["quantities"].items():
+        for sn, keys in (("all", list(rows)), ("excl_main", [k for k in rows if k != "0,0"])):
+            st[f"{qn}_{q}_{sn}"] = {"windows": keys, **window_stats([rows[k][STATS["state"]]["diff_vs_A"][q]["mean"] for k in keys])}
+    out = {"label": "derived (simulated recon + assumed parameters); heuristic, not yet reviewed", "rules": STATS,
+           "windows": rows, "not_run": not_run, "stats": st}
+    write_json(OUT / "t6_table.json", out)
+    figure_t6(rows)
+    log("jezero", "mwab", f"table: {list(rows)}; stats {st}")
+    return out
+
+
+def figure_t6(rows):
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    keys = list(rows)
+    fig, ax = plt.subplots(1, 2, figsize=(12, 0.6 * len(keys) + 2.2))
+    for a, (q, ttl) in zip(ax, (("hazard_m", "Hazard metres per walk, route − route A (main)"),
+                                ("actual_o2", "Actual O2 per walk, route − route A (nominal min; secondary)"))):
+        y = np.arange(len(keys))[::-1]
+        b = [rows[k]["B@30"]["diff_vs_A"][q]["mean"] for k in keys]
+        r = [rows[k]["REF"]["diff_vs_A"][q]["mean"] for k in keys]
+        a.axvline(0, color="#888", lw=1)
+        a.scatter(r, y, s=70, facecolors="none", edgecolors="#8a8a8a", lw=1.6, label="reference bound − A (not a recon result)", zorder=3)
+        a.scatter(b, y, s=70, color="#1f5fa8", label="B after 30 loops − A", zorder=4)
+        for yy, bv in zip(y, b):
+            a.annotate(f"{bv:+.0f}" if q == "hazard_m" else f"{bv:+.1f}", (bv, yy), xytext=(0, 9), textcoords="offset points",
+                       ha="center", fontsize=9, color="#222")
+        a.set_yticks(y); a.set_yticklabels([f"({k})" + (" main AOI" if k == "0,0" else "") for k in keys])
+        a.set_title(ttl, fontsize=10); a.grid(axis="x", color="#e5e5e5", lw=.6); a.set_axisbelow(True)
+        for s in ("top", "right"):
+            a.spines[s].set_visible(False)
+    ax[0].legend(loc="lower left", fontsize=8, frameon=False)
+    fig.suptitle("T6 multi-window route A vs B (means over each window's test points; derived, simulated recon, "
+                 "sand classes heuristic, not yet reviewed)", fontsize=10)
+    fig.tight_layout()
+    out = APP / "qa/jezero/multiwindow"; out.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out / "T6_windows_A_vs_B.png", dpi=110); plt.close(fig)
 
 
 def main():
