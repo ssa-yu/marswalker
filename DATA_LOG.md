@@ -267,3 +267,69 @@ Code `pipeline/compare_ab.py` (docstring repeats this), tests `tests/test_compar
 **Freeze statement (2026-11-14, before the first real-terrain comparison run).** Everything that affects the T2 numbers is fixed at commit `e17452a` (`pipeline/compare_ab.py`, `pipeline/astro_plan.py`, `pipeline/rover_sim.py`, `pipeline/terrain.py`, `pipeline/sandfield.py`, the definitions above) plus these generated inputs (not in git; SHA-256):
 `terrain_2m.npz` c9e14772d15c5c3d51f755814151e1317ab8b86c7e5556cb7d35e7234cd755f8 · `terrain_2m.json` 7556f85b536d46302efab452e5047a00a70b9e18c9013dbea54abcf804f03c4d · `recon_loops.json` 47791c62c0eb85c0d5aee40f487a7aec86f3ff524b386c43c01d76c3bc77ef33 · `recon_state.npz` c227832634e6fd7b93c81d1cc7ee1fc91be99b8329f334e47786567e174f7838.
 From the first comparison number on, terrain classes, parameters, AOI, targets, rules and definitions are not changed; the numbers are reported as they come out, once, and not re-run. Interpretations written here before the run (flagged for manager): hazard metres count metres inside hazard zones (sand metres on any sand cell are listed separately); a merged crossing is measured by its in-zone metres (the < 10 m gaps are not added); no dwell time at the target.
+
+#### T2 result — the single run, 2026-11-14 04:29:58 CST (8.9 s), frozen commit `e17452a`, reported as computed
+
+63 targets (8 at 300–600 m, 31 at 600–1200 m, 24 beyond 1200 m), 0 unreachable, 156 hazard zones (one fewer than the 157 components ≥ 400 m² counted in round 5: one component is mostly blocked/marked on the prior and fails the 80 % "not marked" rule). Rover had observed 0.5 / 3.2 / 5.4 / 8.9 / 11.3 % of the AOI after loops 1 / 5 / 10 / 20 / 30. A+ marks 38.5 % of the AOI as sand. Output `data_work/jezero/compare_ab.json` (+ `_paths.json`, `hazard_zones.npy`). Nothing was changed or re-run after these numbers. O2 and time in nominal minutes / minutes; every route is habitat → target → habitat. derived; sand classes heuristic, not yet reviewed.
+
+**All targets (n = 63)**
+
+| State | Pred O2 | Actual O2 | O2 error (min / %) | Pred / actual ≤ 384 | Pred time | Actual time | Hazard m (mean / total) | Crossings (mean / total) | Blocked m total | Sand m (mean) | Zones entered (mean) | Length m | vs A: hazard m | vs A: actual O2 | vs A: actual time | vs A: crossings | Share of possible gain O2 / hazard m / crossings |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| A (prior only) | 50.8 | 194.6 | +143.8 / +263 % | 63 / 63 | 50.8 | 104.6 | 1156 / 72844 | 10.78 / 679 | 0 | 1158 | 2.40 | 2116 | – | – | – | – | – |
+| A+ (optimistic prior, uses reference, bracket only) | 88.2 | 176.2 | +87.9 / +93 % | 63 / 61 | 75.4 | 108.9 | 803 / 50561 | 18.68 / 1177 | 0 | 803 | 3.46 | 2823 | -354 | -18.5 | +4.3 | +7.90 | 17 % / 35 % / -111 % |
+| B@1 | 51.0 | 195.7 | +144.7 / +264 % | 63 / 63 | 50.9 | 105.0 | 1165 / 73399 | 10.70 / 674 | 0 | 1166 | 2.40 | 2122 | +9 | +1.0 | +0.5 | -0.08 | -1 % / -1 % / 1 % |
+| B@5 | 51.8 | 185.4 | +133.6 / +240 % | 63 / 61 | 51.5 | 101.6 | 1061 / 66820 | 9.51 / 599 | 0 | 1062 | 2.10 | 2141 | -96 | -9.3 | -3.0 | -1.27 | 8 % / 9 % / 18 % |
+| B@10 | 54.1 | 175.1 | +121.0 / +201 % | 63 / 63 | 52.8 | 98.1 | 987 / 62192 | 8.86 / 558 | 0 | 988 | 1.81 | 2168 | -169 | -19.5 | -6.5 | -1.92 | 18 % / 17 % / 27 % |
+| B@20 | 56.2 | 166.8 | +110.7 / +175 % | 63 / 63 | 54.2 | 95.7 | 904 / 56937 | 10.11 / 637 | 0 | 905 | 2.03 | 2210 | -252 | -27.8 | -8.9 | -0.67 | 25 % / 25 % / 9 % |
+| B@30 | 58.3 | 166.5 | +108.2 / +161 % | 63 / 63 | 55.1 | 95.6 | 905 / 57043 | 9.22 / 581 | 0 | 907 | 2.02 | 2214 | -251 | -28.2 | -9.0 | -1.56 | 25 % / 25 % / 22 % |
+| REF (upper bound, not B) | 83.5 | 83.5 | +0.0 / +0 % | 63 / 63 | 71.1 | 71.1 | 147 / 9266 | 3.68 / 232 | 0 | 147 | 0.83 | 2648 | -1009 | -111.1 | -33.4 | -7.10 | – |
+
+Medians (A / B@30 / REF): actual O2 186.6 / 170.5 / 80.1; hazard m 1059 / 952 / 129; paired median B@30 − A: hazard m -167, actual O2 -19.0.
+
+**300-600 m (n = 8)**
+
+| State | Pred O2 | Actual O2 | O2 error (min / %) | Pred / actual ≤ 384 | Pred time | Actual time | Hazard m (mean / total) | Crossings (mean / total) | Blocked m total | Sand m (mean) | Zones entered (mean) | Length m | vs A: hazard m | vs A: actual O2 | vs A: actual time | vs A: crossings | Share of possible gain O2 / hazard m / crossings |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| A (prior only) | 17.4 | 49.8 | +32.4 / +187 % | 8 / 8 | 17.4 | 29.6 | 252 / 2019 | 2.88 / 23 | 0 | 252 | 1.12 | 724 | – | – | – | – | – |
+| A+ (optimistic prior, uses reference, bracket only) | 31.4 | 50.9 | +19.5 / +69 % | 8 / 8 | 24.6 | 32.1 | 228 / 1827 | 3.88 / 31 | 0 | 228 | 1.12 | 857 | -24 | +1.1 | +2.5 | +1.00 | -6 % / 14 % / -50 % |
+| B@1 | 17.6 | 49.9 | +32.3 / +183 % | 8 / 8 | 17.5 | 29.7 | 252 / 2015 | 2.88 / 23 | 0 | 252 | 1.12 | 729 | -1 | +0.1 | +0.1 | +0.00 | -1 % / 0 % / 0 % |
+| B@5 | 18.5 | 49.5 | +30.9 / +162 % | 8 / 8 | 18.3 | 29.9 | 248 / 1987 | 2.12 / 17 | 0 | 248 | 0.88 | 755 | -4 | -0.3 | +0.3 | -0.75 | 2 % / 2 % / 38 % |
+| B@10 | 20.6 | 44.1 | +23.5 / +102 % | 8 / 8 | 19.5 | 28.3 | 200 / 1604 | 1.62 / 13 | 0 | 200 | 0.75 | 785 | -52 | -5.7 | -1.3 | -1.25 | 28 % / 30 % / 62 % |
+| B@20 | 22.0 | 44.3 | +22.4 / +89 % | 8 / 8 | 19.9 | 28.3 | 205 / 1636 | 2.12 / 17 | 0 | 205 | 0.88 | 780 | -48 | -5.4 | -1.3 | -0.75 | 27 % / 27 % / 38 % |
+| B@30 | 24.2 | 40.5 | +16.3 / +51 % | 8 / 8 | 21.9 | 28.0 | 161 / 1284 | 1.38 / 11 | 0 | 161 | 0.75 | 856 | -92 | -9.3 | -1.6 | -1.50 | 46 % / 53 % / 75 % |
+| REF (upper bound, not B) | 29.6 | 29.6 | +0.0 / +0 % | 8 / 8 | 23.6 | 23.6 | 78 / 620 | 0.88 / 7 | 0 | 78 | 0.50 | 834 | -175 | -20.2 | -6.0 | -2.00 | – |
+
+Medians (A / B@30 / REF): actual O2 38.2 / 29.9 / 24.8; hazard m 179 / 78 / 27; paired median B@30 − A: hazard m -38, actual O2 -5.2.
+
+**600-1200 m (n = 31)**
+
+| State | Pred O2 | Actual O2 | O2 error (min / %) | Pred / actual ≤ 384 | Pred time | Actual time | Hazard m (mean / total) | Crossings (mean / total) | Blocked m total | Sand m (mean) | Zones entered (mean) | Length m | vs A: hazard m | vs A: actual O2 | vs A: actual time | vs A: crossings | Share of possible gain O2 / hazard m / crossings |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| A (prior only) | 42.3 | 145.6 | +103.3 / +238 % | 31 / 31 | 42.3 | 81.0 | 821 / 25466 | 9.03 / 280 | 0 | 823 | 2.26 | 1763 | – | – | – | – | – |
+| A+ (optimistic prior, uses reference, bracket only) | 71.0 | 135.6 | +64.6 / +89 % | 31 / 31 | 60.7 | 85.4 | 593 / 18376 | 14.00 / 434 | 0 | 593 | 3.10 | 2275 | -229 | -10.0 | +4.4 | +4.97 | 13 % / 33 % / -79 % |
+| B@1 | 42.5 | 146.6 | +104.1 / +239 % | 31 / 31 | 42.5 | 81.5 | 828 / 25679 | 9.06 / 281 | 0 | 830 | 2.26 | 1769 | +7 | +1.0 | +0.5 | +0.03 | -1 % / -1 % / -1 % |
+| B@5 | 43.3 | 141.4 | +98.1 / +221 % | 31 / 31 | 43.0 | 79.8 | 773 / 23971 | 7.74 / 240 | 0 | 775 | 2.10 | 1784 | -48 | -4.3 | -1.2 | -1.29 | 6 % / 7 % / 21 % |
+| B@10 | 45.1 | 129.7 | +84.6 / +180 % | 31 / 31 | 44.1 | 75.8 | 686 / 21268 | 6.48 / 201 | 0 | 687 | 1.61 | 1810 | -135 | -15.9 | -5.3 | -2.55 | 21 % / 19 % / 41 % |
+| B@20 | 47.0 | 125.3 | +78.4 / +157 % | 31 / 31 | 45.3 | 74.7 | 642 / 19915 | 7.10 / 220 | 0 | 644 | 1.71 | 1849 | -179 | -20.3 | -6.3 | -1.94 | 27 % / 26 % / 31 % |
+| B@30 | 48.4 | 123.9 | +75.5 / +145 % | 31 / 31 | 45.8 | 74.1 | 633 / 19634 | 6.52 / 202 | 0 | 635 | 1.74 | 1846 | -188 | -21.7 | -6.9 | -2.52 | 28 % / 27 % / 40 % |
+| REF (upper bound, not B) | 69.1 | 69.1 | +0.0 / +0 % | 31 / 31 | 59.0 | 59.0 | 124 / 3848 | 2.77 / 86 | 0 | 124 | 0.68 | 2203 | -697 | -76.5 | -22.0 | -6.26 | – |
+
+Medians (A / B@30 / REF): actual O2 145.0 / 125.8 / 67.8; hazard m 834 / 584 / 88; paired median B@30 − A: hazard m -159, actual O2 -19.0.
+
+**>1200 m (n = 24)**
+
+| State | Pred O2 | Actual O2 | O2 error (min / %) | Pred / actual ≤ 384 | Pred time | Actual time | Hazard m (mean / total) | Crossings (mean / total) | Blocked m total | Sand m (mean) | Zones entered (mean) | Length m | vs A: hazard m | vs A: actual O2 | vs A: actual time | vs A: crossings | Share of possible gain O2 / hazard m / crossings |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| A (prior only) | 73.0 | 306.3 | +233.3 / +321 % | 24 / 24 | 72.9 | 160.0 | 1890 / 45360 | 15.67 / 376 | 0 | 1892 | 3.00 | 3037 | – | – | – | – | – |
+| A+ (optimistic prior, uses reference, bracket only) | 129.4 | 270.3 | +140.9 / +106 % | 24 / 22 | 111.2 | 164.9 | 1265 / 30358 | 29.67 / 712 | 0 | 1265 | 4.71 | 4186 | -625 | -36.0 | +4.8 | +14.00 | 19 % / 37 % / -142 % |
+| B@1 | 73.1 | 307.7 | +234.6 / +322 % | 24 / 24 | 73.0 | 160.6 | 1904 / 45706 | 15.42 / 370 | 0 | 1906 | 3.00 | 3041 | +14 | +1.4 | +0.6 | -0.25 | -1 % / -1 % / 3 % |
+| B@5 | 73.9 | 287.5 | +213.6 / +291 % | 24 / 22 | 73.7 | 153.7 | 1703 / 40862 | 14.25 / 342 | 0 | 1704 | 2.50 | 3063 | -187 | -18.7 | -6.3 | -1.42 | 10 % / 11 % / 14 % |
+| B@10 | 76.9 | 277.5 | +200.6 / +261 % | 24 / 24 | 75.2 | 150.2 | 1638 / 39320 | 14.33 / 344 | 0 | 1640 | 2.42 | 3090 | -252 | -28.8 | -9.9 | -1.33 | 15 % / 15 % / 14 % |
+| B@20 | 79.4 | 261.2 | +181.8 / +228 % | 24 / 24 | 77.1 | 145.2 | 1474 / 35385 | 16.67 / 400 | 0 | 1476 | 2.83 | 3153 | -416 | -45.0 | -14.8 | +1.00 | 24 % / 25 % / -10 % |
+| B@30 | 82.4 | 263.5 | +181.1 / +218 % | 24 / 24 | 78.0 | 145.8 | 1505 / 36125 | 15.33 / 368 | 0 | 1507 | 2.79 | 3142 | -385 | -42.8 | -14.2 | -0.33 | 23 % / 23 % / 3 % |
+| REF (upper bound, not B) | 120.2 | 120.2 | +0.0 / +0 % | 24 / 24 | 102.7 | 102.7 | 200 / 4798 | 5.79 / 139 | 0 | 200 | 1.12 | 3828 | -1690 | -186.1 | -57.3 | -9.88 | – |
+
+Medians (A / B@30 / REF): actual O2 317.4 / 272.3 / 125.3; hazard m 1953 / 1506 / 233; paired median B@30 − A: hazard m -246, actual O2 -28.9.
+
+Observations (no change follows from them): no single round trip exceeds the 384 budget on the reference except 2 targets under B@5 and A+ (all > 1200 m or 600–1200 m walks that the new knowledge routed longer); blocked metres are 0 for every state (the 2 m astronaut-blocked cells are rare and avoided or not crossed); hazard metres ≈ sand metres. B@1 is marginally worse than A (+9 m, +1.0 min). Crossings are not monotonic in loops (B@20 has more than B@10), because routes that avoid part of a sand belt can enter it in more, shorter stretches. A+ lowers hazard metres (35 % of the possible gain) but raises crossings (−111 %): the 60 m blocks push routes around and through more belt edges.
