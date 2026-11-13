@@ -25,8 +25,6 @@ def test_each_loop_starts_and_ends_at_base(recon):
         assert tuple(L["path_rc"][0]) == b and tuple(L["path_rc"][-1]) == b, L["id"]
 
 
-@pytest.mark.xfail(strict=False, reason="round-5 v2 run (sand v2, goal rule v2) overshot by <= 4.8 units in 5 loops: "
-                   "hard-rule margin bug, fixed in rover_sim.py; the single rerun after S1 lock will be checked again")
 def test_no_loop_over_budget(recon):
     for L in recon["loops"]:
         assert L["cost_total"] <= L["budget"], L["id"]
