@@ -34,6 +34,19 @@
       <h3>All 63 test points: what the recon changed</h3>
       <div id="overall"></div>
     </section>
+    <section id="step2" hidden>
+      <h3>Step 2 · Where is a walk worth it? <span class="badge derived">derived</span></h3>
+      <div class="row wrap ctrl" id="s2Mode" role="group" aria-label="Which measurements"></div>
+      <div id="s2Info"></div>
+      <div class="row wrap" id="s2Stops" role="group" aria-label="Candidate stops"></div>
+      <div id="s2Card"></div>
+      <div id="s2Samples"></div>
+    </section>
+    <section id="round7" hidden>
+      <h3>One walk to all these stops <span class="badge derived">derived</span></h3>
+      <label class="row wrap"><input type="checkbox" id="s2Walks" checked> Show this walk on the map (A and B)</label>
+      <div id="r7Body"></div>
+    </section>
     <section>
       <h3>Test point</h3>
       <div class="row ctrl"><button id="tPrev" class="btn sm" aria-label="Previous test point">◀</button><select id="tSel" aria-label="Test point"></select><button id="tNext" class="btn sm" aria-label="Next test point">▶</button></div>
@@ -110,5 +123,6 @@
 <canvas id="seenCanvas" hidden></canvas>
 <script src="lib/maplibre-gl.js"></script>
 <script src="astronaut.js"></script>
+<script src="step2.js"></script>
 </body>
 </html>

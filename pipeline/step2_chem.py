@@ -320,8 +320,11 @@ def run(cfg=None):
         return {"enabled": False}
     OUT.mkdir(parents=True, exist_ok=True)
     res_file = OUT / f"step2_result_r{int(cfg['unlock_radius_m'])}.json"
-    if res_file.exists():
-        raise SystemExit(f"step 2 already run once: {res_file}")
+    if res_file.exists():   # computed once already: switching back on only re-exports the saved result
+        out = read_json(res_file)
+        export_web(out, cfg)
+        log("jezero", "step2", f"already run once ({out['computed_at']}): re-exported {res_file.name}, nothing recomputed")
+        return out
     t0 = time.time()
     T, rmsep, info = build_targets()
     unit_at = unit_lookup()
