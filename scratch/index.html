@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scratch the Map</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../lib/maplibre-gl.css">
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="scratch.css">
+</head>
+<body>
+<header id="sTop">
+  <a class="btn sm" href="../index.html">&larr; Home</a>
+  <div class="brand"><span class="logo">&#9679;</span> Scratch the map <span class="muted">· Jezero Crater</span></div>
+</header>
+<div id="demoBanner" role="note"><b>Interactive demo — not the analysis results.</b> Numbers here are illustrative only and are not part of the before/after comparison. Oxygen model parameters are the pipeline's <span class="badge assumed">assumed</span> values. Sand classes are heuristic, not yet reviewed.</div>
+<main id="sMain">
+  <section id="left" aria-label="Map">
+    <div id="steps" role="tablist" aria-label="Steps">
+      <button class="step active" data-step="1" role="tab">1 · Scratch</button>
+      <button class="step" data-step="2" role="tab">2 · Analyse</button>
+      <button class="step" data-step="3" role="tab">3 · Walk</button>
+    </div>
+    <div id="mapwrap">
+      <div id="map"></div>
+      <div id="revealBadge" aria-live="polite"><span>Revealed</span> <b id="revPct">0.0 %</b><div class="bar"><div class="fill" id="revFill"></div></div></div>
+      <div id="modeBox" role="group" aria-label="Map mode">
+        <button id="modeScratch" class="btn sm active" aria-pressed="true">Scratch</button>
+        <button id="modePan" class="btn sm" aria-pressed="false">Pan / zoom</button>
+      </div>
+      <div id="mapLegend" class="legend line">
+        <span><i style="background:#62d6a4"></i>firm</span><span><i style="background:#f4b740"></i>rough</span><span><i style="background:#ff5a4e"></i>sand</span><span><i style="background:#5a2a6e"></i>blocked ≥ 25°</span><span><i class="dot sc"></i>SuperCam site (revealed only)</span>
+      </div>
+    </div>
+  </section>
+  <section id="right" aria-label="Astronaut view and controls">
+    <div id="view">
+      <div id="viewImgs"><img id="imgA" alt=""><img id="imgB" alt=""><div id="viewSchem" hidden></div></div>
+      <div id="viewTag"><span id="viewCls">Habitat</span><span id="viewWhere"></span></div>
+      <p id="viewNote" class="hint">Real Perseverance image of similar terrain (illustrative, not the astronaut's actual view).</p>
+      <p id="viewCredit" class="hint"></p>
+    </div>
+    <div id="panel">
+      <div class="pane" data-pane="1">
+        <h3>1 · Scratch off the orbital map</h3>
+        <p class="lead">The cover is what orbit gives before any recon: blurry CTX imagery (6 m) whose terrain classes say almost everything is firm. Drag over the study area to scratch it off and reveal HiRISE detail (0.25 m) with its terrain classes.</p>
+        <label for="brush" class="sl">Brush radius <b id="brushLbl"></b></label>
+        <input id="brush" type="range" min="20" max="150" step="5" value="60">
+        <div class="row wrap">
+          <label><input type="checkbox" id="showCls" checked> Terrain classes</label>
+          <label><input type="checkbox" id="showSc" checked> SuperCam sites</label>
+        </div>
+        <div class="row"><button id="revealAll" class="btn sm">Reveal all</button><button id="resetBtn" class="btn sm">Reset</button></div>
+        <div id="revStats"></div>
+      </div>
+      <div class="pane" data-pane="2" hidden>
+        <h3>2 · Find places worth a walk</h3>
+        <p class="lead">Uses only what you scratched open. Unscratched ground stays as the orbital prior.</p>
+        <label for="nTg" class="sl">Targets wanted <b id="nTgLbl"></b></label>
+        <input id="nTg" type="range" min="1" max="5" step="1" value="3">
+        <div class="row"><button id="analyse" class="btn">Analyse revealed area</button></div>
+        <details id="rules"><summary>How targets are chosen</summary>
+          <ol>
+            <li>Candidates on a 20 m lattice, only where at least 80 % of the 40 m circle around them is revealed.</li>
+            <li>The spot itself is firm or rough (not sand, not blocked), with no revealed sand within 20 m.</li>
+            <li>Score = terrain variety in the 60 m circle (Shannon entropy of firm / rough / sand / blocked shares, 0–1) + 0.4 per SuperCam site within 30 m that lies in the revealed area (up to 3).</li>
+            <li>Must be reachable and back within the usable oxygen on your map (revealed = HiRISE classes, unrevealed = orbital prior).</li>
+            <li>Highest scores first, at least 150 m apart.</li>
+          </ol>
+        </details>
+        <div id="tgList"></div>
+      </div>
+      <div class="pane" data-pane="3" hidden>
+        <h3>3 · Walk from the habitat and back</h3>
+        <div class="row ctrl">
+          <button id="plan" class="btn">Plan round trip</button>
+          <button id="play" class="btn" disabled>&#9654; Play</button>
+          <select id="speed" aria-label="Replay speed"><option value="3">3 min / s</option><option value="8" selected>8 min / s</option><option value="20">20 min / s</option></select>
+        </div>
+        <label for="scrub" class="sl">Elapsed <b id="tLbl">0 min</b></label>
+        <input id="scrub" type="range" min="0" max="1000" step="1" value="0" disabled>
+        <div id="hud">
+          <div class="hrow"><span>Oxygen left</span><b id="o2Val">–</b></div>
+          <div class="bar" id="o2Bar"><div class="fill"></div><div class="res"></div></div>
+          <div class="hrow"><span>Return margin</span><b id="mgVal">–</b></div>
+          <div class="bar" id="mgBar"><div class="fill"></div></div>
+          <div class="hrow small"><span>Distance / heading</span><b id="tdVal">–</b></div>
+          <div id="warn" hidden></div>
+        </div>
+        <div id="planOut"></div>
+        <details><summary>Oxygen budget <span class="badge assumed">assumed</span></summary>
+          <label for="cap" class="sl">Suit oxygen <b id="capLbl"></b> nominal minutes</label>
+          <input id="cap" type="range" min="60" max="480" step="5" value="480">
+          <label for="res" class="sl">Emergency reserve kept <b id="resLbl"></b></label>
+          <input id="res" type="range" min="0" max="50" step="5" value="20">
+          <label for="stay" class="sl">Stay at each target <b id="stayLbl"></b></label>
+          <input id="stay" type="range" min="0" max="60" step="5" value="10">
+          <p class="hint">1 nominal minute = oxygen used in one minute of walking on firm ground. Walking 2.5 km/h on firm ground; speed ×1 / 0.6 / 0.35 and oxygen rate ×1 / 1.5 / 2.1 on firm / rough / sand; blocked is impassable (pipeline values, MVP_PLAN 5.6, assumed). Stay rate ×1 is a demo assumption.</p>
+        </details>
+      </div>
+      <p class="hint foot">Data: CTX and HiRISE orthomosaics (NASA/JPL/MSSS, NASA/JPL/UArizona via USGS Mars 2020 TRN), terrain classes from the team pipeline (HiRISE DTM, 2 m), SuperCam LIBS oxides (PDS Geosciences), Perseverance raw images (NASA/JPL-Caltech). Habitat at Octavia E. Butler Landing <span class="badge assumed">assumed</span>.</p>
+    </div>
+  </section>
+</main>
+<canvas id="coverCanvas" hidden></canvas>
+<script src="../lib/maplibre-gl.js"></script>
+<script src="scratch.js"></script>
+</body>
+</html>
