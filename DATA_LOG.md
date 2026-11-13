@@ -210,7 +210,7 @@ Scripts `spikes/s6_*.py`, outputs `qa/jezero/S6_*.{png,json}`. No web change.
 
 Same method as `pipeline/align.py` (CTX 6 m ortho vs HiRISE ortho on a 6 m grid, high-pass σ 60 m, phase correlation, one global shift, then four quadrant registrations; vertical offset = median CTX − HiRISE DTM on 20 m after the shift). Window (i, j) = main AOI shifted by (2400 i, 2400 j) m; habitat = main habitat shifted the same (assumed; no waypoint used). HiRISE ortho per window from the USGS S3 mirror (strip rows, window + 300 m margin); DTM from the local full HiRISE mosaic; MOLA from a new wide 463 m window (`data_raw/jezero/windows/mola_wide.tif`). Self-test: the same code on (0,0) reproduces the checkpoint-1 numbers exactly. No routes, classes or comparison numbers were computed. Items 3–4 are reported and not used to drop a window (decision 2026-11-14).
 
-| Window | Habitat x, y (m) | HiRISE DTM cover | Global shift E, N (m) | Vertical offset (m) | Quadrant dev (m) | X3-1/2 | X3-3 ref − MOLA (m) | X3-4 prior − MOLA std (m) | Ortho download |
+| Window | Habitat x, y (m) | HiRISE DTM cover | Global shift E, N (m) | Vertical offset applied to CTX (m) | Quadrant dev (m) | X3-1/2 | X3-3 ref − MOLA (m) | X3-4 prior − MOLA std (m) | Ortho download |
 |---|---|---|---|---|---|---|---|---|---|
 | (0,0) main | 0, 0 | 100 % | −2.1, +1.8 | −1.03 | 0.3 / 0.3 / 0.7 / 0.4 | pass | −11.0 ± 10.7 (fail) | 11.7 (fail) | checkpoint 1 |
 | (−1,0) | −2400, 0 | 100 % | −1.8, +0.6 | −1.96 | 0.4 / 0.4 / 0.9 / 0.7 | pass | −17.7 ± 10.7 (fail) | 10.3 (fail) | 152 MB / 355 s |
