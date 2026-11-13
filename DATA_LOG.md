@@ -333,3 +333,22 @@ Medians (A / B@30 / REF): actual O2 145.0 / 125.8 / 67.8; hazard m 834 / 584 / 8
 Medians (A / B@30 / REF): actual O2 317.4 / 272.3 / 125.3; hazard m 1953 / 1506 / 233; paired median B@30 − A: hazard m -246, actual O2 -28.9.
 
 Observations (no change follows from them): no round trip exceeds the 384 budget on the reference under A; 2 do under B@5 ((−1500, −900) 384.5 and (−1200, −900) 393.4) and 2 under A+ ((−1500, −600) 398.6 and (−1500, −900) 413.2), all beyond 1200 m; blocked metres are 0 for every state (the 2 m astronaut-blocked cells are rare and avoided or not crossed); hazard metres ≈ sand metres. B@1 is marginally worse than A (+9 m, +1.0 min). Crossings are not monotonic in loops (B@20 has more than B@10), because routes that avoid part of a sand belt can enter it in more, shorter stretches. A+ lowers hazard metres (35 % of the possible gain) but raises crossings (−111 %): the 60 m blocks push routes around and through more belt edges.
+
+#### T3 web: astronaut map is now the first page (`web/index.html`, `web/astronaut.js`; `pipeline/export_compare.py`)
+
+- `index.html` = astronaut map (route A vs B); old map-data page moved to `data.html`; `astronaut.html` redirects. Recon page (`recon.html`) shows the T1 rerun; its About text updated to goal rule v2 and the rerun.
+- Shows the 63 test points; for the selected one, route A, route B after 1/5/10/20/30 loops, optional A+ and reference bound, a table of the T2 quantities, and a walk replay with "Oxygen left (actual)", "Return margin, as the plan sees it" (oxygen used so far on the reference minus O2 home on the map the route was planned on) and "Return margin, true (reference)". The oxygen sliders only change the budget verdicts (routes do not depend on the budget). A panel summarises all 63 points; the full table (all states, three distance bands) is a dialog. Default test point = lattice point (600, 0) (the step-3 skeleton's first placeholder rule), not chosen by its numbers.
+- Export only reformats `compare_ab*.json` (non-finite band edge written as null); nothing is recomputed. 7.4 MB (63 route files). Old skeleton data `web/data/jezero/astronaut/` removed.
+- Screenshots `qa/screenshots/T3_walk_*.png` (`tools/screenshot_astronaut.py`, 0 console errors), `T1_recon_rerun_*.png`.
+
+#### T4 documents
+
+README (result summary, Limitations with every item listed in TECH_LEAD_BRIEF T4), `docs/PROJECT_PAGE.md` (English project-page text; NASA Data from the table above), `docs/REFERENCES.md` (added SIM 3464, MOLA PEDR, SuperCam, CRISM, samples, Horizons, Deahn, AI4MARS, parameter sources), `docs/AI_USE.md`.
+
+#### T5 Navcam viewing directions (`pipeline/photo_heading.py`, runs after `export` in `pipeline.run`)
+
+256 of 256 Navcam images in `web/data/jezero/photos.json` got `view` = azimuths of the rays through the centre and the left/right edges (mid-height) of the delivered frame, from the CAHV camera model rotated by the `attitude` quaternion (method of S6-2). Check against S6-2: the edge azimuths reproduce the verified spans of the 3 passing images within 0.2–2.1° at the edges (e.g. 245.8–293.1° vs 246.0–292.9°). `mast_az` / `mast_el` renamed `mast_az_rover_frame` / `mast_el_rover_frame` and no longer shown as a direction. Map-data page: 45 m wedges (layer "Navcam viewing directions", derived); photo cards show "looking toward N° from north". Front Hazcam and Mastcam-Z: no direction. Screenshots `qa/screenshots/T5_navcam_*.png`.
+
+#### Not done this round
+
+T6 (multi-window A vs B) and T7 (rover sensitivity: budget 8,000 / 16,000, sand ×3) were not run. Their rules stay as written (direction.md); Limitations says they have not been run.
