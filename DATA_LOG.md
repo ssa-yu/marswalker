@@ -203,5 +203,20 @@ Scripts `spikes/s6_*.py`, outputs `qa/jezero/S6_*.{png,json}`. No web change.
 - CRISM four-quadrant check (X3-2 rule, ≤ 20 m): frt00005c5e quadrant deviations 8.9/11.8/19.9/31.7 m, hrl000040ff 7.7/7.7/17.8/42.0 m → both fail with the Q3 method (nearest resampling). With bilinear resampling hrl000040ff passes (≤ 6.6 m) and frt00005c5e still fails (21.8 m); verdict kept on the original method. Correction: hrl000040ff native pixel is 36 m (Q3 recorded 18 m).
 - SuperCam PDS label: each calibrated-spectra label carries ROVER_NAV_FRAME SITE/DRIVE and the rover pose in the site frame (no target coordinates); the masterlist EDR file names also encode site/drive, so measurements can be placed on waypoints by site/drive instead of by sol (not re-done this round).
 - Horizons (Q6): east longitude must be entered negative for Mars (stated by Horizons; Sun elevation 76.22° vs rover telemetry 76.02° at sol 11). Local true solar time derived from the hour angle (Horizons gives n.a.). AOI shadow from the HiRISE DTM: < 5 % whenever the Sun is ≥ 10° high (LTST ~6.5–17.5 h); 7–20 % at 5°, 28–64 % at 2°. Recommendation: remaining-daylight only.
-- DONKI (Q7): not done — api.nasa.gov DEMO_KEY returned 429 (hourly limit used up), CCMC endpoint timed out; .env not read.
+- DONKI (Q7): **not done — DEMO_KEY rate-limited (429, retried once in the main session too); waiting for a team api.nasa.gov key.** CCMC endpoint timed out. No key requested and no workaround tried.
 - AI4MARS (Q8): v0.6, CC-BY-4.0, 16.2 GB merged zip; Perseverance Navcam 4,573 (+2,122 early-named) images, 3,827 NAV labels (2,191 at 72 main-AOI waypoints), 8,508 geology labels; no expert test set for Perseverance; paper baseline (Curiosity only) 94.97 % overall; no public weights found. Not downloaded.
+
+#### S4 multi-window X3 positioning check (`pipeline/multiwindow_x3.py` → `qa/jezero/multiwindow/x3_windows.json`, `X3_<i>_<j>.png`)
+
+Same method as `pipeline/align.py` (CTX 6 m ortho vs HiRISE ortho on a 6 m grid, high-pass σ 60 m, phase correlation, one global shift, then four quadrant registrations; vertical offset = median CTX − HiRISE DTM on 20 m after the shift). Window (i, j) = main AOI shifted by (2400 i, 2400 j) m; habitat = main habitat shifted the same (assumed; no waypoint used). HiRISE ortho per window from the USGS S3 mirror (strip rows, window + 300 m margin); DTM from the local full HiRISE mosaic; MOLA from a new wide 463 m window (`data_raw/jezero/windows/mola_wide.tif`). Self-test: the same code on (0,0) reproduces the checkpoint-1 numbers exactly. No routes, classes or comparison numbers were computed. Items 3–4 are reported and not used to drop a window (decision 2026-11-14).
+
+| Window | Habitat x, y (m) | HiRISE DTM cover | Global shift E, N (m) | Vertical offset (m) | Quadrant dev (m) | X3-1/2 | X3-3 ref − MOLA (m) | X3-4 prior − MOLA std (m) | Ortho download |
+|---|---|---|---|---|---|---|---|---|---|
+| (0,0) main | 0, 0 | 100 % | −2.1, +1.8 | −1.03 | 0.3 / 0.3 / 0.7 / 0.4 | pass | −11.0 ± 10.7 (fail) | 11.7 (fail) | checkpoint 1 |
+| (−1,0) | −2400, 0 | 100 % | −1.8, +0.6 | −1.96 | 0.4 / 0.4 / 0.9 / 0.7 | pass | −17.7 ± 10.7 (fail) | 10.3 (fail) | 152 MB / 355 s |
+| (−1,1) | −2400, 2400 | 100 % | −1.2, +0.9 | +0.57 | 0.0 / 0.7 / 0.3 / 0.4 | pass | −12.2 ± 7.6 (fail) | 8.4 (pass) | 152 MB / 354 s |
+| (−2,1) | −4800, 2400 | 100 % | −0.9, +0.3 | +0.38 | 0.6 / 0.3 / 0.3 / 0.3 | pass | −9.2 ± 13.1 (fail) | 13.9 (fail) | 152 MB / 327 s |
+| (−3,1) | −7200, 2400 | 100 % | −0.9, +0.3 | +0.55 | 0.3 / 0.7 / 0.0 / 0.0 | pass | −32.0 ± 24.6 (fail) | 23.2 (fail) | 152 MB / 319 s |
+| (−4,0) rim | −9600, 0 | 97.5 % | −0.6, −1.2 | +2.98 | 0.7 / 0.3 / 1.2 / 0.7 | pass | −24.7 ± 49.9 (fail) | 47.3 (fail) | 152 MB / 329 s |
+
+All six windows pass X3 items 1–2 (largest quadrant deviation 1.2 m against 20 m) → none is dropped; the locked multi-window rule keeps all 6. Items 3–4 (MOLA 463 m grid) fail in every window except item 4 in (−1,1), the same pattern as the main AOI; the larger misfits at (−3,1) and (−4,0) are on the rough crater-rim terrain, where the 463 m grid is coarsest relative to relief (observation, not tested). The (0,0) item-4 value here (11.7 m, 30 interior cells) differs from checkpoint 1 (14.3 m, 675 cells) because this code samples MOLA cells inside the window only; the checkpoint-1 value stays the record.

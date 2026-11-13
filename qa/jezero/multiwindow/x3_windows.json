@@ -1,0 +1,718 @@
+{
+ "thresholds": {
+  "quadrant_dev_max_m": 20.0,
+  "ref_mola_abs_mean_max_m": 10.0,
+  "ref_mola_std_max_m": 10.0,
+  "prior_mola_std_max_m": 10.0
+ },
+ "method": "python -m pipeline.multiwindow_x3 [--windows \"-1,0;-1,1\"] [--fetch-only]\n\nWindows = the main Jezero AOI (x -1700..700, y -1000..1400 m from the habitat) shifted by whole cells of\n2400 m: window (i, j) covers x + 2400 i, y + 2400 j. Its habitat = main habitat + (2400 i, 2400 j)\n(rule locked in direction.md \"多視窗\"; no waypoint is used for anything here).\nMethod = pipeline/align.py, unchanged: CTX 6 m ortho vs HiRISE ortho averaged to 6 m on the window's\n\"inner\" extent (window + 300 m fetch margin - 50 m), high-pass sigma 60 m, phase correlation -> one\nglobal shift; re-register the 4 quadrants after the shift; X3-2 passes if every quadrant deviation\n<= 20 m. Vertical offset = median(CTX DTM shifted - HiRISE DTM) on a 20 m grid.\nX3-3/4: MOLA 463 m cells fully covered by the product inside the window's fetch extent (interior cells).\nDiffers from the main-AOI run in one respect: there the prior-vs-MOLA statistic used the whole CTX\nmosaic over a 12 km MOLA window; here both statistics are restricted to the window's fetch extent.\nNo routes, terrain classes or comparison numbers are computed.",
+ "windows": {
+  "0,0": {
+   "window": [
+    0,
+    0
+   ],
+   "source": "data_work/jezero/alignment.json (pipeline/align.py, checkpoint 1)",
+   "habitat_local_m": [
+    0,
+    0
+   ],
+   "image_registration": {
+    "grid_res_m": 6.0,
+    "measured_shift_m": [
+     -2.1,
+     1.8
+    ],
+    "shift_magnitude_m": 2.77,
+    "r_before": 0.791,
+    "r_after": 0.81,
+    "residual_after_shift_m": [
+     -0.3,
+     -0.3
+    ],
+    "quadrant_shift_after_m": [
+     [
+      0.0,
+      -0.3
+     ],
+     [
+      -0.3,
+      -0.0
+     ],
+     [
+      -0.3,
+      -0.6
+     ],
+     [
+      -0.3,
+      -0.3
+     ]
+    ],
+    "quadrant_dev_m": [
+     0.3,
+     0.3,
+     0.67,
+     0.42
+    ]
+   },
+   "vertical": {
+    "prior_minus_ref_median_m": 1.03,
+    "nmad_m": 2.57,
+    "n": 21025
+   },
+   "mola": {
+    "reference_minus_mola": {
+     "n_cells": 30,
+     "mean_m": -11.02,
+     "std_m": 10.73,
+     "max_abs_m": 47.27
+    },
+    "shifted_prior_minus_mola": {
+     "n_cells": 675,
+     "mean_m": -11.55,
+     "std_m": 14.27,
+     "max_abs_m": 75.89
+    },
+    "note": "MOLA 463 m cells fully covered by the product, interior cells only",
+    "diagnostic_not_used_for_verdict": {
+     "best_mola_grid_offset_m": [
+      -439.0,
+      232.0
+     ],
+     "prior_minus_mola_at_best_offset": {
+      "mean_m": -0.96,
+      "std_m": 9.24
+     },
+     "prior_minus_mola_gentle_cells_lt2deg": {
+      "n": 557,
+      "mean_m": -5.99,
+      "std_m": 9.33
+     }
+    }
+   },
+   "x3": {
+    "checks": {
+     "1_single_global_shift_recorded": true,
+     "2_quadrants_within_20m": true,
+     "3_ref_vs_mola": false,
+     "4_prior_vs_mola_std": false
+    },
+    "pass": false
+   }
+  },
+  "-1,0": {
+   "window": [
+    -1,
+    0
+   ],
+   "extent_local_m": [
+    -4100.0,
+    -1000.0,
+    -1700.0,
+    1400.0
+   ],
+   "fetch_extent_local_m": [
+    -4400.0,
+    -1300.0,
+    -1400.0,
+    1700.0
+   ],
+   "habitat_local_m": [
+    -2400.0,
+    0.0
+   ],
+   "habitat_lonlat": [
+    77.4082037,
+    18.4446271
+   ],
+   "hirise_dtm_coverage_frac": 1.0,
+   "hirise_ortho_coverage_frac": 1.0,
+   "image_registration": {
+    "grid_res_m": 6.0,
+    "measured_shift_m": [
+     -1.8,
+     0.6
+    ],
+    "shift_magnitude_m": 1.9,
+    "r_before": 0.776,
+    "r_after": 0.777,
+    "residual_after_shift_m": [
+     0.0,
+     -0.0
+    ],
+    "quadrant_shift_after_m": [
+     [
+      0.3,
+      -0.3
+     ],
+     [
+      -0.3,
+      0.3
+     ],
+     [
+      0.3,
+      -0.9
+     ],
+     [
+      -0.6,
+      0.3
+     ]
+    ],
+    "quadrant_dev_m": [
+     0.42,
+     0.42,
+     0.95,
+     0.67
+    ]
+   },
+   "vertical": {
+    "prior_minus_ref_median_m": 1.96,
+    "nmad_m": 3.01,
+    "n": 21025,
+    "applied_vertical_offset_m": -1.96
+   },
+   "mola": {
+    "reference_minus_mola": {
+     "n_cells": 30,
+     "mean_m": -17.67,
+     "std_m": 10.66,
+     "max_abs_m": 36.16
+    },
+    "shifted_prior_minus_mola": {
+     "n_cells": 30,
+     "mean_m": -17.79,
+     "std_m": 10.3,
+     "max_abs_m": 35.86
+    },
+    "note": "MOLA 463 m cells fully covered inside the window fetch extent, interior cells; reported, not used to drop the window"
+   },
+   "x3": {
+    "checks": {
+     "1_single_global_shift_recorded": true,
+     "2_quadrants_within_20m": true,
+     "3_ref_vs_mola": false,
+     "4_prior_vs_mola_std": false
+    },
+    "items_1_2_pass": true
+   },
+   "ortho_fetch": {
+    "url": "https://asc-pds-services.s3.us-west-2.amazonaws.com/mosaic/mars2020_trn/HiRISE/JEZ_hirise_soc_006_orthoMosaic_25cm_Eqc_latTs0_lon0_first.tif",
+    "fetched_bytes": 151824651,
+    "seconds": 351.0,
+    "wall_seconds": 355.1,
+    "total_seconds": 355.1
+   }
+  },
+  "-1,1": {
+   "window": [
+    -1,
+    1
+   ],
+   "extent_local_m": [
+    -4100.0,
+    1400.0,
+    -1700.0,
+    3800.0
+   ],
+   "fetch_extent_local_m": [
+    -4400.0,
+    1100.0,
+    -1400.0,
+    4100.0
+   ],
+   "habitat_local_m": [
+    -2400.0,
+    2400.0
+   ],
+   "habitat_lonlat": [
+    77.4082037,
+    18.4851166
+   ],
+   "hirise_dtm_coverage_frac": 1.0,
+   "hirise_ortho_coverage_frac": 1.0,
+   "image_registration": {
+    "grid_res_m": 6.0,
+    "measured_shift_m": [
+     -1.2,
+     0.9
+    ],
+    "shift_magnitude_m": 1.5,
+    "r_before": 0.856,
+    "r_after": 0.855,
+    "residual_after_shift_m": [
+     -0.3,
+     0.3
+    ],
+    "quadrant_shift_after_m": [
+     [
+      0.0,
+      -0.0
+     ],
+     [
+      -0.3,
+      0.6
+     ],
+     [
+      0.0,
+      -0.3
+     ],
+     [
+      -0.3,
+      0.3
+     ]
+    ],
+    "quadrant_dev_m": [
+     0.0,
+     0.67,
+     0.3,
+     0.42
+    ]
+   },
+   "vertical": {
+    "prior_minus_ref_median_m": -0.57,
+    "nmad_m": 4.76,
+    "n": 21025,
+    "applied_vertical_offset_m": 0.57
+   },
+   "mola": {
+    "reference_minus_mola": {
+     "n_cells": 30,
+     "mean_m": -12.21,
+     "std_m": 7.55,
+     "max_abs_m": 24.98
+    },
+    "shifted_prior_minus_mola": {
+     "n_cells": 30,
+     "mean_m": -12.08,
+     "std_m": 8.38,
+     "max_abs_m": 22.81
+    },
+    "note": "MOLA 463 m cells fully covered inside the window fetch extent, interior cells; reported, not used to drop the window"
+   },
+   "x3": {
+    "checks": {
+     "1_single_global_shift_recorded": true,
+     "2_quadrants_within_20m": true,
+     "3_ref_vs_mola": false,
+     "4_prior_vs_mola_std": true
+    },
+    "items_1_2_pass": true
+   },
+   "ortho_fetch": {
+    "url": "https://asc-pds-services.s3.us-west-2.amazonaws.com/mosaic/mars2020_trn/HiRISE/JEZ_hirise_soc_006_orthoMosaic_25cm_Eqc_latTs0_lon0_first.tif",
+    "fetched_bytes": 151824651,
+    "seconds": 352.0,
+    "wall_seconds": 354.1,
+    "total_seconds": 354.1
+   }
+  },
+  "-2,1": {
+   "window": [
+    -2,
+    1
+   ],
+   "extent_local_m": [
+    -6500.0,
+    1400.0,
+    -4100.0,
+    3800.0
+   ],
+   "fetch_extent_local_m": [
+    -6800.0,
+    1100.0,
+    -3800.0,
+    4100.0
+   ],
+   "habitat_local_m": [
+    -4800.0,
+    2400.0
+   ],
+   "habitat_lonlat": [
+    77.3655217,
+    18.4851166
+   ],
+   "hirise_dtm_coverage_frac": 1.0,
+   "hirise_ortho_coverage_frac": 1.0,
+   "image_registration": {
+    "grid_res_m": 6.0,
+    "measured_shift_m": [
+     -0.9,
+     0.3
+    ],
+    "shift_magnitude_m": 0.95,
+    "r_before": 0.805,
+    "r_after": 0.804,
+    "residual_after_shift_m": [
+     0.0,
+     -0.0
+    ],
+    "quadrant_shift_after_m": [
+     [
+      0.0,
+      0.6
+     ],
+     [
+      -0.3,
+      -0.0
+     ],
+     [
+      0.0,
+      0.3
+     ],
+     [
+      0.0,
+      -0.3
+     ]
+    ],
+    "quadrant_dev_m": [
+     0.6,
+     0.3,
+     0.3,
+     0.3
+    ]
+   },
+   "vertical": {
+    "prior_minus_ref_median_m": -0.38,
+    "nmad_m": 3.69,
+    "n": 21025,
+    "applied_vertical_offset_m": 0.38
+   },
+   "mola": {
+    "reference_minus_mola": {
+     "n_cells": 25,
+     "mean_m": -9.21,
+     "std_m": 13.06,
+     "max_abs_m": 31.84
+    },
+    "shifted_prior_minus_mola": {
+     "n_cells": 30,
+     "mean_m": -12.45,
+     "std_m": 13.87,
+     "max_abs_m": 33.12
+    },
+    "note": "MOLA 463 m cells fully covered inside the window fetch extent, interior cells; reported, not used to drop the window"
+   },
+   "x3": {
+    "checks": {
+     "1_single_global_shift_recorded": true,
+     "2_quadrants_within_20m": true,
+     "3_ref_vs_mola": false,
+     "4_prior_vs_mola_std": false
+    },
+    "items_1_2_pass": true
+   },
+   "ortho_fetch": {
+    "url": "https://asc-pds-services.s3.us-west-2.amazonaws.com/mosaic/mars2020_trn/HiRISE/JEZ_hirise_soc_006_orthoMosaic_25cm_Eqc_latTs0_lon0_first.tif",
+    "fetched_bytes": 151824651,
+    "seconds": 326.1,
+    "wall_seconds": 326.8,
+    "total_seconds": 326.8
+   }
+  },
+  "-3,1": {
+   "window": [
+    -3,
+    1
+   ],
+   "extent_local_m": [
+    -8900.0,
+    1400.0,
+    -6500.0,
+    3800.0
+   ],
+   "fetch_extent_local_m": [
+    -9200.0,
+    1100.0,
+    -6200.0,
+    4100.0
+   ],
+   "habitat_local_m": [
+    -7200.0,
+    2400.0
+   ],
+   "habitat_lonlat": [
+    77.3228396,
+    18.4851166
+   ],
+   "hirise_dtm_coverage_frac": 1.0,
+   "hirise_ortho_coverage_frac": 1.0,
+   "image_registration": {
+    "grid_res_m": 6.0,
+    "measured_shift_m": [
+     -0.9,
+     0.3
+    ],
+    "shift_magnitude_m": 0.95,
+    "r_before": 0.806,
+    "r_after": 0.806,
+    "residual_after_shift_m": [
+     0.0,
+     0.3
+    ],
+    "quadrant_shift_after_m": [
+     [
+      0.3,
+      -0.0
+     ],
+     [
+      0.3,
+      0.6
+     ],
+     [
+      0.0,
+      -0.0
+     ],
+     [
+      0.0,
+      -0.0
+     ]
+    ],
+    "quadrant_dev_m": [
+     0.3,
+     0.67,
+     0.0,
+     0.0
+    ]
+   },
+   "vertical": {
+    "prior_minus_ref_median_m": -0.55,
+    "nmad_m": 3.49,
+    "n": 21025,
+    "applied_vertical_offset_m": 0.55
+   },
+   "mola": {
+    "reference_minus_mola": {
+     "n_cells": 30,
+     "mean_m": -31.97,
+     "std_m": 24.64,
+     "max_abs_m": 85.05
+    },
+    "shifted_prior_minus_mola": {
+     "n_cells": 30,
+     "mean_m": -32.27,
+     "std_m": 23.22,
+     "max_abs_m": 83.45
+    },
+    "note": "MOLA 463 m cells fully covered inside the window fetch extent, interior cells; reported, not used to drop the window"
+   },
+   "x3": {
+    "checks": {
+     "1_single_global_shift_recorded": true,
+     "2_quadrants_within_20m": true,
+     "3_ref_vs_mola": false,
+     "4_prior_vs_mola_std": false
+    },
+    "items_1_2_pass": true
+   },
+   "ortho_fetch": {
+    "url": "https://asc-pds-services.s3.us-west-2.amazonaws.com/mosaic/mars2020_trn/HiRISE/JEZ_hirise_soc_006_orthoMosaic_25cm_Eqc_latTs0_lon0_first.tif",
+    "fetched_bytes": 151824651,
+    "seconds": 318.4,
+    "wall_seconds": 319.0,
+    "total_seconds": 319.0
+   }
+  },
+  "-4,0": {
+   "window": [
+    -4,
+    0
+   ],
+   "extent_local_m": [
+    -11300.0,
+    -1000.0,
+    -8900.0,
+    1400.0
+   ],
+   "fetch_extent_local_m": [
+    -11600.0,
+    -1300.0,
+    -8600.0,
+    1700.0
+   ],
+   "habitat_local_m": [
+    -9600.0,
+    0.0
+   ],
+   "habitat_lonlat": [
+    77.2801576,
+    18.4446271
+   ],
+   "hirise_dtm_coverage_frac": 0.9751,
+   "hirise_ortho_coverage_frac": 0.9751,
+   "image_registration": {
+    "grid_res_m": 6.0,
+    "measured_shift_m": [
+     -0.6,
+     -1.2
+    ],
+    "shift_magnitude_m": 1.34,
+    "r_before": 0.869,
+    "r_after": 0.876,
+    "residual_after_shift_m": [
+     -0.3,
+     -0.6
+    ],
+    "quadrant_shift_after_m": [
+     [
+      0.3,
+      -0.6
+     ],
+     [
+      -0.3,
+      -0.0
+     ],
+     [
+      0.0,
+      -1.2
+     ],
+     [
+      -0.6,
+      -0.3
+     ]
+    ],
+    "quadrant_dev_m": [
+     0.67,
+     0.3,
+     1.2,
+     0.67
+    ]
+   },
+   "vertical": {
+    "prior_minus_ref_median_m": -2.98,
+    "nmad_m": 4.66,
+    "n": 19039,
+    "applied_vertical_offset_m": 2.98
+   },
+   "mola": {
+    "reference_minus_mola": {
+     "n_cells": 24,
+     "mean_m": -24.74,
+     "std_m": 49.94,
+     "max_abs_m": 96.45
+    },
+    "shifted_prior_minus_mola": {
+     "n_cells": 25,
+     "mean_m": -23.67,
+     "std_m": 47.33,
+     "max_abs_m": 91.7
+    },
+    "note": "MOLA 463 m cells fully covered inside the window fetch extent, interior cells; reported, not used to drop the window"
+   },
+   "x3": {
+    "checks": {
+     "1_single_global_shift_recorded": true,
+     "2_quadrants_within_20m": true,
+     "3_ref_vs_mola": false,
+     "4_prior_vs_mola_std": false
+    },
+    "items_1_2_pass": true
+   },
+   "ortho_fetch": {
+    "url": "https://asc-pds-services.s3.us-west-2.amazonaws.com/mosaic/mars2020_trn/HiRISE/JEZ_hirise_soc_006_orthoMosaic_25cm_Eqc_latTs0_lon0_first.tif",
+    "fetched_bytes": 151824651,
+    "seconds": 328.7,
+    "wall_seconds": 329.3,
+    "total_seconds": 329.3
+   }
+  }
+ },
+ "self_test_0_0_this_code": {
+  "window": [
+   0,
+   0
+  ],
+  "extent_local_m": [
+   -1700.0,
+   -1000.0,
+   700.0,
+   1400.0
+  ],
+  "fetch_extent_local_m": [
+   -2000.0,
+   -1300.0,
+   1000.0,
+   1700.0
+  ],
+  "habitat_local_m": [
+   0.0,
+   0.0
+  ],
+  "habitat_lonlat": [
+   77.4508857,
+   18.4446271
+  ],
+  "hirise_dtm_coverage_frac": 1.0,
+  "hirise_ortho_coverage_frac": 1.0,
+  "image_registration": {
+   "grid_res_m": 6.0,
+   "measured_shift_m": [
+    -2.1,
+    1.8
+   ],
+   "shift_magnitude_m": 2.77,
+   "r_before": 0.791,
+   "r_after": 0.81,
+   "residual_after_shift_m": [
+    -0.3,
+    -0.3
+   ],
+   "quadrant_shift_after_m": [
+    [
+     0.0,
+     -0.3
+    ],
+    [
+     -0.3,
+     -0.0
+    ],
+    [
+     -0.3,
+     -0.6
+    ],
+    [
+     -0.3,
+     -0.3
+    ]
+   ],
+   "quadrant_dev_m": [
+    0.3,
+    0.3,
+    0.67,
+    0.42
+   ]
+  },
+  "vertical": {
+   "prior_minus_ref_median_m": 1.03,
+   "nmad_m": 2.57,
+   "n": 21025,
+   "applied_vertical_offset_m": -1.03
+  },
+  "mola": {
+   "reference_minus_mola": {
+    "n_cells": 30,
+    "mean_m": -11.02,
+    "std_m": 10.73,
+    "max_abs_m": 47.27
+   },
+   "shifted_prior_minus_mola": {
+    "n_cells": 30,
+    "mean_m": -11.22,
+    "std_m": 11.68,
+    "max_abs_m": 53.14
+   },
+   "note": "MOLA 463 m cells fully covered inside the window fetch extent, interior cells; reported, not used to drop the window"
+  },
+  "x3": {
+   "checks": {
+    "1_single_global_shift_recorded": true,
+    "2_quadrants_within_20m": true,
+    "3_ref_vs_mola": false,
+    "4_prior_vs_mola_std": false
+   },
+   "items_1_2_pass": true
+  },
+  "ortho_fetch": {
+   "cached": true
+  }
+ }
+}
