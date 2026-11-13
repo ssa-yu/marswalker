@@ -299,11 +299,15 @@ def window_row(cmp_json, recon_json):
             r[s]["diff_vs_A"] = {q: S[s]["diff_vs_A"][q] for q in ("hazard_m", "actual_o2", "crossings")}
         if "share_of_possible_improvement" in S[s]:
             r[s]["share"] = S[s]["share_of_possible_improvement"]
-    r["bands"] = {b: {"n": cmp_json["summary"][b]["n"],
+    nb = lambda b: cmp_json["summary"][b]["A"]["n"] if "A" in cmp_json["summary"][b] else 0
+    r["bands"] = {b: {"n": nb(b),
                       **({s: {"hazard_m_mean": cmp_json["summary"][b][s]["hazard_m"]["mean"],
-                              "actual_o2_mean": cmp_json["summary"][b][s]["actual_o2"]["mean"]}
-                          for s in ("A", "B@30", "REF")} if cmp_json["summary"][b]["n"] else {})}
+                              "actual_o2_mean": cmp_json["summary"][b][s]["actual_o2"]["mean"],
+                              "diff_vs_A": {q: cmp_json["summary"][b][s]["diff_vs_A"][q]["mean"] for q in ("hazard_m", "actual_o2")} if s != "A" else None}
+                          for s in ("A", "B@30", "REF")} if nb(b) else {})}
                   for b in ("300-600", "600-1200", ">1200")}
+    r["pred_o2_mean"] = {s: S[s]["pred_o2"]["mean"] for s in ("A", "B@30")}
+    r["o2_error_mean"] = {s: S[s]["o2_error"]["mean"] for s in ("A", "B@30")}
     return r
 
 
@@ -376,10 +380,10 @@ def figure_t6(rows):
         a.set_title(ttl, fontsize=10); a.grid(axis="x", color="#e5e5e5", lw=.6); a.set_axisbelow(True)
         for s in ("top", "right"):
             a.spines[s].set_visible(False)
-    ax[0].legend(loc="lower left", fontsize=8, frameon=False)
+    fig.legend(*ax[0].get_legend_handles_labels(), loc="lower center", ncol=2, fontsize=9, frameon=False)
     fig.suptitle("T6 multi-window route A vs B (means over each window's test points; derived, simulated recon, "
                  "sand classes heuristic, not yet reviewed)", fontsize=10)
-    fig.tight_layout()
+    fig.tight_layout(rect=(0, 0.06, 1, 1))
     out = APP / "qa/jezero/multiwindow"; out.mkdir(parents=True, exist_ok=True)
     fig.savefig(out / "T6_windows_A_vs_B.png", dpi=110); plt.close(fig)
 
