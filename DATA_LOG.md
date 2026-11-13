@@ -520,3 +520,48 @@ Every place these numbers appear says: **designed after seeing round 6; round 6 
 4. Evaluation: the planned tour (same cells, same order, not replanned) walked on the reference (blocked charged at the sand rate, as round 6). Stops reached, **main reading (ii)**: stops at whose dwell end the astronaut could still get home within the usable O2 by the least-O2 way home of his own map, charged on the reference (true return margin ≥ 0); reading (i) (dwell ends before actual O2 used > usable) beside it; and the first point where that true margin turns negative.
 5. Reported per state and column: planned / actual O2 and time, error, stops planned, stops reached (ii)/(i), hazard / blocked / sand metres, crossings, zones entered (round-6 definitions on the whole tour), actual ≤ usable (listed, not evidence), differences vs A (main column of A).
 6. Hazard zones = round 6 zones (asserted identical). Run once (`data_work/jezero/round7/round7.json`; the code refuses a second run); refuses when `step2.enabled` is false.
+
+#### W2 result — round 7, the single run (2026-11-14 05:46:22 CST, 42.7 s; settings commit `7b03090` 05:46:21), reported as computed
+**Designed after seeing round 6; round 6 is the pre-registered main comparison.** Output `data_work/jezero/round7/round7.json`; web `web/data/jezero/compare/round7.json`. Oxygen in nominal minutes, usable 384; dwell 18 per visited stop is included in every planned and actual value. "Reached (ii)" = main reading. Diff = minus A (main column of A). Actual ≤ 384 is listed, not evidence.
+
+Table (i) — main: the 4 stops from measurements the rover unlocked by loop 30 (3_110, 4_48, 4_1062, 4_1422)
+
+| State | Column | Stops planned | Reached (ii) / (i) | Planned O2 | Actual O2 | Error | Planned / actual time (min) | Hazard m | Sand m | Blocked m | Crossings | Length m | Actual ≤ 384 | Order (stop index) | Diff O2 / hazard m |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| A | own order | 4 | 4 / 4 | 90.2 | 114.6 | +24.3 | 90 / 99 | 183 | 183 | 0 | 5 | 760 | yes | [2, 3, 1, 0] | — |
+| A+ | own order | 4 | 4 / 4 | 95.8 | 115.1 | +19.3 | 92 / 100 | 198 | 198 | 0 | 4 | 760 | yes | [0, 1, 2, 3] | +0.5 / +15 |
+| B@1 | own order | 4 | 4 / 4 | 90.2 | 114.6 | +24.3 | 90 / 99 | 183 | 183 | 0 | 5 | 760 | yes | [2, 3, 1, 0] | +0.0 / +0 |
+| B@1 | keeps A order | 4 | 4 / 4 | 90.2 | 114.6 | +24.3 | 90 / 99 | 183 | 183 | 0 | 5 | 760 | yes | [2, 3, 1, 0] | +0.0 / +0 |
+| B@5 | own order | 4 | 4 / 4 | 92.9 | 121.7 | +28.8 | 92 / 102 | 256 | 256 | 0 | 4 | 780 | yes | [0, 1, 3, 2] | +7.1 / +73 |
+| B@5 | keeps A order | 4 | 4 / 4 | 92.9 | 119.2 | +26.4 | 92 / 101 | 235 | 235 | 0 | 5 | 780 | yes | [2, 3, 1, 0] | +4.6 / +52 |
+| B@10 | own order | 4 | 4 / 4 | 93.2 | 104.6 | +11.4 | 92 / 96 | 112 | 112 | 0 | 2 | 793 | yes | [0, 2, 3, 1] | -10.0 / -71 |
+| B@10 | keeps A order | 4 | 4 / 4 | 93.2 | 104.6 | +11.4 | 92 / 96 | 112 | 112 | 0 | 2 | 794 | yes | [2, 3, 1, 0] | -9.9 / -71 |
+| B@20 | own order | 4 | 4 / 4 | 94.6 | 104.1 | +9.5 | 92 / 96 | 108 | 108 | 0 | 2 | 793 | yes | [1, 2, 3, 0] | -10.4 / -74 |
+| B@20 | keeps A order | 4 | 4 / 4 | 94.6 | 104.2 | +9.5 | 92 / 96 | 108 | 108 | 0 | 2 | 794 | yes | [2, 3, 1, 0] | -10.4 / -74 |
+| B@30 | own order | 4 | 4 / 4 | 94.6 | 104.0 | +9.4 | 92 / 96 | 108 | 108 | 0 | 2 | 793 | yes | [1, 2, 3, 0] | -10.5 / -74 |
+| B@30 | keeps A order | 4 | 4 / 4 | 94.6 | 104.1 | +9.4 | 92 / 96 | 108 | 108 | 0 | 2 | 794 | yes | [2, 3, 1, 0] | -10.5 / -74 |
+| REF | own order | 4 | 4 / 4 | 96.2 | 96.2 | +0.0 | 93 / 93 | 37 | 37 | 0 | 2 | 813 | yes | [0, 2, 3, 1] | -18.4 / -145 |
+
+True return margin never turned negative in any tour of this table (first negative point: none).
+
+Table (ii) — second: the 5 stops from all Perseverance measurements in the AOI (5_0, 8_64, 9_0, 7_2050, 8_0); not brought back by this rover
+
+| State | Column | Stops planned | Reached (ii) / (i) | Planned O2 | Actual O2 | Error | Planned / actual time (min) | Hazard m | Sand m | Blocked m | Crossings | Length m | Actual ≤ 384 | Order (stop index) | Diff O2 / hazard m |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| A | own order | 5 | 5 / 5 | 141.2 | 246.4 | +105.2 | 141 / 181 | 820 | 820 | 0 | 18 | 2133 | yes | [0, 1, 4, 2, 3] | — |
+| A+ | own order | 5 | 5 / 5 | 159.6 | 246.3 | +86.6 | 150 / 183 | 787 | 787 | 0 | 20 | 2285 | yes | [0, 1, 4, 3, 2] | -0.1 / -32 |
+| B@1 | own order | 5 | 5 / 5 | 141.2 | 246.4 | +105.2 | 141 / 181 | 820 | 820 | 0 | 18 | 2133 | yes | [0, 1, 4, 2, 3] | +0.0 / +0 |
+| B@1 | keeps A order | 5 | 5 / 5 | 141.2 | 246.4 | +105.2 | 141 / 181 | 820 | 820 | 0 | 18 | 2133 | yes | [0, 1, 4, 2, 3] | +0.0 / +0 |
+| B@5 | own order | 5 | 5 / 5 | 142.2 | 250.2 | +108.0 | 142 / 182 | 864 | 864 | 0 | 16 | 2156 | yes | [0, 1, 4, 2, 3] | +3.8 / +44 |
+| B@5 | keeps A order | 5 | 5 / 5 | 142.2 | 250.2 | +108.0 | 142 / 182 | 864 | 864 | 0 | 16 | 2156 | yes | [0, 1, 4, 2, 3] | +3.8 / +44 |
+| B@10 | own order | 5 | 5 / 5 | 144.0 | 226.4 | +82.3 | 144 / 175 | 623 | 623 | 0 | 15 | 2230 | yes | [0, 1, 2, 3, 4] | -20.0 / -197 |
+| B@10 | keeps A order | 5 | 5 / 5 | 144.1 | 230.7 | +86.7 | 144 / 176 | 692 | 692 | 0 | 15 | 2231 | yes | [0, 1, 4, 2, 3] | -15.7 / -128 |
+| B@20 | own order | 5 | 5 / 5 | 144.8 | 225.9 | +81.1 | 144 / 175 | 618 | 618 | 0 | 8 | 2231 | yes | [0, 2, 3, 4, 1] | -20.4 / -201 |
+| B@20 | keeps A order | 5 | 5 / 5 | 145.1 | 208.7 | +63.6 | 144 / 168 | 507 | 507 | 0 | 9 | 2245 | yes | [0, 1, 4, 2, 3] | -37.7 / -312 |
+| B@30 | own order | 5 | 5 / 5 | 144.8 | 225.5 | +80.7 | 144 / 175 | 618 | 618 | 0 | 8 | 2231 | yes | [0, 2, 3, 4, 1] | -20.9 / -201 |
+| B@30 | keeps A order | 5 | 5 / 5 | 145.2 | 204.9 | +59.7 | 144 / 167 | 481 | 481 | 0 | 9 | 2246 | yes | [0, 1, 4, 2, 3] | -41.5 / -339 |
+| REF | own order | 5 | 5 / 5 | 153.2 | 153.2 | +0.0 | 150 / 150 | 37 | 37 | 0 | 2 | 2393 | yes | [0, 1, 4, 3, 2] | -93.2 / -783 |
+
+True return margin never turned negative in any tour of this table (first negative point: none).
+
+Observations (no change follows): every state plans and reaches all stops in both tables (readings (ii) and (i) agree; no true margin below zero), so round 7 does not show "A thinks it can reach all, B knows only some" for these stops — they are all within ~1 km of the habitat. Table (i) (stops 5–300 m from the habitat): B@30 − A −10.5 O2 / −74 hazard m, B@5 is worse than A (+7.1 / +73), the reference tour −18.4 / −145; error after recon +9.4 vs A +24.3. Table (ii) (stops 0.5–0.9 km away, Séítah edge): B@30 own order −20.9 / −201, keeping A's order −41.5 / −339; REF −93.2 / −783; A underestimates the tour by 105 nominal minutes, B@30 by 81 (own order) or 60 (A's order). In (ii) B's own order costs more on the reference than A's order on B's map at loops 10, 20 and 30: the order chosen as cheapest on B's partial map runs into unseen sand. All hazard metres are sand metres; blocked metres 0.
