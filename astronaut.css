@@ -42,3 +42,14 @@ table.full th, table.full td { border-bottom: 1px solid var(--line); padding: 3p
 table.full th:first-child, table.full td:first-child { text-align: left; }
 table.full tr.hl td { background: rgba(67,176,241,.12); }
 @media (max-width: 760px) { table.full { font-size: 10px; } dialog.wide { padding: 10px; overflow-x: auto; } }
+.gdot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; border: 1px solid #000; margin-right: 5px; vertical-align: -1px; }
+.glist div { font-size: 11.5px; margin: 4px 0; }
+#s2Stops { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
+.s2card { margin-top: 6px; } .s2card p { margin: 4px 0; font-size: 12px; }
+table.ox { width: 100%; border-collapse: collapse; font-size: 10.5px; font-variant-numeric: tabular-nums; margin: 6px 0; }
+table.ox th, table.ox td { border-bottom: 1px solid var(--line); padding: 2px 2px; text-align: right; }
+table.ox td:first-child, table.ox th:first-child { text-align: left; color: var(--muted); }
+.thumbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 6px; }
+.thumbs img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 4px; display: block; background: #000; }
+table.r7 td, table.r7 th { font-size: 11px; } table.r7 tr.hl td { background: rgba(67,176,241,.12); }
+.r7wrap { overflow-x: auto; } table.r7 td, table.r7 th { font-size: 10.5px; padding: 2px 3px; }
