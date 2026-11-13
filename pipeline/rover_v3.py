@@ -51,7 +51,7 @@ PARAMS.update({"status": "locked (manager 2026-11-14, version 3)", "goal_rule": 
                "frontier_min_cells": 3, "cand_frontier_m": 20.0, "corridor_m": 15.0})
 READINGS = {
     "candidate_not_current_cell": "the rover's current cell is never a candidate (else it would 'reach' it at once, forever)",
-    "feasible_before_top_k": "the K = 30 coarse shortlist is taken among feasible candidates (feasibility uses only the coarse quantities)",
+    "feasible_before_top_k": "the K = 30 coarse shortlist is taken among feasible candidates; first-pass feasibility uses the coarse quantities E[s->q] (E[c] summed along the c' tree from s) and E[q->home] (E[c] home field); the chosen candidate is re-checked with E[c] summed along its traced outbound path, else the next by score (manager 12th update)",
     "return_for_gain": "the return path used for G(q) is planned on c' as it is at selection time (seen cells so far)",
     "outbound_lookahead": "outbound: the version-2 'cost x2 ahead' path replan is replaced by R5's 1.5x reselect; an impassable cell on the remaining path triggers a reselect at once",
     "score_home_term": "E[q->home] in score and feasibility = least E[c] cost home (same as the coarse value)",
@@ -193,16 +193,30 @@ class Selector:
         rr, cl = np.nonzero(feas)
         coarse = A[rr, cl] / np.maximum(tot[rr, cl], 1e-9)
         top = np.argsort(-coarse, kind="stable")[:P["K"]]
-        best = None
+        scored = []
         for i in top:
             q = (int(rr[i]), int(cl[i]))
             out = [tuple(int(v) for v in x) for x in ms.traceback(q)]
             back = [tuple(int(v) for v in x) for x in mh.traceback(q)][::-1]
             G = corridor_gain([out, back], bel.observed, res, P["corridor_m"])
-            sc = G / max(tot[q], 1e-9)
-            tol = 1.0 / max(tot[q], 1e-9)                          # "same score" = within 1 m2 of gain
-            if best is None or sc > best["score"] + tol or (abs(sc - best["score"]) <= tol and Es[q] < best["est"]):
-                best = {"goal": q, "path": out, "est": float(Es[q]), "score": float(sc), "gain_m2": G, "home_E": float(Eh[q])}
+            scored.append({"goal": q, "path": out, "est": float(Es[q]), "score": float(G / max(tot[q], 1e-9)), "gain_m2": G,
+                           "home_E": float(Eh[q]), "tot": float(tot[q])})
+        # order: score, ties (within 1 m2 of gain) -> smaller E[s->q]
+        order = []
+        for c in sorted(scored, key=lambda c: -c["score"]):
+            order.append(c)
+        best = None
+        rest = list(order)
+        while rest:
+            top_c = rest[0]
+            tie = [c for c in rest if abs(c["score"] - top_c["score"]) * top_c["tot"] <= 1.0]
+            c = min(tie, key=lambda c: c["est"])
+            rest.remove(c)
+            # manager 12th update (2): final feasibility on the traced outbound path's E[c] cost
+            e_path = path_cost(E, c["path"], res)
+            if spent + (e_path + c["home_E"]) * bel.margin(P) <= Bp:
+                best = c; best["est"] = e_path
+                break
         info = {"n_cand": int(cand.sum()), "n_feasible": int(feas.sum())}
         return best, info
 
