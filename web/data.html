@@ -10,15 +10,20 @@
 </head>
 <body>
 <header id="top">
-  <div class="brand"><span class="logo">&#9679;</span> Marswalk Recon <span class="muted">· Checkpoint 1: terrain maps &amp; real imagery</span></div>
-  <nav id="scenes" aria-label="Scenes"></nav>
-  <a class="btn" href="index.html">Astronaut map</a>
-  <a class="btn" href="recon.html">Step 1 · Scout rover recon</a>
-  <a class="btn active" href="data.html" aria-current="page">Map data</a>
-  <button id="aboutBtn" class="btn">About &amp; Limitations</button>
+  <a class="brand" href="index.html"><span class="logo">&#9679;</span> Marswalk Recon <span class="muted">· Jezero Crater</span></a>
+  <nav id="pages" aria-label="Pages">
+    <a class="btn" href="index.html">Astronaut map</a>
+    <a class="btn" href="recon.html">Step 1 · Scout rover recon</a>
+    <a class="btn active" href="data.html" aria-current="page">Map data</a>
+    <a class="btn demo" href="scratch/">Interactive demo</a>
+  </nav>
+  <div class="actions">
+    <button id="aboutBtn" class="btn">About<span class="long"> &amp; Limitations</span></button>
+  </div>
 </header>
 <main>
   <aside id="panel" aria-label="Layers">
+    <nav id="scenes" aria-label="Scenes"></nav>
     <section id="sceneInfo"></section>
     <section>
       <h3>Compare terrain resolution</h3>

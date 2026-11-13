@@ -1,7 +1,4 @@
-nav#pages { display: flex; gap: 6px; flex: 1; }
-nav#pages a { text-decoration: none; }
-#skelBanner { background: rgba(233,185,73,.14); border-bottom: 1px solid var(--warn); color: var(--warn); font-size: 12px; padding: 4px 14px; height: 26px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-main { height: calc(100% - 74px); }
+#skelBanner { background: rgba(233,185,73,.14); border-bottom: 1px solid var(--warn); color: var(--warn); font-size: 12px; padding: 4px 14px; flex: none; height: 26px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 h2.title { font-size: 16px; margin: 4px 0 6px; display: flex; gap: 8px; align-items: center; }
 p.lead { color: var(--muted); margin: 0 0 6px; }
 .ctrl .row { display: flex; gap: 6px; align-items: center; margin: 6px 0; }
