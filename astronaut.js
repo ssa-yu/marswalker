@@ -49,7 +49,7 @@ async function init() {
   $('#scrub').oninput = () => { stop(); setT(+$('#scrub').value / 1000 * cur().act_t.at(-1)); };
   $('#play').onclick = () => (S.playing ? stop() : play());
   $('#aboutBtn').onclick = () => { renderAbout(); $('#about').showModal(); };
-  $('#tableBtn').onclick = () => { renderTable(); $('#table').showModal(); };
+  $('#tableBtn').onclick = () => { renderTable(); renderRobust(); $('#table').showModal(); };
   for (const [id, lay] of [['showCls', 'cls'], ['showHaz', 'haz'], ['showSeen', 'seen'], ['showHi', 'hfull']])
     $('#' + id).onchange = () => S.map.setLayoutProperty(lay, 'visibility', $('#' + id).checked ? 'visible' : 'none');
   const tImg = await bitmap(CB + C.files.reveal_t);
@@ -119,7 +119,7 @@ function renderOverall() {
 <tr><td>Actual oxygen</td><td>${f1(A.actual_o2.mean)}</td><td><b>${f1(B.actual_o2.mean)}</b></td><td>${f1(R.actual_o2.mean)}</td></tr>
 <tr><td>Oxygen underestimated by</td><td>${f1(A.o2_error.mean)}</td><td><b>${f1(B.o2_error.mean)}</b></td><td>${f1(R.o2_error.mean)}</td></tr></tbody></table>
 <p class="hint">After ${S.k} loop${S.k > 1 ? 's' : ''} the rover's map recovers ${pc(sh.hazard_m)} of the hazard metres and ${pc(sh.actual_o2)} of the oxygen that perfect knowledge (reference bound) would save. ${pw ? `Of the ${pw.n} walks, ${pw.better} use less actual oxygen than route A, ${pw.worse} more, ${pw.same} the same.` : ''} Oxygen in nominal minutes. Details by distance: <a href="#" id="tblLink">full table</a>.</p>`;
-  $('#tblLink').onclick = (e) => { e.preventDefault(); renderTable(); $('#table').showModal(); };
+  $('#tblLink').onclick = (e) => { e.preventDefault(); renderTable(); renderRobust(); $('#table').showModal(); };
 }
 
 /* ---------------- map ---------------- */
@@ -257,7 +257,26 @@ ${st.map((k) => { const d = s[k], dv = d.diff_vs_A; return `<tr class="${k === `
 <p>${C.rows.length} test points (300 m grid around the habitat, ≥ 300 m away, passable on both maps). For each: walk habitat → point → habitat on the least-oxygen path of the map named in the first column, then walk that same path on the HiRISE reference terrain. Oxygen in nominal minutes; usable budget 384 (480 with a 20% reserve). Computed ${esc(C.computed_at)}; definitions fixed before the first run (see DATA_LOG). Sand classes are <i>heuristic, not yet reviewed</i>.</p>
 ${G.map((g) => `<h3>${g === 'all' ? 'All test points' : g + ' m from the habitat'} (n = ${C.summary[g].A ? C.summary[g].A.n : 0})</h3>${tbl(g)}`).join('')}
 ${pointwiseTables()}
+<div id="robust"></div>
 <p class="hint">Share of possible gain = (A − B) / (A − reference upper bound), on the means. A+ adds the large sand belts to the orbital map using the reference terrain (60 m blocks ≥ 50% sand): it is not real pre-departure knowledge and only brackets the result. The reference upper bound is what perfect knowledge would give; it is not a recon result.</p>`;
+}
+
+async function renderRobust() {
+  let R; try { R = await getJSON(CB + 'robustness.json'); } catch (e) { return; }
+  const pc = (v) => v == null ? '–' : Math.round(100 * v) + '%';
+  let h = '<h3>Robustness checks written before they were run <span class="badge derived">derived</span></h3>';
+  if (R.t6) {
+    const W = R.t6.windows;
+    h += `<h4>Other 2.4 km windows of the same HiRISE mosaic (same rules, one run each)</h4><table class="full"><thead><tr><th>Window</th><th>Test points</th><th>Rover saw</th><th>Actual O2: A / B@30 / bound</th><th>B@30 − A O2</th><th>Hazard m: A / B@30 / bound</th><th>B@30 − A hazard m</th><th>Share of possible gain (O2 / hazard m)</th></tr></thead><tbody>
+${Object.entries(W).map(([k, w]) => `<tr><td>(${k})${k === '0,0' ? ' main' : ''}</td><td>${w.n_targets}</td><td>${f1(w.observed_pct_after_30)}%</td><td>${f1(w.A.actual_o2_mean)} / ${f1(w['B@30'].actual_o2_mean)} / ${f1(w.REF.actual_o2_mean)}</td><td>${sg(w['B@30'].diff_vs_A.actual_o2.mean, f1)}</td><td>${f0(w.A.hazard_m_mean)} / ${f0(w['B@30'].hazard_m_mean)} / ${f0(w.REF.hazard_m_mean)}</td><td>${sg(w['B@30'].diff_vs_A.hazard_m.mean)}</td><td>${pc(w['B@30'].share.actual_o2)} / ${pc(w['B@30'].share.hazard_m)}</td></tr>`).join('')}</tbody></table>`;
+    const st = R.t6.stats, line = (k, n) => { const x = st[k]; return `${n}: ${x.n_negative} of ${x.n} windows lower than A; median ${sg(x.median, f1)}${x.median_ci95_bootstrap ? ` (bootstrap 95% interval ${sg(x.median_ci95_bootstrap[0], f1)} to ${sg(x.median_ci95_bootstrap[1], f1)})` : ''}; ${x.wilcoxon_exact_two_sided_p != null ? 'Wilcoxon p = ' + x.wilcoxon_exact_two_sided_p.toFixed(3) : 'no p-value (' + esc(x.p_not_reported_because) + ')'}.`; };
+    h += `<p class="hint">${line('main_hazard_m_all', 'Hazard metres, all windows')} ${line('main_hazard_m_excl_main', 'Without the main window')} ${line('secondary_actual_o2_all', 'Actual oxygen, all windows')} ${line('secondary_actual_o2_excl_main', 'Without the main window')}${Object.keys(R.t6.not_run || {}).length ? ' Not run: ' + Object.keys(R.t6.not_run).map((k) => `(${k})`).join(', ') + ' (HiRISE gap rule waiting for a decision).' : ''} Windows were chosen by a rule fixed after their HiRISE coverage was known and before any route number.</p>`;
+  }
+  if (R.t7) {
+    h += `<h4>Rover settings (main window; written after the locked run's 11.3% coverage was seen, before any route number; the locked setting stays the result)</h4><table class="full"><thead><tr><th>Rover setting</th><th>Seen after 1 / 5 / 10 / 20 / 30 loops</th><th>B@30: actual O2</th><th>B@30 − A O2</th><th>B@30: hazard m</th><th>B@30 − A hazard m</th><th>Share of possible gain (O2 / hazard m)</th><th>Still underestimated by</th></tr></thead><tbody>
+${Object.entries(R.t7).map(([k, t]) => { const b = t.summary.all['B@30']; return `<tr class="${k.startsWith('locked') ? 'hl' : ''}"><td>${esc(t.changed)}${k.startsWith('locked') ? ' (locked)' : ''}</td><td>${[1, 5, 10, 20, 30].map((i) => f1(100 * t.recon[i])).join(' / ')}%</td><td>${f1(b.actual_o2.mean)}</td><td>${sg(b.diff_vs_A.actual_o2.mean, f1)}</td><td>${f0(b.hazard_m.mean)}</td><td>${sg(b.diff_vs_A.hazard_m.mean)}</td><td>${pc(b.share_of_possible_improvement.actual_o2)} / ${pc(b.share_of_possible_improvement.hazard_m)}</td><td>${f1(b.o2_error.mean)}</td></tr>`; }).join('')}</tbody></table>`;
+  }
+  $('#robust').innerHTML = h;
 }
 
 function pointwiseTables() {
