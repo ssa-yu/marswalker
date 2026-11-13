@@ -1416,11 +1416,401 @@
      "A": 139.59675136204345,
      "B@30": 109.99201935614643
     }
+   },
+   "-4,0": {
+    "n_targets": 58,
+    "n_unreachable": 0,
+    "n_hazard_zones": 166,
+    "observed_pct_after_30": 11.7,
+    "A": {
+     "actual_o2_mean": 132.85465903139672,
+     "actual_o2_median": 128.11254190021674,
+     "hazard_m_mean": 226.80248031937515,
+     "hazard_m_median": 198.5807358037436,
+     "crossings_mean": 5.603448275862069,
+     "n_actual_within_budget": 58
+    },
+    "A+": {
+     "actual_o2_mean": 128.2467434937675,
+     "actual_o2_median": 126.81898521760317,
+     "hazard_m_mean": 170.89678051933325,
+     "hazard_m_median": 137.68124086713186,
+     "crossings_mean": 5.051724137931035,
+     "n_actual_within_budget": 58,
+     "diff_vs_A": {
+      "hazard_m": {
+       "mean": -55.905699800041916,
+       "median": 0.0
+      },
+      "actual_o2": {
+       "mean": -4.60791553762922,
+       "median": 0.0
+      },
+      "crossings": {
+       "mean": -0.5517241379310345,
+       "median": 0.0
+      }
+     },
+     "share": {
+      "actual_o2": 0.11636249266184938,
+      "hazard_m": 0.2539494052239945,
+      "crossings": 0.10158730158730161
+     }
+    },
+    "B@1": {
+     "actual_o2_mean": 129.40377460260123,
+     "actual_o2_median": 118.48379475477441,
+     "hazard_m_mean": 214.41963214335993,
+     "hazard_m_median": 160.82842712474618,
+     "crossings_mean": 4.879310344827586,
+     "n_actual_within_budget": 58,
+     "diff_vs_A": {
+      "hazard_m": {
+       "mean": -12.382848176015216,
+       "median": 0.0
+      },
+      "actual_o2": {
+       "mean": -3.450884428795515,
+       "median": -0.49164675298172433
+      },
+      "crossings": {
+       "mean": -0.7241379310344828,
+       "median": 0.0
+      }
+     },
+     "share": {
+      "actual_o2": 0.08714428698691057,
+      "hazard_m": 0.05624859255005216,
+      "crossings": 0.1333333333333334
+     }
+    },
+    "B@5": {
+     "actual_o2_mean": 126.73153779333929,
+     "actual_o2_median": 119.03401812106117,
+     "hazard_m_mean": 206.28331080522975,
+     "hazard_m_median": 161.3847763108502,
+     "crossings_mean": 4.4655172413793105,
+     "n_actual_within_budget": 58,
+     "diff_vs_A": {
+      "hazard_m": {
+       "mean": -20.519169514145375,
+       "median": 0.0
+      },
+      "actual_o2": {
+       "mean": -6.123121238057445,
+       "median": -2.3193757518555707
+      },
+      "crossings": {
+       "mean": -1.1379310344827587,
+       "median": 0.0
+      }
+     },
+     "share": {
+      "actual_o2": 0.1546255881455794,
+      "hazard_m": 0.09320750679170713,
+      "crossings": 0.20952380952380956
+     }
+    },
+    "B@10": {
+     "actual_o2_mean": 124.88722496838072,
+     "actual_o2_median": 114.86696011310968,
+     "hazard_m_mean": 220.74626047141658,
+     "hazard_m_median": 146.59797974644658,
+     "crossings_mean": 4.603448275862069,
+     "n_actual_within_budget": 58,
+     "diff_vs_A": {
+      "hazard_m": {
+       "mean": -6.056219847958571,
+       "median": 0.0
+      },
+      "actual_o2": {
+       "mean": -7.967434063016018,
+       "median": -6.037937659289957
+      },
+      "crossings": {
+       "mean": -1.0,
+       "median": 0.0
+      }
+     },
+     "share": {
+      "actual_o2": 0.2011995402520913,
+      "hazard_m": 0.027510136422506198,
+      "crossings": 0.1841269841269841
+     }
+    },
+    "B@20": {
+     "actual_o2_mean": 114.99051949557892,
+     "actual_o2_median": 109.6936579416282,
+     "hazard_m_mean": 151.35419208015077,
+     "hazard_m_median": 128.08326112068517,
+     "crossings_mean": 3.2586206896551726,
+     "n_actual_within_budget": 58,
+     "diff_vs_A": {
+      "hazard_m": {
+       "mean": -75.44828823922438,
+       "median": -38.6274169979697
+      },
+      "actual_o2": {
+       "mean": -17.864139535817802,
+       "median": -19.306819043732304
+      },
+      "crossings": {
+       "mean": -2.3448275862068964,
+       "median": -2.0
+      }
+     },
+     "share": {
+      "actual_o2": 0.4511184696576171,
+      "hazard_m": 0.34272083154399885,
+      "crossings": 0.43174603174603177
+     }
+    },
+    "B@30": {
+     "actual_o2_mean": 114.26176935584274,
+     "actual_o2_median": 109.04362417161789,
+     "hazard_m_mean": 150.04300633471487,
+     "hazard_m_median": 126.71067811865466,
+     "crossings_mean": 3.189655172413793,
+     "n_actual_within_budget": 58,
+     "diff_vs_A": {
+      "hazard_m": {
+       "mean": -76.75947398466025,
+       "median": -30.84062043356613
+      },
+      "actual_o2": {
+       "mean": -18.592889675553987,
+       "median": -19.306819043732304
+      },
+      "crossings": {
+       "mean": -2.413793103448276,
+       "median": -2.0
+      }
+     },
+     "share": {
+      "actual_o2": 0.4695214074056909,
+      "hazard_m": 0.34867684034779844,
+      "crossings": 0.4444444444444445
+     }
+    },
+    "REF": {
+     "actual_o2_mean": 93.25499566718987,
+     "actual_o2_median": 87.22761377299686,
+     "hazard_m_mean": 6.657448868206281,
+     "hazard_m_median": 0.0,
+     "crossings_mean": 0.1724137931034483,
+     "n_actual_within_budget": 58,
+     "diff_vs_A": {
+      "hazard_m": {
+       "mean": -220.14503145116885,
+       "median": -194.0365799264595
+      },
+      "actual_o2": {
+       "mean": -39.59966336420688,
+       "median": -39.542063181753306
+      },
+      "crossings": {
+       "mean": -5.431034482758621,
+       "median": -4.5
+      }
+     }
+    },
+    "bands": {
+     "300-600": {
+      "n": 8,
+      "A": {
+       "hazard_m_mean": 4.0,
+       "actual_o2_mean": 37.76188957842066,
+       "diff_vs_A": null
+      },
+      "B@30": {
+       "hazard_m_mean": 0.0,
+       "actual_o2_mean": 31.375214044478454,
+       "diff_vs_A": {
+        "hazard_m": -4.0,
+        "actual_o2": -6.3866755339421974
+       }
+      },
+      "REF": {
+       "hazard_m_mean": 0.0,
+       "actual_o2_mean": 31.029206035251747,
+       "diff_vs_A": {
+        "hazard_m": -4.0,
+        "actual_o2": -6.732683543168907
+       }
+      }
+     },
+     "600-1200": {
+      "n": 30,
+      "A": {
+       "hazard_m_mean": 211.06683006523724,
+       "actual_o2_mean": 111.85131063642969,
+       "diff_vs_A": null
+      },
+      "B@30": {
+       "hazard_m_mean": 132.3698315605078,
+       "actual_o2_mean": 90.92819531887014,
+       "diff_vs_A": {
+        "hazard_m": -78.69699850472948,
+        "actual_o2": -20.923115317559578
+       }
+      },
+      "REF": {
+       "hazard_m_mean": 6.971236166328253,
+       "actual_o2_mean": 74.38618488118509,
+       "diff_vs_A": {
+        "hazard_m": -204.095593898909,
+        "actual_o2": -37.4651257552446
+       }
+      }
+     },
+     ">1200": {
+      "n": 20,
+      "A": {
+       "hazard_m_mean": 339.52694782833197,
+       "actual_o2_mean": 202.39678940503774,
+       "diff_vs_A": null
+      },
+      "B@30": {
+       "hazard_m_mean": 236.56997102991153,
+       "actual_o2_mean": 182.4167525358474,
+       "diff_vs_A": {
+        "hazard_m": -102.95697679842048,
+        "actual_o2": -19.980036869190297
+       }
+      },
+      "REF": {
+       "hazard_m_mean": 8.849747468305829,
+       "actual_o2_mean": 146.4485276989722,
+       "diff_vs_A": {
+        "hazard_m": -330.6772003600262,
+        "actual_o2": -55.948261706065466
+       }
+      }
+     }
+    },
+    "pred_o2_mean": {
+     "A": 87.44881819208244,
+     "B@30": 86.92759669071187
+    },
+    "o2_error_mean": {
+     "A": 45.40584083931427,
+     "B@30": 27.33417266513088
+    }
    }
   },
-  "not_run": {
-   "-4,0": "no comparison (see DATA_LOG)"
-  },
+  "not_run": {},
+  "stats": {
+   "main_hazard_m_all": {
+    "windows": [
+     "0,0",
+     "-1,0",
+     "-1,1",
+     "-2,1",
+     "-3,1",
+     "-4,0"
+    ],
+    "n": 6,
+    "values": [
+     -250.81,
+     -201.99,
+     -64.85,
+     -184.73,
+     -197.78,
+     -76.76
+    ],
+    "n_negative": 6,
+    "n_positive": 0,
+    "median": -191.25,
+    "median_ci95_bootstrap": [
+     -226.4,
+     -70.8
+    ],
+    "wilcoxon_exact_two_sided_p": 0.03125,
+    "p_note": "with 6 windows all of one sign this is the smallest p the design can give; it equals the sign test and says nothing about the size of the differences (manager 2026-11-14)"
+   },
+   "main_hazard_m_excl_main": {
+    "windows": [
+     "-1,0",
+     "-1,1",
+     "-2,1",
+     "-3,1",
+     "-4,0"
+    ],
+    "n": 5,
+    "values": [
+     -201.99,
+     -64.85,
+     -184.73,
+     -197.78,
+     -76.76
+    ],
+    "n_negative": 5,
+    "n_positive": 0,
+    "median": -184.73,
+    "median_ci95_bootstrap": [
+     -201.99,
+     -64.85
+    ],
+    "wilcoxon_exact_two_sided_p": null,
+    "p_not_reported_because": "5 windows (< 6)"
+   },
+   "secondary_actual_o2_all": {
+    "windows": [
+     "0,0",
+     "-1,0",
+     "-1,1",
+     "-2,1",
+     "-3,1",
+     "-4,0"
+    ],
+    "n": 6,
+    "values": [
+     -28.16,
+     -22.61,
+     -9.63,
+     -24.8,
+     -21.28,
+     -18.59
+    ],
+    "n_negative": 6,
+    "n_positive": 0,
+    "median": -21.95,
+    "median_ci95_bootstrap": [
+     -26.48,
+     -14.11
+    ],
+    "wilcoxon_exact_two_sided_p": 0.03125,
+    "p_note": "with 6 windows all of one sign this is the smallest p the design can give; it equals the sign test and says nothing about the size of the differences (manager 2026-11-14)"
+   },
+   "secondary_actual_o2_excl_main": {
+    "windows": [
+     "-1,0",
+     "-1,1",
+     "-2,1",
+     "-3,1",
+     "-4,0"
+    ],
+    "n": 5,
+    "values": [
+     -22.61,
+     -9.63,
+     -24.8,
+     -21.28,
+     -18.59
+    ],
+    "n_negative": 5,
+    "n_positive": 0,
+    "median": -21.28,
+    "median_ci95_bootstrap": [
+     -24.8,
+     -9.63
+    ],
+    "wilcoxon_exact_two_sided_p": null,
+    "p_not_reported_because": "5 windows (< 6)"
+   }
+  }
+ },
+ "t6_5windows": {
   "stats": {
    "main_hazard_m_all": {
     "windows": [
@@ -1522,7 +1912,8 @@
     "wilcoxon_exact_two_sided_p": null,
     "p_not_reported_because": "4 windows (< 6)"
    }
-  }
+  },
+  "note": "statistics over the first five windows, before (-4,0) ran (kept, not replaced)"
  },
  "t7": {
   "locked (main result)": {
