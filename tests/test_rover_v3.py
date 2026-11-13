@@ -108,3 +108,14 @@ def test_cost_jump_triggers_reselect():
     reasons = [e.get("reason") for L in loops for e in L["events"] if e["type"] == "replan"]
     assert "cost_x1.5" in reasons
     assert all(L["cost_total"] <= P["loop_budget"] for L in loops)
+
+
+def test_bv3_expected_map_uses_class_p_and_reference_where_seen():
+    from pipeline.astro_plan import PARAMS as AP, per_metre
+    from pipeline.compare_v3 import expected_maps_v3
+    tm, om = per_metre(AP)
+    prior = np.array([[0, 1, 3], [0, 1, 0]], np.uint8); ref = np.array([[2, 2, 3], [0, 0, 1]], np.uint8)
+    obs = np.array([[False, False, False], [True, True, False]])
+    T, O, cls_b = expected_maps_v3(prior, ref, obs, 0.3, 0.6)
+    assert abs(O[0, 0] - (0.7 * om[0] + 0.3 * om[2])) < 1e-12 and abs(O[0, 1] - (0.4 * om[1] + 0.6 * om[2])) < 1e-12
+    assert np.isinf(O[0, 2]) and O[1, 0] == om[0] and O[1, 1] == om[0] and abs(O[1, 2] - (0.7 * om[0] + 0.3 * om[2])) < 1e-12
