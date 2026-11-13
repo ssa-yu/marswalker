@@ -88,6 +88,10 @@ def run(scene: str):
                          "post_landing": al.get("post_landing"),
                          "mola_pedr": read_json(sc.qa / "R1_mola_pedr.json") if (sc.qa / "R1_mola_pedr.json").exists() else None},
            "checks": qa.get("summary"), "ground_data": sc.cfg.get("ground_data")}
+    # SIM 3464 geology (written by hand into scene.json on 2026-11-14 from spikes/sim3464_extract.py; kept if present)
+    old = sc.web / "scene.json"
+    if old.exists() and "geology" in read_json(old):
+        scene["geology"] = read_json(old)["geology"]
 
     # rover data (Jezero)
     if (sc.work / "photos.json").exists():

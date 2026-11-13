@@ -97,6 +97,16 @@ function addVectors(map, sc, base) {
       renderPanel(sc);
     });
   }
+  if (sc.geology) {
+    const g = sc.geology, match = ['match', ['get', 'symbol']];
+    g.units.forEach((u) => match.push(u[0], u[2])); match.push('#888');
+    map.addSource('geology', { type: 'geojson', data: abs(base + g.url) });
+    map.addLayer({ id: 'geology-fill', type: 'fill', source: 'geology', layout: { visibility: 'none' }, paint: { 'fill-color': match, 'fill-opacity': 0.35 } });
+    map.addLayer({ id: 'geology-line', type: 'line', source: 'geology', layout: { visibility: 'none' }, paint: { 'line-color': '#000', 'line-width': 0.8, 'line-opacity': 0.7 } });
+    const gp = new maplibregl.Popup({ closeButton: false, offset: 6 });
+    map.on('mousemove', 'geology-fill', (e) => { const p = e.features[0].properties; gp.setLngLat(e.lngLat).setHTML(`<b>${esc(p.symbol)}</b> ${esc(p.name)}<br><span class="muted">USGS SIM 3464</span>`).addTo(map); });
+    map.on('mouseleave', 'geology-fill', () => gp.remove());
+  }
   const b = sc.base;
   map.addSource('base', { type: 'geojson', data: { type: 'Feature', geometry: { type: 'Point', coordinates: [b.lon, b.lat] }, properties: {} } });
   map.addLayer({ id: 'base', type: 'circle', source: 'base', paint: { 'circle-radius': 7, 'circle-color': '#e8743b', 'circle-stroke-color': '#fff', 'circle-stroke-width': 2 } });
@@ -111,6 +121,7 @@ const VECTORS = [
   { id: 'traverse', title: 'Perseverance traverse', label: 'measured', layers: ['traverse', 'traverse-casing'], rover: 'traverse' },
   { id: 'waypoints', title: 'Perseverance waypoints', label: 'measured', layers: ['waypoints'], rover: 'waypoints' },
   { id: 'photos', title: 'Ground photos (click a yellow dot)', label: 'measured', layers: ['photos'], rover: 'photos' },
+  { id: 'geology', title: 'Geologic units (USGS SIM 3464)', label: 'measured', layers: ['geology-fill', 'geology-line'], geo: true, off: true },
 ];
 
 function legendHTML(lg) {
@@ -126,13 +137,13 @@ function renderPanel(sc) {
   sc.layers.slice().reverse().forEach((L) => (groups[L.group] = groups[L.group] || []).push(L));
   let h = '';
   const order = ['Rover ground data', 'Reference terrain (HiRISE, orbital)', 'Prior terrain (CTX, orbital)', 'Regional context'];
-  const vec = VECTORS.filter((v) => !v.rover || (sc.rover && sc.rover[v.rover]));
+  const vec = VECTORS.filter((v) => (!v.rover || (sc.rover && sc.rover[v.rover])) && (!v.geo || sc.geology));
   h += '<h3>Map annotations &amp; rover data</h3>';
   vec.forEach((v) => {
     const r = v.rover && sc.rover[v.rover];
     const extra = v.id === 'photos' && r ? ` — ${r.n_images} photos at ${r.n_waypoints}/${r.n_waypoints_aoi} AOI waypoints` : '';
-    const src = r ? `${esc(r.source.title)} · ${esc(r.source.mission)}` : v.id === 'base' ? esc(sc.base.note) : esc(sc.aoi.rule || '');
-    h += `<div class="layer"><div class="row"><input type="checkbox" id="v_${v.id}" data-vec="${v.id}" checked>` +
+    const src = r ? `${esc(r.source.title)} · ${esc(r.source.mission)}` : v.id === 'base' ? esc(sc.base.note) : v.geo ? `${esc(sc.geology.source.title)} · <i>challenge Resources item</i><br>${esc(sc.geology.note)}<div class="legend line">${sc.geology.units.map((u) => `<span style="padding:0;flex:none;margin-right:8px" title="${esc(u[1])}"><i style="position:static;display:inline-block;width:10px;height:9px;margin-right:3px;background:${u[2]}"></i>${esc(u[0])}</span>`).join('')}</div>` : esc(sc.aoi.rule || '');
+    h += `<div class="layer"><div class="row"><input type="checkbox" id="v_${v.id}" data-vec="${v.id}" ${v.off ? '' : 'checked'}>` +
       `<label class="name" for="v_${v.id}">${esc(v.title)}${extra}</label><span class="badge ${v.label}">${v.label}</span></div>` +
       `<div class="src">${src}</div>` + (v.id === 'photos' && r ? `<div class="src">Placed by exact site/drive match with a waypoint. Viewing direction not drawn (camera azimuth not verified).</div>` : '') + '</div>';
   });

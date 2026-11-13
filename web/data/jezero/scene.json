@@ -658,5 +658,52 @@
   "photos_bytes": 33309206,
   "tiles_bytes": 23845882,
   "total_bytes": 61659799
+ },
+ "geology": {
+  "url": "sim3464_units.geojson",
+  "units": [
+   [
+    "Njf",
+    "Jezero floor unit",
+    "#3987e5"
+   ],
+   [
+    "Nle",
+    "Lower etched unit",
+    "#d95926"
+   ],
+   [
+    "NHjf2",
+    "Jezero fan 2 unit",
+    "#199e70"
+   ],
+   [
+    "Nue",
+    "Upper etched unit",
+    "#c98500"
+   ],
+   [
+    "Aeb",
+    "Eolian bedform unit",
+    "#d55181"
+   ],
+   [
+    "cr",
+    "Crater rim unit",
+    "#008300"
+   ],
+   [
+    "su",
+    "Smooth unit, undivided",
+    "#9085e9"
+   ]
+  ],
+  "source": {
+   "title": "USGS SIM 3464 Geologic map of Jezero crater and the Nili Planum region (GeoUnits_v1)",
+   "mission": "USGS-NASA Planetary Geologic Mapping",
+   "url": "https://pubs.usgs.gov/sim/3464/",
+   "in_resources": true
+  },
+  "note": "Clipped to the 12 km context window and simplified (~3 m). Not registered to HiRISE: a 100-200 m offset against CTX was noted earlier and is not corrected."
  }
 }

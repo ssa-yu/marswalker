@@ -19,10 +19,16 @@ Label: measured = instrument data as published; derived = computed by us from me
 | Perseverance traverse (M20_traverse.json) | Mars 2020, NASA JPL MMGIS | https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_traverse.json | Traverse layer; C2 check | measured | no | in use |
 | Perseverance Raw Images (Navcam, Front Hazcam, Mastcam-Z left) | Mars 2020, NASA/JPL-Caltech (Mastcam-Z: ASU) | https://mars.nasa.gov/mars2020/multimedia/raw-images/ (JSON API `https://mars.nasa.gov/rss/api/?feed=raw_images&category=mars2020`) | Ground photos stored locally, placed on waypoints by site/drive | measured | yes | in use |
 | Habitat (base) location | — | — | Local grid origin (Octavia E. Butler Landing) | assumed | — | in use |
-| USGS SIM 3464 Jezero geologic map | USGS-NASA Planetary Geologic Mapping | https://pubs.usgs.gov/sim/3464/sim3464_database.zip | Geologic units (later step) | measured | yes | planned |
+| USGS SIM 3464 Jezero geologic map | USGS-NASA Planetary Geologic Mapping | https://pubs.usgs.gov/sim/3464/sim3464_database.zip | Map layer (GeoUnits_v1, 12 km context window; read remotely via /vsizip, 216 kB GeoJSON); Q1 unit at SuperCam sites | measured | yes | in use (layer, not registered to HiRISE) |
 | SWIM ice-consistency maps | PSI/JPL (NASA) | https://swim.psi.edu/ | Regional layer, Arcadia | measured (consistency, not detection) | no | paused (Arcadia paused 2026-11-14) |
 | HiRISE DTM 061075_2195 + CTX K20_061141/061075 (Arcadia) | MRO HiRISE / CTX; USGS ARD | see `team/tech/official-sources.md` | Arcadia scene | measured | no | paused: CTX DTM + ortho downloaded; HiRISE DTM download stopped; X3 not re-run |
 | HiRISE DTM 060706_2195 + CTX (Arcadia, second region) | MRO HiRISE / CTX; USGS ARD | see `team/tech/official-sources.md` | Arcadia second region | measured | no | paused (data from feasibility spike kept in `data_raw/arcadia_starship_060706/`) |
+| MOLA PEDR laser shots (ODE GDS molapedr query, 1,608 shots in 18.31–18.67°N, 77.22–77.58°E) | MGS MOLA; PDS Geosciences Node ODE | https://oderest.rsl.wustl.edu/livegds/?query=molapedr&results=v&minlat=18.31&maxlat=18.67&westernlon=77.22&easternlon=77.58 | R1 supplementary elevation check | measured | no | in use (QA only) |
+| HiRISE DTM mosaic 1 m, full file (same product as above, 1.84 GB, S3 mirror) | MRO HiRISE; USGS Astrogeology | https://asc-pds-services.s3.us-west-2.amazonaws.com/mosaic/mars2020_trn/HiRISE/JEZ_hirise_soc_006_DTM_MOLAtopography_DeltaGeoid_1m_Eqc_latTs0_lon0_blend40.tif | PEDR check over the whole mosaic; multi-window coverage | measured | no | downloaded 2026-11-14 (357 s) |
+| SuperCam LIBS major oxides (supercam_libs_moc.csv) + Raman table | Mars 2020 SuperCam; PDS Geosciences | https://pds-geosciences.wustl.edu/m2020/urn-nasa-pds-mars2020_supercam/data_derived_spectra/ | Step-2 verification Q1/Q4/Q10 only (no product use until Shan picks option A/C/D) | measured | no | verification only |
+| CRISM MTRDR summary parameters (4 products: frt00005c5e, frt0001fb74, hrl000040ff, frt000047a3; _su cubes, 0.6 GB) | MRO CRISM; PDS Geosciences | https://pds-geosciences.wustl.edu/mro/mro-m-crism-5-rdr-mptargeted-v1/mrocr_4001/mtrdr/ | Step-2 verification Q3 only | measured (parameters derived by the CRISM team) | no | verification only |
+| Mars rock samples list (30 samples) | NASA Science | https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples/ | Q2 sample locations (test set only) | measured | no | verification only |
+| Deahn et al. 2026 crater-rim map (crater_rim_mapping_v4.gdb) | Mars 2020 team; Zenodo 10.5281/zenodo.20976631 | https://doi.org/10.5281/zenodo.20976631 | Q9 rim window facts only | measured (expert mapping) | no | verification only (rim scene waits for Shan) |
 | AI4MARS | NASA JPL, Zenodo | https://zenodo.org/records/15995036 | Terrain classes on rover photos (later step) | measured labels | no | planned |
 | Curiosity's Proposed Path up Mount Sharp | NASA | https://science.nasa.gov/resource/curiositys-proposed-path-up-mount-sharp/ | Design reference for route maps | — | yes | reference only |
 | NASA Worldview | NASA | https://worldview.earthdata.nasa.gov/ | Design reference for layer list | — | yes | reference only |
@@ -60,3 +66,63 @@ Downloads (AOI windows only; network to AWS us-west-2 ~120–300 KB/s): HiRISE o
 X3 is reported as failing at Jezero (items 3–4); thresholds not relaxed. Decision for manager.
 
 Web output `web/data/jezero/`: 61.7 MB total (ortho tiles 10.6 MB / 1435 files, post-landing tiles 13.2 MB / 1435, photos 33.3 MB, overlays 2.8 MB). Headless Chrome: first map idle 0.43 s on localhost; offline run made 0 external requests.
+
+
+### 2026-11-14 round 4 (R1–R3, tech-lead)
+
+#### R1 MOLA: self-check and PEDR supplementary check (original X3-3/4 "fail" stays)
+
+The original result above is unchanged: X3-3 HiRISE − MOLA 463 m −11.0 ± 10.7 m **fail**; X3-4 CTX − MOLA std 14.3 m **fail**. No bug was found in our code, so items 3–4 were not re-run.
+
+(a) Self-check (`spikes/mola_selfcheck.py` → `qa/jezero/R1_mola_selfcheck.json`)
+
+| Check | Result |
+|---|---|
+| S1 our strip-window reader vs GDAL reading the same remote window | identical values (max diff 0 m), identical georeference |
+| S2 mosaic header | AREA_OR_POINT=Area; pixel 463.0935 m (implies R 3,396,263 m, CRS says 3,396,190 m); origin −180.0039°E / 90.0019°N (half a cell beyond the edge). If the data sit on an exact 1/128° grid this displaces Jezero by ~94 m E, 24 m N — too small to explain the misfit |
+| Vertical datum | HiRISE/CTX TRN metadata: "elevation values ... refer to the Mars 2020 IAU sphere, R 3,396,190 m", but the values (≈ −2,600 m) match areoid-referenced MOLA topography (sphere heights here would be ≈ −4,270 m); "MOLAtopography_DeltaGeoid" is not explained in the metadata (not verified further). CTX was aligned to the HRSC DTM (+183.3 m vertical), HiRISE to CTX (median 0.4 m). Same datum as MOLA in practice → not the cause |
+| S3 MOLA PEDR shots vs the MOLA 463 m mosaic itself (MOLA vs MOLA, no HiRISE/CTX involved) | 1,608 shots: mosaic − shots +8.7 ± 28.7 m at zero offset; best agreement when the mosaic is moved (−0.75, −0.5) cells = −329 m E, +232 m N → −0.1 ± 13.1 m. Same direction and size as the earlier diagnostic. The gridded mosaic disagrees with its own source shots here; our sampling is not the cause |
+| S4 same code at Arcadia 060706 | PEDR-vs-mosaic (shots from the USGS ARD file, radius): flat terrain, std 61.0 → 60.0 m: inconclusive. CTX-vs-mosaic: best offset −180 m E, +695 m N but that CTX product carries its own 506 m shift: inconclusive |
+
+(b) PEDR supplementary check, spec locked in direction.md before running (`pipeline/mola_pedr.py` → `qa/jezero/R1_mola_pedr.{json,png,_shots.csv}`): shots inside the HiRISE mosaic where every DTM cell in the 84 m disc is valid (rule written before the run); same shots for CTX (X3-1 shift and −1.03 m applied); no horizontal shift fitted.
+
+| | n | DTM − PEDR | Threshold | Verdict |
+|---|---|---|---|---|
+| HiRISE (D1) | 1,067 | −2.58 ± 7.38 m (median −1.63, max 52.8) | \|mean\| ≤ 10, std ≤ 10 | pass |
+| CTX shifted (D3) | 1,067 | −3.34 ± 7.19 m | std ≤ 10 | pass |
+
+Reported next to the original fail, not instead of it. Visible pattern: west part of the mosaic negative (−10 to −20 m), east part positive (+5 to +10 m): a regional tilt between the DTMs and MOLA, not examined further.
+
+Side observation (Q3): the CRISM MTRDR products register to HiRISE only after shifts of −171…−320 m E, +188…+261 m N — the same direction as the MOLA mosaic offset. Cause not verified.
+
+#### R2 Step 1 scout-rover recon simulation (`pipeline/rover_sim.py`, `pipeline/export_recon.py`, `web/recon.html`) — simulated, review pending
+
+Run 2026-11-14 with the R3 proposals below, 30 loops, 413 s. No route A/B comparison was computed.
+
+| Item | Value |
+|---|---|
+| Loops / distance | 30 loops, 79.9 km driven |
+| Study area observed (reference revealed) | 1.3 % after loop 1, 10.8 % after 10, 18.6 % after 20, 23.7 % after 30 |
+| Class agreement belief vs reference | 76.4 % before departure → 82.6 % after 30 loops |
+| Goals reached | 17 of 30 (13 turned back on the soft rule) |
+| Return events | 13 turn-back, 18 return switched to cheapest route, 6 reserve-rule returns |
+| Replans | 4,817 (most are "cost ×2 ahead": prior firm, reference rough/sand) |
+| Acceptance (MVP_PLAN P6, `tests/test_recon.py`) | every loop starts/ends at base: pass; max loop energy 3,987 / 4,000: pass; never on impassable reference cells: pass; never on a cell before it was observed: pass; median return-on-outbound overlap 13 % (< 30 %): pass |
+
+Deviations from MVP_PLAN P6 (made before any comparison number existed): goal score = unobserved area within 150 m (+0.25 × within 450 m) among goals at 25–45 % of the planning budget (MVP score picked a goal 20 m from base every loop); a 25 % energy reserve with a hard rule "always keep enough energy to get home over already-seen terrain" (guarantees the budget); learned margin = paid / prior-predicted cost (stayed at the 1.15 floor in this run). Web: CTX basemap dimmed; HiRISE drawn only where revealed (browser composites reveal_t.png); "View all data" shows the full HiRISE. Output size 2.8 MB.
+
+#### R3 parameter proposals (status: proposed, waiting for manager to lock; none tuned on route comparisons)
+
+| Parameter | Proposed value | Basis | Label | Human check |
+|---|---|---|---|---|
+| Slope baseline | 6 m (central difference ±3 m on the 1 m HiRISE DTM; max to 2 m) | ~2× the effective resolution of HiRISE DTMs (≈3 m for 1 m posts; Kirk et al. 2008 — page not re-verified); 10 m in the sensitivity run | assumed | — |
+| Prior slope | CTX 20 m Horn (40 m baseline), bilinear to 2 m | only scale the product supports | derived | — |
+| Terrain classes | rough ≥ 8° or roughness ≥ P85 (0.059 m); sand = ripple index ≥ P90 (0.266) and slope < 15°; blocked ≥ 25° (astronaut), rover-blocked ≥ 20°; 3×3 majority | MVP_PLAN 5.4 values (from the team's earlier prototype; original source not found) | assumed | `qa/jezero/R3_terrain_classes.png` |
+| Resulting areas (AOI) | reference: firm 75.5 %, rough 15.3 %, sand 8.9 %, blocked 0.4 %; prior: firm 97.9 %, rough 1.9 %, blocked 0.2 % | — | derived | — |
+| Sand (ripples) | needs a person: in `qa/jezero/R3_ripple_check.png` the sand outlines follow ripple crests, and two "firm" crops (x 9,y −747; x −1199,y 261) lie inside ripple fields between crests | tech-lead's own look, not a review | heuristic, not yet reviewed | **Shan / teammate** |
+| Hazard zone (for the A/B table, not computed) | 8-connected component of reference cells in sand or blocked, area ≥ 400 m² (100 cells), and ≥ 80 % of its cells are firm or rough on the prior | MVP_PLAN wording; area chosen so a single ripple crest does not count | assumed | after classes are reviewed |
+| Comparison targets (independent of step 2) | every point of a 300 m lattice aligned to the base inside the AOI, ≥ 300 m from the base, not blocked on prior or reference; each base→target→base is one test route; report the distribution | rule fixed before any route exists | assumed | — |
+| Sensing radius | 15 m | MVP_PLAN; Navcam/Hazcam terrain range not verified | assumed | — |
+| Rover loop budget | 4,000 energy units (1 unit = 1 m firm; rough 2.5, sand 6), 75 % planning / 25 % reserve, home margin ≥ 1.15, revisit penalty ×2.5 | assumed (no rover power model) | assumed | — |
+| Astronaut budget | MVP_PLAN 5.6 unchanged: 2.5 km/h, O2 480 nominal min, 20 % reserve, factors firm/rough/sand speed 1/0.6/0.35, effort 1/1.5/2.1 | team prototype; Apollo 15 20 % reserve (not re-verified) | assumed | teammates: sources |
+| Unlock radius (link rule (i), only if Shan picks it) | 15 m = sensing radius | SuperCam LIBS distance in the table: median 3.1 m, p90 5.2 m, max 6.5 m; location precision = rover waypoint | assumed | — |
