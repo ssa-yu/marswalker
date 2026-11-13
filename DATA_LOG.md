@@ -369,3 +369,35 @@ Code `pipeline/multiwindow_ab.py` (stages terrain / recon / compare / table), te
 #### T7 rover sensitivity — settings, written here BEFORE the runs (2026-11-14)
 
 Code `pipeline/rover_sensitivity.py`. Settings (direction.md 嚴謹度 4; decided after the locked run's coverage 11.3 % was known, before any A vs B number; each run once, listed next to the locked result, never replacing it): `budget_8000` (loop budget 8,000, sand ×6), `budget_16000` (16,000, sand ×6), `sand_x3` (4,000, sand ×3). Everything else = `rover_sim.PARAMS` (rule v2, 75 % planning + 25 % reserve, 15 m, 30 loops, rover blocked ≥ 20°, firm 1 / rough 2.5), main AOI terrain (frozen hashes above). Comparison `compare_ab.compare` unchanged; A, A+, REF do not depend on the rover and are checked equal to the frozen T2 file. Outputs `data_work/jezero/sensitivity/<setting>/`; the main recon and comparison files are not touched. Reported: coverage after loops 1/5/10/20/30, by direction and distance, and the A vs B table.
+
+### 2026-11-14 round 7 (U1–U4, T6–T7 continued, tech-lead)
+
+#### U1 wording (no number changed)
+README step 3 now says the route is *planned* to keep enough oxygen and the page shows whether it really does; results written in the order of direction.md 主訊息 (underestimate 3.8× → recon sees 11.3 % and recovers about a quarter, near n = 8 → still underestimates by 108, loops 20–30 no gain, partial knowledge sometimes worse and why). PROJECT_PAGE summary rewritten the same way; `cheap` removed; "no server or network" → "no backend: any static file server". One oxygen unit everywhere: "nominal minutes" (short "nominal min"; time stays "min"). Home page: crossings row says they do not fall steadily with loops; budget-fit rows say they are not evidence for either route. Limitations (README and About): the three T2 definitions set by the implementer and ratified by manager after the numbers (process violation), dwell note, 63 points not independent, one AOI / one recon run, origin of the 156 hazard zones. The rover's "always keeps enough energy" (recon page) reworded to the hard rule + test.
+
+#### U2 per-point summary of the frozen T2 numbers (`spikes/u2_pointwise.py`; reads `compare_ab.json` only, compare_ab not run)
+Describes the spread of the 63 test points; **not a significance test** (shared walk out of the habitat, one recon, one AOI); added after the numbers were seen; no number changed. Rules in the script header (better / worse / same on the stored values; for the O2 error better = smaller absolute error; 10,000 resamples of the points, seed 20261114, 95 % percentile interval of the mean). Output `qa/jezero/U2_pointwise_summary.json` (all states × 4 quantities × all points and 3 bands), web copy `web/data/jezero/compare/pointwise.json` (full-table dialog section "Point by point", home-page sentence).
+
+| B@30 − A, all 63 | better / worse / same | mean [95 % resampling interval] | median (q1, q3; min, max) |
+|---|---|---|---|
+| actual O2 | 56 / 6 / 1 | −28.16 [−36.37, −20.48] | −18.98 (−36.70, −7.73; −104.85, +34.76) |
+| hazard m | 52 / 6 / 5 | −250.8 [−322.0, −184.9] | −167.1 |
+| O2 error (abs) | 57 / 5 / 1 | −35.61 [−43.91, −27.53] | −27.14 |
+| crossings | 39 / 14 / 10 | −1.56 [−2.57, −0.52] | −2.0 |
+
+Against manager's check (O2 56/6/1, mean −28.2 (−36.1 to −20.4); metres 52/6/5, −251 (−320 to −184)): counts and means identical; the interval ends differ by ≤ 2 (different resampling draws).
+
+#### U3 home-page shortcuts
+Three buttons under the test-point selector (rule shown beside them): median walk = the point whose B@30 − A actual O2 equals the median of the 63 differences (T51, (−300, −600), −19.0); most improved (T4, (−300, 1200), −104.9); most worsened (T14, (300, 900), +34.8). Default point (600, 0) unchanged. Screenshots `qa/screenshots/U3_*.png` (`tools/screenshot_u3.py`, 0 console errors).
+
+#### U4 multi-stop walk with dwell — code and DRAFT definitions for round 7 (draft, not run)
+Code `pipeline/multistop.py` (reuses `astro_plan.py` unchanged), tests `tests/test_multistop.py` (synthetic only, 5 pass). **No real-terrain number has been computed; waiting for manager to confirm the definitions below.**
+
+Draft definitions (round 7 = "go to the places step 2 selects, several per walk"; designed after seeing round 6; round 6 stays the pre-registered main comparison):
+1. Unchanged from round 6: terrain classes (sand v2, manager lock), astronaut walk model (2.5 km/h; speed 1/0.6/0.35; O2 1/1.5/2.1; ≥ 25° blocked; 480 × 0.8 = 384 usable), rover knowledge of the T1 rerun, hazard zones and every round-6 quantity definition (incl. the three ratified points).
+2. Targets: the output of step 2 (not decided; Shan). A and B (and A+, REF) plan to the **same target set**. Draft target set size: all step-2 targets in one walk if they fit, else the planner drops some (see 3). No targets exist yet, so nothing can be run.
+3. Order rule (same as the step-3 skeleton): visit the most targets, then the least planned O2, subject to "after the dwell at each target, planned O2 used + planned O2 home ≤ usable"; brute force over orders for ≤ 7 targets, greedy nearest-feasible beyond. Each knowledge state chooses its own order and subset (so A and B may visit different subsets — **question for manager**: alternatively force B to use A's order).
+4. Dwell: 18 minutes per visited target, charged as 18 nominal minutes of O2 (rate = walking on firm ground) — **to confirm**: time and O2, and whether the O2 rate at rest should differ (no source).
+5. Evaluation on the reference: the planned tour (same cells, same order, nothing replanned) walked on the reference classes (blocked charged at the sand rate, as round 6). If the actual O2 exceeds the usable budget, report how many targets were reached under two readings (manager to choose one, or both): (i) targets whose dwell ends before the actual O2 used passes the usable budget; (ii, proposed main) targets after whose dwell the astronaut could still walk home on the reference within the usable budget (true return margin ≥ 0). Also the first point where the true return margin turns negative.
+6. Report per state (A, A+, B@1/5/10/20/30, REF): planned / actual O2 and time, error, targets planned, targets reached (i)/(ii), hazard metres, sand metres, crossings (round-6 definitions, on the whole tour), whether actual ≤ usable (listed, not used as evidence), differences vs A; one walk only if step 2 gives one set, so no distribution — **question**: what to report if step 2 gives several alternative sets.
+7. Run once after confirmation; every place it appears says "designed after seeing round 6; round 6 is the pre-registered main comparison".
