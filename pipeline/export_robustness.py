@@ -14,6 +14,10 @@ def main():
     t6 = W / "windows/t6_table.json"
     if t6.exists():
         out["t6"] = read_json(t6)
+    t6_5 = W / "windows/t6_table_5windows.json"
+    if t6_5.exists():
+        out["t6_5windows"] = {"stats": read_json(t6_5)["stats"],
+                              "note": "statistics over the first five windows, before (-4,0) ran (kept, not replaced)"}
     t7 = {}
     main_cmp = read_json(W / "compare_ab.json")
     main_rec = read_json(W / "recon_loops.json")
