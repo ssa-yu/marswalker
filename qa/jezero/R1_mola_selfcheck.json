@@ -1,0 +1,88 @@
+{
+ "S1_reader": {
+  "window_col_row": [
+   32938,
+   9145
+  ],
+  "shape": [
+   27,
+   29
+  ],
+  "georef_offset_cells": [
+   0.0,
+   0.0
+  ],
+  "max_abs_value_diff_m": 0.0,
+  "same_pixel_size": true
+ },
+ "S2_header": {
+  "AREA_OR_POINT": "Area",
+  "size": [
+   46080,
+   23040
+  ],
+  "pixel_m": 463.0935415503709,
+  "pixel_m_if_1_128_deg_on_R3396190": 463.0836,
+  "sphere_radius_implied_by_pixel_m": 3396263.1,
+  "origin_lon_deg": -180.003874,
+  "origin_lat_deg": 90.001937,
+  "note": "Pixel size implies R = 3,396,263 m while the CRS says 3,396,190 m; origin is half a cell beyond -180 E / 90 N. If the data are on an exact 1/128 deg grid, the georeference is off at Jezero by the amount below.",
+  "implied_misplacement_at_base_m_east_north_if_exact_1_128_grid_from_edges": [
+   93.7,
+   23.5
+  ]
+ },
+ "S3_jezero_pedr_vs_mosaic": {
+  "n_shots": 1608,
+  "mosaic_minus_shots_zero_offset": {
+   "mean_m": 8.71,
+   "std_m": 28.71
+  },
+  "best_offset_cells_col_row": [
+   -0.75,
+   -0.5
+  ],
+  "best_offset_m_east_north": [
+   -329.0,
+   232.0
+  ],
+  "mosaic_minus_shots_at_best": {
+   "mean_m": -0.07,
+   "std_m": 13.1,
+   "n": 1608
+  },
+  "pedr_query": "ODE GDS molapedr, 18.31-18.67 N, 77.22-77.58 E, TOPOGRAPHY = planet radius - areoid"
+ },
+ "S4_arcadia_060706_pedr_vs_mosaic": {
+  "best_offset_cells_col_row": [
+   0.625,
+   -0.375
+  ],
+  "best_offset_m_east_north": [
+   225.0,
+   174.0
+  ],
+  "mosaic_minus_shots_at_best": {
+   "mean_m": -3388279.98,
+   "std_m": 60.01,
+   "n": 3674
+  },
+  "mosaic_minus_shots_zero_offset_std_m": 61.03,
+  "n_shots": 3674,
+  "note": "shots: USGS ARD product file *_mola_shots.csv (radius); mean includes areoid radius, only std/offset are meaningful"
+ },
+ "S4_arcadia_060706_ctx_vs_mosaic": {
+  "best_offset_cells_col_row": [
+   -0.5,
+   -1.5
+  ],
+  "best_offset_m_east_north": [
+   -180.0,
+   695.0
+  ],
+  "std_at_best_m": 21.77,
+  "std_zero_offset_m": 37.42,
+  "n_cells": 7415,
+  "note": "CTX DTM is the uncontrolled USGS ARD product; its own 506 m shift is not applied here"
+ }
+}

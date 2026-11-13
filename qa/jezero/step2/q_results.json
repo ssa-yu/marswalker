@@ -1,0 +1,1371 @@
+{
+ "Q1": {
+  "rows_in_file": 12130,
+  "rows_calibration_targets_excluded": 521,
+  "rows_parsed": 11609,
+  "targets_sol_name": 1346,
+  "target_names_unique": 1341,
+  "sol_range": [
+   12,
+   1859
+  ],
+  "rmsep_wt%": {
+   "SiO2": 6.1,
+   "TiO2": 0.3,
+   "Al2O3": 1.8,
+   "FeOT": 3.1,
+   "MgO": 1.1,
+   "CaO": 1.3,
+   "Na2O": 0.5,
+   "K2O": 0.6
+  },
+  "location_rule": "waypoint with the largest arrival sol <= measurement sol (sorted by sol, site, drive)",
+  "rows_on_sols_with_a_drive_end": 2686,
+  "aoi": {
+   "points": 1712,
+   "targets": 207,
+   "waypoints": 59,
+   "sol_range": [
+    15,
+    379
+   ]
+  },
+  "distance_m": {
+   "median": 3.2,
+   "p90": 5.27,
+   "max": 6.5
+  },
+  "clusters_aoi_targets_ward_rmsep_units": {
+   "2": {
+    "sizes": [
+     114,
+     93
+    ],
+    "min_pair_sep_rmsep": 12.71,
+    "silhouette": 0.503,
+    "centroids": {
+     "SiO2": [
+      48.9,
+      44.1
+     ],
+     "TiO2": [
+      0.6,
+      0.3
+     ],
+     "Al2O3": [
+      8.9,
+      4.9
+     ],
+     "FeOT": [
+      18.5,
+      22.9
+     ],
+     "MgO": [
+      3.2,
+      17.2
+     ],
+     "CaO": [
+      5.5,
+      3.9
+     ],
+     "Na2O": [
+      2.9,
+      1.5
+     ],
+     "K2O": [
+      1.0,
+      0.4
+     ]
+    }
+   },
+   "3": {
+    "sizes": [
+     114,
+     32,
+     61
+    ],
+    "min_pair_sep_rmsep": 9.09,
+    "silhouette": 0.454,
+    "centroids": {
+     "SiO2": [
+      48.9,
+      44.8,
+      43.7
+     ],
+     "TiO2": [
+      0.6,
+      0.2,
+      0.4
+     ],
+     "Al2O3": [
+      8.9,
+      4.0,
+      5.4
+     ],
+     "FeOT": [
+      18.5,
+      24.7,
+      22.0
+     ],
+     "MgO": [
+      3.2,
+      24.8,
+      13.2
+     ],
+     "CaO": [
+      5.5,
+      2.9,
+      4.5
+     ],
+     "Na2O": [
+      2.9,
+      1.4,
+      1.6
+     ],
+     "K2O": [
+      1.0,
+      0.2,
+      0.5
+     ]
+    }
+   },
+   "4": {
+    "sizes": [
+     114,
+     32,
+     25,
+     36
+    ],
+    "min_pair_sep_rmsep": 5.59,
+    "silhouette": 0.34,
+    "centroids": {
+     "SiO2": [
+      48.9,
+      44.8,
+      42.1,
+      44.8
+     ],
+     "TiO2": [
+      0.6,
+      0.2,
+      0.6,
+      0.2
+     ],
+     "Al2O3": [
+      8.9,
+      4.0,
+      7.4,
+      4.1
+     ],
+     "FeOT": [
+      18.5,
+      24.7,
+      18.5,
+      24.5
+     ],
+     "MgO": [
+      3.2,
+      24.8,
+      9.3,
+      15.8
+     ],
+     "CaO": [
+      5.5,
+      2.9,
+      5.0,
+      4.1
+     ],
+     "Na2O": [
+      2.9,
+      1.4,
+      2.1,
+      1.3
+     ],
+     "K2O": [
+      1.0,
+      0.2,
+      0.6,
+      0.3
+     ]
+    }
+   },
+   "5": {
+    "sizes": [
+     22,
+     92,
+     32,
+     25,
+     36
+    ],
+    "min_pair_sep_rmsep": 2.48,
+    "silhouette": 0.258,
+    "centroids": {
+     "SiO2": [
+      53.9,
+      47.7,
+      44.8,
+      42.1,
+      44.8
+     ],
+     "TiO2": [
+      0.5,
+      0.6,
+      0.2,
+      0.6,
+      0.2
+     ],
+     "Al2O3": [
+      12.0,
+      8.2,
+      4.0,
+      7.4,
+      4.1
+     ],
+     "FeOT": [
+      12.3,
+      20.0,
+      24.7,
+      18.5,
+      24.5
+     ],
+     "MgO": [
+      1.9,
+      3.5,
+      24.8,
+      9.3,
+      15.8
+     ],
+     "CaO": [
+      4.2,
+      5.8,
+      2.9,
+      5.0,
+      4.1
+     ],
+     "Na2O": [
+      3.5,
+      2.7,
+      1.4,
+      2.1,
+      1.3
+     ],
+     "K2O": [
+      1.6,
+      0.8,
+      0.2,
+      0.6,
+      0.3
+     ]
+    }
+   },
+   "6": {
+    "sizes": [
+     22,
+     43,
+     49,
+     32,
+     25,
+     36
+    ],
+    "min_pair_sep_rmsep": 2.57,
+    "silhouette": 0.273,
+    "centroids": {
+     "SiO2": [
+      53.9,
+      49.1,
+      46.6,
+      44.8,
+      42.1,
+      44.8
+     ],
+     "TiO2": [
+      0.5,
+      0.6,
+      0.6,
+      0.2,
+      0.6,
+      0.2
+     ],
+     "Al2O3": [
+      12.0,
+      7.9,
+      8.4,
+      4.0,
+      7.4,
+      4.1
+     ],
+     "FeOT": [
+      12.3,
+      23.4,
+      17.0,
+      24.7,
+      18.5,
+      24.5
+     ],
+     "MgO": [
+      1.9,
+      2.0,
+      4.8,
+      24.8,
+      9.3,
+      15.8
+     ],
+     "CaO": [
+      4.2,
+      5.0,
+      6.5,
+      2.9,
+      5.0,
+      4.1
+     ],
+     "Na2O": [
+      3.5,
+      2.8,
+      2.7,
+      1.4,
+      2.1,
+      1.3
+     ],
+     "K2O": [
+      1.6,
+      0.9,
+      0.7,
+      0.2,
+      0.6,
+      0.3
+     ]
+    }
+   },
+   "7": {
+    "sizes": [
+     22,
+     43,
+     36,
+     13,
+     32,
+     25,
+     36
+    ],
+    "min_pair_sep_rmsep": 2.47,
+    "silhouette": 0.284,
+    "centroids": {
+     "SiO2": [
+      53.9,
+      49.1,
+      47.2,
+      44.8,
+      44.8,
+      42.1,
+      44.8
+     ],
+     "TiO2": [
+      0.5,
+      0.6,
+      0.6,
+      0.5,
+      0.2,
+      0.6,
+      0.2
+     ],
+     "Al2O3": [
+      12.0,
+      7.9,
+      9.4,
+      5.6,
+      4.0,
+      7.4,
+      4.1
+     ],
+     "FeOT": [
+      12.3,
+      23.4,
+      15.7,
+      20.3,
+      24.7,
+      18.5,
+      24.5
+     ],
+     "MgO": [
+      1.9,
+      2.0,
+      4.7,
+      5.1,
+      24.8,
+      9.3,
+      15.8
+     ],
+     "CaO": [
+      4.2,
+      5.0,
+      5.5,
+      9.4,
+      2.9,
+      5.0,
+      4.1
+     ],
+     "Na2O": [
+      3.5,
+      2.8,
+      3.0,
+      2.0,
+      1.4,
+      2.1,
+      1.3
+     ],
+     "K2O": [
+      1.6,
+      0.9,
+      0.9,
+      0.3,
+      0.2,
+      0.6,
+      0.3
+     ]
+    }
+   }
+  },
+  "cluster4_vs_sim3464_unit": {
+   "c1|Njf": 81,
+   "c1|Nle": 33,
+   "c2|Njf": 2,
+   "c2|Nle": 30,
+   "c3|Njf": 7,
+   "c3|Nle": 18,
+   "c4|Njf": 3,
+   "c4|Nle": 33
+  },
+  "aoi_target_units": {
+   "Njf": 93,
+   "Nle": 114
+  },
+  "aoi_sim3464_area_share": {
+   "Nle (Lower etched unit)": 0.512,
+   "Njf (Jezero floor unit)": 0.468,
+   "NHjf2 (Jezero fan 2 unit)": 0.02
+  },
+  "raman": {
+   "rows": 343,
+   "in_aoi_by_sol": 72,
+   "fields": [
+    "Source Product",
+    "Target",
+    "Summary",
+    "Number_of_features",
+    "Feature1_RamanShift",
+    "Feature1_ID",
+    "Feature1_PotentialMinerals",
+    "Feature1_Confidence"
+   ]
+  }
+ },
+ "Q2": {
+  "n_listed": 30,
+  "rock_cores": 27,
+  "rock_cores_in_aoi": [
+   "Montdenier",
+   "Montagnac",
+   "Salette",
+   "Coulettes",
+   "Robine",
+   "Malay",
+   "Ha'ahoni",
+   "Atsa"
+  ],
+  "rock_sites_in_aoi": [
+   "Brac",
+   "Issole",
+   "Rochette",
+   "Sid"
+  ],
+  "rock_sites_total": 20,
+  "rock_cores_in_rim_window": [
+   "Silver Mountain",
+   "Green Gardens",
+   "Main River"
+  ],
+  "table": [
+   {
+    "n": "1",
+    "name": "Roubion",
+    "type": "atmospheric",
+    "sol_sealed": "164",
+    "rock_type": "n/a",
+    "feature": "Roubion",
+    "area": "Polygon Valley",
+    "wp": "6_0",
+    "x": 43,
+    "y": -1004,
+    "in_aoi": false,
+    "in_rim_window": false,
+    "supercam_targets_matching_feature": [
+     "roubion_168_scam@168",
+     "roubion_hole_scam@167"
+    ]
+   },
+   {
+    "n": "2",
+    "name": "Montdenier",
+    "type": "rock core",
+    "sol_sealed": "194",
+    "rock_type": "igneous",
+    "feature": "Rochette",
+    "area": "Artuby Ridge",
+    "wp": "7_0",
+    "x": -367,
+    "y": -823,
+    "in_aoi": true,
+    "in_rim_window": false,
+    "supercam_targets_matching_feature": []
+   },
+   {
+    "n": "3",
+    "name": "Montagnac",
+    "type": "rock core",
+    "sol_sealed": "196",
+    "rock_type": "igneous",
+    "feature": "Rochette",
+    "area": "Artuby Ridge",
+    "wp": "7_0",
+    "x": -367,
+    "y": -823,
+    "in_aoi": true,
+    "in_rim_window": false,
+    "supercam_targets_matching_feature": []
+   },
+   {
+    "n": "4",
+    "name": "Salette",
+    "type": "rock core",
+    "sol_sealed": "262",
+    "rock_type": "igneous",
+    "feature": "Brac",
+    "area": "South Seitah",
+    "wp": "8_0",
+    "x": -442,
+    "y": -632,
+    "in_aoi": true,
+    "in_rim_window": false,
+    "supercam_targets_matching_feature": [
+     "brac_246@246",
+     "brac_247@247"
+    ]
+   },
+   {
+    "n": "5",
+    "name": "Coulettes",
+    "type": "rock core",
+    "sol_sealed": "271",
+    "rock_type": "igneous",
+    "feature": "Brac",
+    "area": "South Seitah",
+    "wp": "8_0",
+    "x": -442,
+    "y": -632,
+    "in_aoi": true,
+    "in_rim_window": false,
+    "supercam_targets_matching_feature": [
+     "brac_246@246",
+     "brac_247@247"
+    ]
+   },
+   {
+    "n": "6",
+    "name": "Robine",
+    "type": "rock core",
+    "sol_sealed": "298",
+    "rock_type": "igneous",
+    "feature": "Issole",
+    "area": "South Seitah",
+    "wp": "9_0",
+    "x": -535,
+    "y": -709,
+    "in_aoi": true,
+    "in_rim_window": false,
+    "supercam_targets_matching_feature": [
+     "issole@202"
+    ]
+   },
+   {
+    "n": "7",
+    "name": "Malay",
+    "type": "rock core",
+    "sol_sealed": "337",
+    "rock_type": "igneous",
+    "feature": "Issole",
+    "area": "South Seitah",
+    "wp": "9_276",
+    "x": -538,
+    "y": -712,
+    "in_aoi": true,
+    "in_rim_window": false,
+    "supercam_targets_matching_feature": [
+     "issole@202"
+    ]
+   },
+   {
+    "n": "8",
+    "name": "Ha'ahoni",
+    "type": "rock core",
+    "sol_sealed": "371",
+    "rock_type": "igneous",
+    "feature": "Sid",
+    "area": "Octavia E. Butler Landing / Ch'al",
+    "wp": "11_108",
+    "x": 87,
+    "y": -43,
+    "in_aoi": true,
+    "in_rim_window": false,
+    "supercam_targets_matching_feature": [
+     "beachside@1476",
+     "sid_362@362"
+    ]
+   },
+   {
+    "n": "9",
+    "name": "Atsa",
+    "type": "rock core",
+    "sol_sealed": "377",
+    "rock_type": "igneous",
+    "feature": "Sid",
+    "area": "Octavia E. Butler Landing / Ch'al",
+    "wp": "11_108",
+    "x": 87,
+    "y": -43,
+    "in_aoi": true,
+    "in_rim_window": false,
+    "supercam_targets_matching_feature": [
+     "beachside@1476",
+     "sid_362@362"
+    ]
+   },
+   {
+    "n": "10",
+    "name": "Swift Run",
+    "type": "rock core",
+    "sol_sealed": "490",
+    "rock_type": "sedimentary",
+    "feature": "Skinner Ridge",
+    "area": "Delta Front",
+    "wp": "26_1004",
+    "x": -2514,
+    "y": 846,
+    "in_aoi": false,
+    "in_rim_window": false,
+    "supercam_targets_matching_feature": []
+   },
+   {
+    "n": "11",
+    "name": "Skyland",
+    "type": "rock core",
+    "sol_sealed": "495",
+    "rock_type": "sedimentary",
+    "feature": "Skinner Ridge",
+    "area": "Delta Front",
+    "wp": "26_1004",
+    "x": -2514,
+    "y": 846,
+    "in_aoi": false,
+    "in_rim_window": false,
+    "supercam_targets_matching_feature": []
+   },
+   {
+    "n": "12",
+    "name": "Hazeltop",
+    "type": "rock core",
+    "sol_sealed": "509",
+    "rock_type": "sedimentary",
+    "feature": "Wildcat Ridge",
+    "area": "Delta Front",
+    "wp": "26_1222",
+    "x": -2528,
+    "y": 831,
+    "in_aoi": false,
+    "in_rim_window": false,
+    "supercam_targets_matching_feature": []
+   },
+   {
+    "n": "13",
+    "name": "Bearwallow",
+    "type": "rock core",
+    "sol_sealed": "516",
+    "rock_type": "sedimentary",
+    "feature": "Wildcat Ridge",
+    "area": "Delta Front",
+    "wp": "26_1222",
+    "x": -2528,
+    "y": 831,
+    "in_aoi": false,
+    "in_rim_window": false,
+    "supercam_targets_matching_feature": []
+   },
+   {
+    "n": "14",
+    "name": "Shuyak",
+    "type": "rock core",
+    "sol_sealed": "575",
+    "rock_type": "sedimentary",
+    "feature": "Amalik",
+    "area": "Delta Front",
+    "wp": "29_0",
+    "x": -2780,
+    "y": 362,
+    "in_aoi": false,
+    "in_rim_window": false,
+    "supercam_targets_matching_feature": []
+   },
+   {
+    "n": "15",
+    "name": "Mageik",
+    "type": "rock core",
+    "sol_sealed": "619",
+    "rock_type": "sedimentary",
+    "feature": "Amalik",
+    "area": "Delta Front",
+    "wp": "30_1172",
+    "x": -2909,
+    "y": 534,
+    "in_aoi": false,
+    "in_rim_window": false,
+    "supercam_targets_matching_feature": []
+   },
+   {
+    "n": "16",
+    "name": "Kukaklek",
+    "type": "rock core",
+    "sol_sealed": "631",
+    "rock_type": "sedimentary",
+    "feature": "Hidden Harbor",
+    "area": "Delta Front",
+    "wp": "30_2188",
+    "x": -2780,
+    "y": 415,
+    "in_aoi": false,
+    "in_rim_window": false,
+    "supercam_targets_matching_feature": []
+   },
+   {
+    "n": "17",
+    "name": "Atmo Mountain",
+    "type": "regolith",
+    "sol_sealed": "634",
+    "rock_type": "mixed grains",
+    "feature": "Observation Mountain",
+    "area": "Delta Front",
+    "wp": "31_0",
+    "x": -2791,
+    "y": 397,
+    "in_aoi": false,
+    "in_rim_window": false,
+    "supercam_targets_matching_feature": [
+     "observation_rock@1302"
+    ]
+   },
+   {
+    "n": "18",
+    "name": "Crosswind Lake",
+    "type": "regolith",
+    "sol_sealed": "639",
+    "rock_type": "mixed grains",
+    "feature": "Observation Mountain",
+    "area": "Delta Front",
+    "wp": "31_0",
+    "x": -2791,
+    "y": 397,
+    "in_aoi": false,
+    "in_rim_window": false,
+    "supercam_targets_matching_feature": [
+     "observation_rock@1302"
+    ]
+   },
+   {
+    "n": "19",
+    "name": "Melyn",
+    "type": "rock core",
+    "sol_sealed": "749",
+    "rock_type": "sedimentary",
+    "feature": "Berea",
+    "area": "Upper Fan",
+    "wp": "37_0",
+    "x": -3762,
+    "y": 1517,
+    "in_aoi": false,
+    "in_rim_window": false,
+    "supercam_targets_matching_feature": []
+   },
+   {
+    "n": "20",
+    "name": "Otis Peak",
+    "type": "rock core",
+    "sol_sealed": "832",
+    "rock_type": "sedimentary",
+    "feature": "Emerald Lake",
+    "area": "Upper Fan",
+    "wp": "40_132",
+    "x": -4650,
+    "y": 2274,
+    "in_aoi": false,
+    "in_rim_window": false,
+    "supercam_targets_matching_feature": [
+     "emerald_ridge@1308",
+     "emerald_spring@1074"
+    ]
+   },
+   {
+    "n": "21",
+    "name": "Pilot Mountain",
+    "type": "rock core",
+    "sol_sealed": "913",
+    "rock_type": "sedimentary",
+    "feature": "Dream Lake",
+    "area": "Upper Fan",
+    "wp": "45_0",
+    "x": -5634,
+    "y": 2301,
+    "in_aoi": false,
+    "in_rim_window": false,
+    "supercam_targets_matching_feature": []
+   },
+   {
+    "n": "22",
+    "name": "Pelican Point",
+    "type": "rock core",
+    "sol_sealed": "923",
+    "rock_type": "sedimentary",
+    "feature": "Hans Amundsen Memorial Workspace",
+    "area": "Margin Unit",
+    "wp": "45_0",
+    "x": -5634,
+    "y": 2301,
+    "in_aoi": false,
+    "in_rim_window": false,
+    "supercam_targets_matching_feature": []
+   },
+   {
+    "n": "23",
+    "name": "Lefroy Bay",
+    "type": "rock core",
+    "sol_sealed": "949",
+    "rock_type": "sedimentary",
+    "feature": "Turquoise Bay",
+    "area": "Margin Unit",
+    "wp": "46_0",
+    "x": -5839,
+    "y": 2613,
+    "in_aoi": false,
+    "in_rim_window": false,
+    "supercam_targets_matching_feature": []
+   },
+   {
+    "n": "24",
+    "name": "Comet Geyser",
+    "type": "rock core",
+    "sol_sealed": "1088",
+    "rock_type": "silica-cemented carbonate",
+    "feature": "Bunsen Peak",
+    "area": "Margin Unit",
+    "wp": "51_0",
+    "x": -6955,
+    "y": 2798,
+    "in_aoi": false,
+    "in_rim_window": false,
+    "supercam_targets_matching_feature": []
+   },
+   {
+    "n": "25",
+    "name": "Sapphire Canyon",
+    "type": "rock core",
+    "sol_sealed": "1215",
+    "rock_type": "sedimentary",
+    "feature": "Cheyava Falls",
+    "area": "Neretva Vallis",
+    "wp": "56_0",
+    "x": -8192,
+    "y": 3133,
+    "in_aoi": false,
+    "in_rim_window": false,
+    "supercam_targets_matching_feature": []
+   },
+   {
+    "n": "26",
+    "name": "Silver Mountain",
+    "type": "rock core",
+    "sol_sealed": "1401",
+    "rock_type": "igneous/impactite",
+    "feature": "Shallow Bay",
+    "area": "Crater Rim (Witch Hazel Hill)",
+    "wp": "66_0",
+    "x": -10467,
+    "y": 944,
+    "in_aoi": false,
+    "in_rim_window": true,
+    "supercam_targets_matching_feature": []
+   },
+   {
+    "n": "27",
+    "name": "Green Gardens",
+    "type": "rock core",
+    "sol_sealed": "1433",
+    "rock_type": "serpentinite",
+    "feature": "Tablelands",
+    "area": "Crater Rim (Witch Hazel Hill)",
+    "wp": "69_2000",
+    "x": -10778,
+    "y": 995,
+    "in_aoi": false,
+    "in_rim_window": true,
+    "supercam_targets_matching_feature": []
+   },
+   {
+    "n": "28",
+    "name": "Main River",
+    "type": "rock core",
+    "sol_sealed": "1441",
+    "rock_type": "igneous/impactite",
+    "feature": "Broom Point",
+    "area": "Crater Rim (Witch Hazel Hill)",
+    "wp": "69_2124",
+    "x": -10818,
+    "y": 1014,
+    "in_aoi": false,
+    "in_rim_window": true,
+    "supercam_targets_matching_feature": []
+   },
+   {
+    "n": "29",
+    "name": "Bell Island",
+    "type": "rock core",
+    "sol_sealed": "",
+    "rock_type": "igneous/impactite",
+    "feature": "Pine Pond",
+    "area": "Crater Rim (Witch Hazel Hill)",
+    "wp": null
+   },
+   {
+    "n": "30",
+    "name": "Gallants",
+    "type": "rock core",
+    "sol_sealed": "",
+    "rock_type": "igneous or sedimentary",
+    "feature": "Salmon Point",
+    "area": "Crater Rim (Krokodillen)",
+    "wp": null
+   }
+  ]
+ },
+ "Q4": {
+  "supercam_distance_m": {
+   "median": 3.2,
+   "p90": 5.27,
+   "max": 6.5
+  },
+  "aoi_measured_locations": 59,
+  "unlocked_locations_by_loop_r10m": [
+   0,
+   2,
+   2,
+   2,
+   2,
+   2,
+   3,
+   3,
+   4,
+   4,
+   4,
+   4,
+   4,
+   5,
+   5,
+   5,
+   5,
+   5,
+   5,
+   5,
+   6,
+   7,
+   7,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "unlocked_locations_by_loop_r15m": [
+   1,
+   3,
+   3,
+   3,
+   3,
+   3,
+   4,
+   4,
+   5,
+   5,
+   5,
+   5,
+   5,
+   7,
+   7,
+   7,
+   7,
+   7,
+   7,
+   7,
+   8,
+   8,
+   11,
+   12,
+   12,
+   12,
+   12,
+   12,
+   12,
+   12
+  ],
+  "unlocked_locations_by_loop_r25m": [
+   2,
+   3,
+   3,
+   3,
+   5,
+   5,
+   7,
+   7,
+   9,
+   9,
+   9,
+   9,
+   9,
+   10,
+   10,
+   10,
+   10,
+   10,
+   10,
+   10,
+   11,
+   11,
+   14,
+   17,
+   17,
+   17,
+   17,
+   18,
+   18,
+   18
+  ],
+  "note": "location = Perseverance waypoint (rover position); unlocked if any simulated rover path cell is within the radius"
+ },
+ "Q10": {
+  "measured_locations_aoi": 59,
+  "measured_locations_traverse": 387,
+  "distinct_18m_cells_aoi": 46,
+  "distinct_18m_cells_traverse": 291,
+  "targets_traverse": 1346,
+  "points_traverse": 11609,
+  "note": "18 m cells on a base-centred grid stand in for CRISM MTRDR pixels (18 m/pixel; actual CRISM grid differs)."
+ },
+ "Q5": {
+  "cells": [
+   {
+    "cell": [
+     -5,
+     -1
+    ],
+    "bounds_local_m": [
+     -13700,
+     -3400,
+     -11300,
+     -1000
+    ],
+    "waypoints": 36,
+    "sol_range": [
+     1703,
+     1940
+    ],
+    "hirise_dtm_coverage": 0.0,
+    "ctx_dtm_coverage": 1.0,
+    "supercam_targets": 56,
+    "supercam_locations": 14
+   },
+   {
+    "cell": [
+     -5,
+     0
+    ],
+    "bounds_local_m": [
+     -13700,
+     -1000,
+     -11300,
+     1400
+    ],
+    "waypoints": 56,
+    "sol_range": [
+     1701,
+     2022
+    ],
+    "hirise_dtm_coverage": 0.011,
+    "ctx_dtm_coverage": 1.0,
+    "supercam_targets": 56,
+    "supercam_locations": 19
+   },
+   {
+    "cell": [
+     -4,
+     0
+    ],
+    "bounds_local_m": [
+     -11300,
+     -1000,
+     -8900,
+     1400
+    ],
+    "waypoints": 122,
+    "sol_range": [
+     1305,
+     1700
+    ],
+    "hirise_dtm_coverage": 0.974,
+    "ctx_dtm_coverage": 1.0,
+    "supercam_targets": 347,
+    "supercam_locations": 85
+   },
+   {
+    "cell": [
+     -4,
+     1
+    ],
+    "bounds_local_m": [
+     -11300,
+     1400,
+     -8900,
+     3800
+    ],
+    "waypoints": 2,
+    "sol_range": [
+     1311,
+     1313
+    ],
+    "hirise_dtm_coverage": 1.0,
+    "ctx_dtm_coverage": 1.0,
+    "supercam_targets": 10,
+    "supercam_locations": 2
+   },
+   {
+    "cell": [
+     -3,
+     1
+    ],
+    "bounds_local_m": [
+     -8900,
+     1400,
+     -6500,
+     3800
+    ],
+    "waypoints": 133,
+    "sol_range": [
+     1045,
+     1302
+    ],
+    "hirise_dtm_coverage": 1.0,
+    "ctx_dtm_coverage": 1.0,
+    "supercam_targets": 239,
+    "supercam_locations": 87
+   },
+   {
+    "cell": [
+     -2,
+     1
+    ],
+    "bounds_local_m": [
+     -6500,
+     1400,
+     -4100,
+     3800
+    ],
+    "waypoints": 86,
+    "sol_range": [
+     755,
+     1043
+    ],
+    "hirise_dtm_coverage": 1.0,
+    "ctx_dtm_coverage": 1.0,
+    "supercam_targets": 222,
+    "supercam_locations": 60
+   },
+   {
+    "cell": [
+     -1,
+     0
+    ],
+    "bounds_local_m": [
+     -4100,
+     -1000,
+     -1700,
+     1400
+    ],
+    "waypoints": 131,
+    "sol_range": [
+     407,
+     714
+    ],
+    "hirise_dtm_coverage": 1.0,
+    "ctx_dtm_coverage": 1.0,
+    "supercam_targets": 171,
+    "supercam_locations": 50
+   },
+   {
+    "cell": [
+     -1,
+     1
+    ],
+    "bounds_local_m": [
+     -4100,
+     1400,
+     -1700,
+     3800
+    ],
+    "waypoints": 16,
+    "sol_range": [
+     715,
+     759
+    ],
+    "hirise_dtm_coverage": 1.0,
+    "ctx_dtm_coverage": 1.0,
+    "supercam_targets": 25,
+    "supercam_locations": 8
+   },
+   {
+    "cell": [
+     0,
+     -1
+    ],
+    "bounds_local_m": [
+     -1700,
+     -3400,
+     700,
+     -1000
+    ],
+    "waypoints": 3,
+    "sol_range": [
+     157,
+     169
+    ],
+    "hirise_dtm_coverage": 1.0,
+    "ctx_dtm_coverage": 1.0,
+    "supercam_targets": 12,
+    "supercam_locations": 3
+   },
+   {
+    "cell": [
+     0,
+     0
+    ],
+    "bounds_local_m": [
+     -1700,
+     -1000,
+     700,
+     1400
+    ],
+    "waypoints": 122,
+    "sol_range": [
+     13,
+     405
+    ],
+    "hirise_dtm_coverage": 1.0,
+    "ctx_dtm_coverage": 1.0,
+    "supercam_targets": 207,
+    "supercam_locations": 59
+   },
+   {
+    "cell": [
+     0,
+     1
+    ],
+    "bounds_local_m": [
+     -1700,
+     1400,
+     700,
+     3800
+    ],
+    "waypoints": 1,
+    "sol_range": [
+     389,
+     389
+    ],
+    "hirise_dtm_coverage": 1.0,
+    "ctx_dtm_coverage": 1.0,
+    "supercam_targets": 0,
+    "supercam_locations": 0
+   }
+  ],
+  "n_cells_with_waypoints": 11,
+  "n_ge16": 8,
+  "n_ge36": 7,
+  "n_ge16_and_full_hirise": 5
+ },
+ "Q9": {
+  "window": [
+   -11300,
+   -1000,
+   -8900,
+   1400
+  ],
+  "window_lonlat": [
+   77.2499,
+   18.4278,
+   77.2926,
+   18.4682
+  ],
+  "deahn_bedrock_extent_lonlat": [
+   77.247,
+   18.2751,
+   77.3109,
+   18.518
+  ],
+  "bedrock_unit_area_share_of_window": {
+   "Crater rim knobby": 0.522,
+   "Light-toned banded": 0.232,
+   "Light-toned fractured": 0.078,
+   "Mottled": 0.068,
+   "Light-toned ridged": 0.039,
+   "Rough fractured": 0.038,
+   "Crater rim rubbly": 0.024
+  },
+  "bedrock_mapped_share_of_window": 1.0,
+  "cell_stats": {
+   "cell": [
+    -4,
+    0
+   ],
+   "bounds_local_m": [
+    -11300,
+    -1000,
+    -8900,
+    1400
+   ],
+   "waypoints": 122,
+   "sol_range": [
+    1305,
+    1700
+   ],
+   "hirise_dtm_coverage": 0.974,
+   "ctx_dtm_coverage": 1.0,
+   "supercam_targets": 347,
+   "supercam_locations": 85
+  },
+  "waypoints_in_deahn_extent": {
+   "n": 190,
+   "sol_range": [
+    1171,
+    1700
+   ]
+  },
+  "rock_cores_in_window": [
+   "Silver Mountain",
+   "Green Gardens",
+   "Main River"
+  ]
+ }
+}

@@ -545,6 +545,39 @@
     189.55
    ],
    "note": "terrain texture only; the rover traverse is not used to estimate this shift"
+  },
+  "mola_pedr": {
+   "spec": {
+    "shots": "ODE GDS molapedr TOPOGRAPHY (radius - areoid), query box 18.31-18.67 N, 77.22-77.58 E",
+    "disc_radius_m": 84.0,
+    "valid_rule": "every HiRISE DTM cell in the disc is valid; same shots for CTX",
+    "horizontal_shift_fitted": false,
+    "ctx_registration_applied": {
+     "shift_m": [
+      -2.1,
+      1.8
+     ],
+     "dz_m": -1.03
+    },
+    "thresholds": "HiRISE |mean|<=10 & std<=10 m; CTX std<=10 m; n<30 -> insufficient"
+   },
+   "n_shots_query": 1608,
+   "n_shots_valid": 1067,
+   "hirise_minus_pedr": {
+    "mean_m": -2.58,
+    "std_m": 7.38,
+    "median_m": -1.63,
+    "max_abs_m": 52.78
+   },
+   "ctx_shifted_minus_pedr": {
+    "mean_m": -3.34,
+    "std_m": 7.19,
+    "median_m": -2.37,
+    "max_abs_m": 45.32
+   },
+   "hirise_pass": true,
+   "ctx_pass": true,
+   "verdict": "HiRISE pass; CTX pass"
   }
  },
  "checks": [

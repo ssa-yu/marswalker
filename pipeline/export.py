@@ -85,7 +85,8 @@ def run(scene: str):
            "layers": layers, "review": REVIEW,
            "alignment": {"x3": al["x3"], "prior_shift_m": sh, "prior_vertical_offset_m": dz,
                          "prior_registration": al["prior"]["image_registration"], "mola": al["mola"],
-                         "post_landing": al.get("post_landing")},
+                         "post_landing": al.get("post_landing"),
+                         "mola_pedr": read_json(sc.qa / "R1_mola_pedr.json") if (sc.qa / "R1_mola_pedr.json").exists() else None},
            "checks": qa.get("summary"), "ground_data": sc.cfg.get("ground_data")}
 
     # rover data (Jezero)
