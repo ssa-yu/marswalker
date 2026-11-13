@@ -25,8 +25,8 @@ const nameOf = (r) => ({ A: 'Route A · orbital data only', B: `Route B · after
 function usable() { return +$('#cap').value * (1 - +$('#res').value / 100); }
 
 async function init() {
-  const [C, sc] = await Promise.all([getJSON(CB + 'compare.json'), getJSON(BASE + 'scene.json')]);
-  S.C = C; S.sc = sc;
+  const [C, sc, PW] = await Promise.all([getJSON(CB + 'compare.json'), getJSON(BASE + 'scene.json'), getJSON(CB + 'pointwise.json')]);
+  S.C = C; S.sc = sc; S.PW = PW;
   S.ks = C.states.filter((s) => s.startsWith('B@')).map((s) => +s.slice(2));
   S.k = S.ks[S.ks.length - 1];
   // default test point: the lattice point at (600, 0) m (the step-3 skeleton's first placeholder rule), else the first
@@ -34,6 +34,12 @@ async function init() {
   $('#tSel').innerHTML = C.rows.map((r, i) => `<option value="${i}">T${r.target} · x ${f0(r.x)} m, y ${f0(r.y)} m · ${r.band} m</option>`).join('');
   $('#kBtns').innerHTML = S.ks.map((k) => `<button class="btn sm" data-k="${k}">${k}</button>`).join('') + '<span class="muted">loops</span>';
   document.querySelectorAll('#kBtns button').forEach((b) => b.onclick = () => { S.k = +b.dataset.k; refresh(); });
+  // U3: three example walks, chosen by a fixed rule on B@30 - A actual oxygen (spikes/u2_pointwise.py); default point unchanged
+  const SC = PW.shortcuts_B30_actual_o2, idxOf = (t) => C.rows.findIndex((r) => r.target === t.target);
+  $('#shortcuts').innerHTML = [['median', 'Median walk'], ['most_improved', 'Most improved'], ['most_worsened', 'Most worsened']]
+    .map(([k, n]) => `<button class="btn sm" data-sc="${k}">${n} (${sg(SC[k].diff, f1)})</button>`).join('');
+  document.querySelectorAll('#shortcuts button').forEach((b) => b.onclick = () => { S.k = 30; selectTarget(idxOf(SC[b.dataset.sc])); });
+  $('#shortcutRule').textContent = 'Shortcuts are picked by the change in actual oxygen, route B after 30 loops minus route A, over all 63 test points: the point at the median, the largest drop and the largest rise. Values in nominal minutes.';
   $('#tSel').onchange = () => selectTarget(+$('#tSel').value);
   $('#tPrev').onclick = () => selectTarget((S.tgt - 1 + C.rows.length) % C.rows.length);
   $('#tNext').onclick = () => selectTarget((S.tgt + 1) % C.rows.length);
@@ -82,7 +88,7 @@ function renderRouteSel() {
 
 function renderCmp() {
   const r = row(), U = usable(), cols = ['A', 'B', ...($('#showAp').checked ? ['A+'] : []), ...($('#showRef').checked ? ['REF'] : [])];
-  $('#capLbl').textContent = `${$('#cap').value} min`; $('#resLbl').textContent = `${$('#res').value}%`; $('#usableLbl').textContent = f0(U);
+  $('#capLbl').textContent = `${$('#cap').value}`; $('#resLbl').textContent = `${$('#res').value}%`; $('#usableLbl').textContent = f0(U);
   const v = (c) => r[stateOf(c)];
   const fits = (o2) => o2 <= U + 1e-9 ? '<span class="pass">yes</span>' : '<span class="fail">no</span>';
   const lines = [
@@ -100,18 +106,19 @@ function renderCmp() {
   ];
   $('#cmp').innerHTML = `<table class="cmp"><thead><tr><th></th>${cols.map((c) => `<th class="c${c === 'A+' ? 'Ap' : c === 'REF' ? 'R' : c}">${c === 'B' ? 'B@' + S.k : c}</th>`).join('')}</tr></thead>
 <tbody>${lines.map(([n, f]) => `<tr><td>${n}</td>${cols.map((c) => `<td>${f(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>
-<p class="hint">Habitat → test point → back on the same path. Oxygen in nominal minutes. Hazard zone: a patch of sand or blocked ground ≥ 400 m² on the reference terrain that the orbital map does not show; a crossing is a stretch ≥ 10 m inside one. A+ and the reference bound are context, not results.</p>`;
+<p class="hint">Habitat → test point → back on the same path. Oxygen in nominal minutes. Whether a walk fits the budget is not evidence for either route (it can flip on a few minutes). Hazard zone: a patch of sand or blocked ground ≥ 400 m² on the reference terrain that the orbital map does not show; a crossing is a stretch ≥ 10 m inside one. A+ and the reference bound are context, not results.</p>`;
 }
 
 function renderOverall() {
   const s = S.C.summary.all, A = s.A, B = s[`B@${S.k}`], R = s.REF, sh = B.share_of_possible_improvement;
   const pc = (v) => v == null ? '–' : Math.round(100 * v) + '%';
+  const pw = S.PW && S.PW.groups.all[`B@${S.k}`] && S.PW.groups.all[`B@${S.k}`].actual_o2;
   $('#overall').innerHTML = `<table class="cmp"><thead><tr><th>mean per walk</th><th class="cA">A</th><th class="cB">B@${S.k}</th><th class="cR">ref. bound</th></tr></thead><tbody>
 <tr><td>Metres in hazard zones</td><td>${f0(A.hazard_m.mean)}</td><td><b>${f0(B.hazard_m.mean)}</b></td><td>${f0(R.hazard_m.mean)}</td></tr>
-<tr><td>Hazard crossings</td><td>${f1(A.crossings.mean)}</td><td><b>${f1(B.crossings.mean)}</b></td><td>${f1(R.crossings.mean)}</td></tr>
+<tr><td>Hazard crossings <span class="muted">(do not fall steadily with more loops)</span></td><td>${f1(A.crossings.mean)}</td><td>${f1(B.crossings.mean)}</td><td>${f1(R.crossings.mean)}</td></tr>
 <tr><td>Actual oxygen</td><td>${f1(A.actual_o2.mean)}</td><td><b>${f1(B.actual_o2.mean)}</b></td><td>${f1(R.actual_o2.mean)}</td></tr>
 <tr><td>Oxygen underestimated by</td><td>${f1(A.o2_error.mean)}</td><td><b>${f1(B.o2_error.mean)}</b></td><td>${f1(R.o2_error.mean)}</td></tr></tbody></table>
-<p class="hint">After ${S.k} loop${S.k > 1 ? 's' : ''} the rover's map recovers ${pc(sh.hazard_m)} of the hazard metres and ${pc(sh.actual_o2)} of the oxygen that perfect knowledge (reference bound) would save. Details by distance: <a href="#" id="tblLink">full table</a>.</p>`;
+<p class="hint">After ${S.k} loop${S.k > 1 ? 's' : ''} the rover's map recovers ${pc(sh.hazard_m)} of the hazard metres and ${pc(sh.actual_o2)} of the oxygen that perfect knowledge (reference bound) would save. ${pw ? `Of the ${pw.n} walks, ${pw.better} use less actual oxygen than route A, ${pw.worse} more, ${pw.same} the same.` : ''} Oxygen in nominal minutes. Details by distance: <a href="#" id="tblLink">full table</a>.</p>`;
   $('#tblLink').onclick = (e) => { e.preventDefault(); renderTable(); $('#table').showModal(); };
 }
 
@@ -214,10 +221,10 @@ function setT(t) {
   $('#tLbl').textContent = `${f0(S.t)} of ${f0(tot)}`;
   $('#hudRoute').innerHTML = `<span style="color:${COL[S.route]}">●</span> ${esc(nameOf(S.route))}`;
   $('#hudTerr').textContent = `${CLS[st.cls[i]]}${st.haz[i] ? ' · hazard zone' : ''}`;
-  $('#o2Val').textContent = `${f0(left)} / ${f0(cap)} min`;
+  $('#o2Val').textContent = `${f0(left)} / ${f0(cap)} nominal min`;
   const ob = $('#o2Bar'); ob.querySelector('.fill').style.width = `${Math.max(0, left / cap * 100)}%`; ob.querySelector('.res').style.width = `${resv / cap * 100}%`;
   ob.classList.toggle('low', left < resv);
-  const bar = (id, vid, m) => { $(vid).textContent = `${f0(m)} min`; const b = $(id); b.querySelector('.fill').style.width = `${Math.max(0, Math.min(1, m / U)) * 100}%`; b.classList.toggle('crit', m < 0.15 * U); b.classList.toggle('neg', m < 0); };
+  const bar = (id, vid, m) => { $(vid).textContent = `${f0(m)} nominal min`; const b = $(id); b.querySelector('.fill').style.width = `${Math.max(0, Math.min(1, m / U)) * 100}%`; b.classList.toggle('crit', m < 0.15 * U); b.classList.toggle('neg', m < 0); };
   bar('#mgBar', '#mgVal', mPlan); bar('#mtBar', '#mtVal', mTrue);
   const w = $('#warn');
   if (mTrue < 0) { w.hidden = false; w.textContent = 'True return margin below zero: on the real terrain the oxygen would run into the reserve before getting home.'; }
@@ -249,7 +256,20 @@ ${st.map((k) => { const d = s[k], dv = d.diff_vs_A; return `<tr class="${k === `
   $('#tableBody').innerHTML = `<h2>Before vs after recon: every test point <span class="badge derived">derived</span></h2>
 <p>${C.rows.length} test points (300 m grid around the habitat, ≥ 300 m away, passable on both maps). For each: walk habitat → point → habitat on the least-oxygen path of the map named in the first column, then walk that same path on the HiRISE reference terrain. Oxygen in nominal minutes; usable budget 384 (480 with a 20% reserve). Computed ${esc(C.computed_at)}; definitions fixed before the first run (see DATA_LOG). Sand classes are <i>heuristic, not yet reviewed</i>.</p>
 ${G.map((g) => `<h3>${g === 'all' ? 'All test points' : g + ' m from the habitat'} (n = ${C.summary[g].A ? C.summary[g].A.n : 0})</h3>${tbl(g)}`).join('')}
+${pointwiseTables()}
 <p class="hint">Share of possible gain = (A − B) / (A − reference upper bound), on the means. A+ adds the large sand belts to the orbital map using the reference terrain (60 m blocks ≥ 50% sand): it is not real pre-departure knowledge and only brackets the result. The reference upper bound is what perfect knowledge would give; it is not a recon result.</p>`;
+}
+
+function pointwiseTables() {
+  const PW = S.PW; if (!PW) return '';
+  const Q = [['actual_o2', 'Actual oxygen'], ['hazard_m', 'Hazard metres'], ['o2_error', 'Oxygen error (actual − planned)'], ['crossings', 'Crossings']];
+  const lab = (s) => s === 'A+' ? 'A+ (bracket)' : s === 'REF' ? 'Reference bound' : `B after ${s.slice(2)}`;
+  const f = (v) => (Math.abs(v) >= 100 ? f0(v) : f1(v));
+  const tb = (g) => { const G = PW.groups[g]; return `<table class="full"><thead><tr><th>vs route A, per point</th>${Q.map(([, n]) => `<th>${n}: better / worse / same</th><th>mean [95% resampling interval]</th><th>median (quartiles; min, max)</th>`).join('')}</tr></thead><tbody>
+${Object.keys(G).map((s) => `<tr class="${s === `B@${S.k}` ? 'hl' : ''}"><td>${esc(lab(s))}</td>${Q.map(([q]) => { const d = G[s][q]; return `<td>${d.better} / ${d.worse} / ${d.same}</td><td>${sg(d.mean, f)} [${sg(d.mean_ci95_resample_points[0], f)}, ${sg(d.mean_ci95_resample_points[1], f)}]</td><td>${sg(d.median, f)} (${sg(d.q1, f)}, ${sg(d.q3, f)}; ${sg(d.min, f)}, ${sg(d.max, f)})</td>`; }).join('')}</tr>`).join('')}</tbody></table>`; };
+  return `<h3>Point by point: how the ${PW.groups.all['B@30'].actual_o2.n} walks spread</h3>
+<p class="hint">Difference = route − route A for each test point. Better = lower (for the oxygen error: smaller in absolute value). The interval resamples the points 10,000 times (fixed seed). This describes the spread of these points; it is <b>not a significance test</b> — the points share the walk out of the habitat, one recon run and one study area. Added after the numbers were seen; no number was changed.</p>
+${['all', '300-600', '600-1200', '>1200'].map((g) => `<h4>${g === 'all' ? 'All test points' : g + ' m'} (n = ${PW.groups[g]['B@30'].actual_o2.n})</h4>${tb(g)}`).join('')}`;
 }
 
 /* ---------------- misc ---------------- */
@@ -281,6 +301,9 @@ function renderAbout() {
 <li>Walk speed and oxygen factors come from the team's earlier prototype; their original sources are still being checked. No physiological values are modelled.</li>
 <li>Test points are a fixed grid, not science targets: where it is worth sending the astronaut (step 2) is not decided yet.</li>
 <li>Routes are not replanned during the walk; route A walks into what it did not know about.</li>
+<li>After recon the plan still underestimates a walk by 108 nominal minutes on average (plans 58, costs 167); loops 20 to 30 brought no further gain; knowing part of the map is sometimes worse than knowing none (a detour around seen sand can run into unseen sand).</li>
+<li>Three comparison definitions (hazard metres only inside hazard zones; crossings measured by in-zone metres; no dwell time at the point) were set by the implementer before the run and ratified by the manager after the numbers were seen.</li>
+<li>One study area and one recon run; the 63 test points are not independent, so no per-point p-value is given.</li>
 <li>Full list: <code>README.md</code> and <code>DATA_LOG.md</code> in the repository.</li></ul>`;
 }
 

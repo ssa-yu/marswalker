@@ -363,7 +363,7 @@ function renderAbout() {
 <li>Drive there on its current map. If a newly seen cell ahead is impassable or twice as costly as expected, replan.</li>
 <li>Turn back by itself when (energy spent + planned cost home × margin) reaches the planning budget. The margin starts at ×${P.home_margin} and is raised to how much more the terrain has cost than the orbital map predicted.</li>
 <li>Go home a different way: cells already seen cost ×${1 + P.revisit_penalty} on the way back.</li>
-<li>Reserve rule (guarantee): it always keeps enough energy to get home over terrain it has <i>already seen</i>. When that margin runs out, it goes home that way (dashed green). So no loop can exceed its budget.</li></ol>
+<li>Reserve rule (guarantee): it keeps enough energy to get home over terrain it has <i>already seen</i> (hard rule; tested: no loop of the recorded run exceeds its budget). When that margin runs out, it goes home that way (dashed green). So no loop can exceed its budget.</li></ol>
 <h3>Labels</h3><p><span class="badge simulated">simulated</span> rover routes, events and statistics · <span class="badge assumed">assumed</span> budget, costs, radius, thresholds (proposed, review pending) · <span class="badge measured">measured</span> HiRISE and CTX data (orbital).</p>
 <h3>Limitations</h3><ul><li>Terrain classes are a heuristic from slope, roughness and an image texture index; the sand class in particular (heuristic, not yet reviewed) still needs a person to check it.</li>
 <li>Rover energy units are relative (1 = 1 m of firm ground), not watt-hours.</li>
