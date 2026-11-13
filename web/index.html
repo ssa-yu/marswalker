@@ -7,48 +7,103 @@
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="lib/maplibre-gl.css">
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="astronaut.css">
 </head>
 <body>
 <header id="top">
-  <div class="brand"><span class="logo">&#9679;</span> Marswalk Recon <span class="muted">· Checkpoint 1: terrain maps &amp; real imagery</span></div>
-  <nav id="scenes" aria-label="Scenes"></nav>
-  <a class="btn" href="recon.html">Step 1 · Scout rover recon</a>
-  <a class="btn" href="astronaut.html">Step 3 · Astronaut walk</a>
+  <div class="brand"><span class="logo">&#9679;</span> Marswalk Recon <span class="muted">· Jezero Crater</span></div>
+  <nav id="pages" aria-label="Pages">
+    <a class="btn active" href="index.html" aria-current="page">Astronaut map</a>
+    <a class="btn" href="recon.html">Step 1 · Scout rover recon</a>
+    <a class="btn" href="data.html">Map data</a>
+  </nav>
+  <button id="tableBtn" class="btn">Before vs after recon: full table</button>
   <button id="aboutBtn" class="btn">About &amp; Limitations</button>
 </header>
+<div id="skelBanner" role="note">Walk routes planned before and after a simulated rover recon, checked on HiRISE reference terrain · sand classes heuristic, not yet reviewed · review: pending</div>
 <main>
-  <aside id="panel" aria-label="Layers">
-    <section id="sceneInfo"></section>
+  <aside id="panel" aria-label="Walk planner">
     <section>
-      <h3>Compare terrain resolution</h3>
-      <div class="presets">
-        <button class="btn sm" data-preset="ref">Reference (HiRISE)</button>
-        <button class="btn sm" data-preset="prior">Prior (CTX)</button>
-        <button class="btn sm" data-preset="swipe" id="swipeBtn">Swipe</button>
-      </div>
-      <p class="hint">Same hillshade sun and slope colours for both; only the source resolution differs.</p>
+      <h2 class="title">Where can the astronaut walk? <span class="badge derived">derived</span></h2>
+      <p class="lead">Pick a test point on the map. <b class="cA">Route A</b> is planned from orbital data only; <b class="cB">route B</b> is planned after the scout rover's recon. Both are then walked on the HiRISE reference terrain.</p>
     </section>
-    <section id="layers"></section>
-    <section id="checks"></section>
+    <section>
+      <h3>All 63 test points: what the recon changed</h3>
+      <div id="overall"></div>
+    </section>
+    <section>
+      <h3>Test point</h3>
+      <div class="row ctrl"><button id="tPrev" class="btn sm" aria-label="Previous test point">◀</button><select id="tSel" aria-label="Test point"></select><button id="tNext" class="btn sm" aria-label="Next test point">▶</button></div>
+      <p class="hint" id="tInfo"></p>
+    </section>
+    <section class="ctrl">
+      <h3>Rover recon before route B <span class="badge simulated">simulated</span></h3>
+      <div class="row" id="kBtns" role="group" aria-label="Recon loops before route B"></div>
+      <p class="hint" id="kInfo"></p>
+      <div class="row wrap">
+        <label><input type="checkbox" id="showAp"> <span class="cAp">A+ bracket</span></label>
+        <label><input type="checkbox" id="showRef"> <span class="cR">Reference upper bound</span></label>
+      </div>
+    </section>
+    <section>
+      <h3>This walk, checked on reference terrain</h3>
+      <div id="cmp"></div>
+    </section>
+    <section class="ctrl">
+      <h3>Oxygen budget <span class="badge assumed">assumed</span></h3>
+      <label for="cap" class="sl">Suit oxygen <b id="capLbl"></b> <span class="muted">nominal minutes</span></label>
+      <input id="cap" type="range" min="60" max="480" step="5" value="480">
+      <label for="res" class="sl">Emergency reserve kept <b id="resLbl"></b></label>
+      <input id="res" type="range" min="0" max="50" step="5" value="20">
+      <p class="hint">Usable for the walk: <b id="usableLbl"></b> nominal minutes (1 = oxygen used in one minute of walking on firm ground). Routes do not change with the budget; the budget only decides whether a walk fits.</p>
+    </section>
+    <section class="ctrl">
+      <h3>Walk replay</h3>
+      <div class="row">
+        <select id="rSel" aria-label="Route to replay"></select>
+        <button id="play" class="btn" aria-label="Play">▶ Play</button>
+        <select id="speed" aria-label="Replay speed"><option value="2">2 min / s</option><option value="6" selected>6 min / s</option><option value="20">20 min / s</option></select>
+      </div>
+      <label for="scrub" class="sl">Elapsed <b id="tLbl">0</b> min</label>
+      <input id="scrub" type="range" min="0" max="1000" step="1" value="0">
+    </section>
+    <section>
+      <h3>Map</h3>
+      <div class="row wrap ctrl">
+        <label><input type="checkbox" id="showCls" checked> Reference terrain classes</label>
+        <label><input type="checkbox" id="showHaz"> Hazard zones</label>
+        <label><input type="checkbox" id="showSeen"> Area the rover saw</label>
+        <label><input type="checkbox" id="showHi"> HiRISE image</label>
+      </div>
+      <div class="legend line">
+        <span><i style="background:#f4b740"></i>rough</span><span><i style="background:#ff5a4e"></i>sand</span><span><i style="background:#8a3fae"></i>blocked (≥ 25°)</span>
+        <span><i style="background:none;border:2px solid #ff3c28"></i>hazard zone</span><span><i style="background:#58b4ff"></i>rover saw</span>
+      </div>
+      <p class="hint">Classes and hazard zones come from the HiRISE reference terrain: what the astronaut actually walks on. Route A's planner did not have them.</p>
+    </section>
   </aside>
   <div id="mapwrap">
     <div id="map"></div>
-    <div id="map2"></div>
-    <div id="swipeHandle" hidden><span>HiRISE ◀ ▶ CTX</span></div>
+    <div id="hud" aria-live="polite">
+      <div class="hrow"><span id="hudRoute">Route</span><b id="hudTerr"></b></div>
+      <div class="hrow"><span>Oxygen left (actual)</span><b id="o2Val"></b></div>
+      <div class="bar" id="o2Bar"><div class="fill"></div><div class="res"></div></div>
+      <div class="hrow"><span>Return margin, as the plan sees it</span><b id="mgVal"></b></div>
+      <div class="bar" id="mgBar"><div class="fill"></div></div>
+      <div class="hrow"><span>Return margin, true (reference)</span><b id="mtVal"></b></div>
+      <div class="bar" id="mtBar"><div class="fill"></div></div>
+      <div class="hrow small"><span>Elapsed / distance</span><b id="tdVal"></b></div>
+      <div id="warn" hidden></div>
+      <div class="hrow small muted">values <span class="badge derived">derived</span> · parameters <span class="badge assumed">assumed</span></div>
+    </div>
     <div id="scale"><div id="scaleBar"></div><span id="scaleLabel"></span></div>
     <div id="coords"></div>
-    <div id="review"></div>
   </div>
-  <aside id="photoPanel" hidden aria-label="Ground photos">
-    <button id="photoClose" class="btn sm close" aria-label="Close">✕</button>
-    <div id="photoBody"></div>
-  </aside>
 </main>
-<dialog id="about">
-  <form method="dialog"><button class="btn sm close" aria-label="Close">✕</button></form>
-  <div id="aboutBody"></div>
-</dialog>
+<dialog id="about"><form method="dialog"><button class="btn sm close" aria-label="Close">✕</button></form><div id="aboutBody"></div></dialog>
+<dialog id="table" class="wide"><form method="dialog"><button class="btn sm close" aria-label="Close">✕</button></form><div id="tableBody"></div></dialog>
+<canvas id="seenCanvas" hidden></canvas>
 <script src="lib/maplibre-gl.js"></script>
-<script src="app.js"></script>
+<script src="astronaut.js"></script>
 </body>
 </html>

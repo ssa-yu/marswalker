@@ -23,6 +23,17 @@ from .compare_ab import SAND, aplus_classes, belief_after
 from .rover_sim import simplify
 
 
+def finite(o):
+    """JSON for browsers: non-finite floats (the open upper band edge) become null."""
+    if isinstance(o, float):
+        return o if np.isfinite(o) else None
+    if isinstance(o, dict):
+        return {k: finite(v) for k, v in o.items()}
+    if isinstance(o, (list, tuple)):
+        return [finite(v) for v in o]
+    return o
+
+
 def run(scene: str):
     sc = Scene(scene)
     C = read_json(sc.work / "compare_ab.json")
@@ -92,7 +103,7 @@ def run(scene: str):
                           "class_ref": "../recon/class_ref.png", "class_prior": "../recon/class_prior.png",
                           "hirise": "../recon/hirise_1m.jpg", "reveal_t": "../recon/reveal_t.png"},
                 "recon_t1": {str(k): v for k, v in loop_t1.items()}})
-    write_json(out / "compare.json", web)
+    write_json(out / "compare.json", finite(web))
     log(scene, "export_compare", f"{len(C['rows'])} targets exported")
 
 

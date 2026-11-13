@@ -1,7 +1,6 @@
-"""Headless screenshots of the step-3 skeleton page (installed Google Chrome through Playwright).
-python tools/screenshot_astronaut.py [--url http://127.0.0.1:8765]  -> qa/screenshots/S5_astronaut_*.png"""
+"""Headless screenshots of the astronaut map (index.html: route A vs B on reference terrain).
+python tools/screenshot_astronaut.py [--url http://127.0.0.1:8765]  -> qa/screenshots/T3_walk_*.png"""
 import argparse
-import json
 import time
 from pathlib import Path
 
@@ -18,24 +17,26 @@ with sync_playwright() as p:
     pg.on("pageerror", lambda e: errors.append(str(e)))
     pg.on("response", lambda r: errors.append(f"HTTP {r.status} {r.url}") if r.status >= 400 else None)
     t0 = time.time()
-    pg.goto(a.url + "/astronaut.html")
-    pg.wait_for_function("window.__mapIdle === true && S.plan && S.parity", timeout=120000)
-    print("loaded in", round(time.time() - t0, 2), "s; parity", json.dumps(pg.evaluate("S.parity")))
+    pg.goto(a.url + "/index.html")
+    pg.wait_for_function("window.__mapIdle === true && S.routes", timeout=120000)
+    print("loaded in", round(time.time() - t0, 2), "s")
 
-    def shot(name, js=None, wait=0.8):
+    def shot(name, js=None, wait=1.0):
         if js:
             pg.evaluate(js)
         pg.wait_for_timeout(int(wait * 1000))
-        pg.screenshot(path=str(out / f"S5_astronaut_{name}.png")); print("saved", name)
+        pg.evaluate("new Promise(r => { const t = setTimeout(() => r(false), 20000); S.map.once('idle', () => { clearTimeout(t); r(true); }); S.map.triggerRepaint(); })")
+        pg.wait_for_timeout(300)
+        pg.screenshot(path=str(out / f"T3_walk_{name}.png")); print("saved", name)
 
-    shot("01_default_start")
-    shot("02_default_midwalk", "setT(S.plan.time * 0.55)")
-    shot("03_low_oxygen", "document.querySelector('#cap').value = 120; document.querySelector('#cap').dispatchEvent(new Event('input')); setT(S.plan.time * 0.6)")
-    print("low-O2 plan:", pg.evaluate("({order: S.plan.order, skipped: S.plan.skipped, o2: S.plan.o2, U: S.plan.U, min: S.plan.minMargin})"))
-    shot("04_near_end_warning", "document.querySelector('#cap').value = 90; document.querySelector('#cap').dispatchEvent(new Event('input')); setT(S.plan.T[S.plan.T.length - 3])")
-    pg.click("#play"); pg.wait_for_timeout(1500)
-    shot("05_playing", None, 0.1)
-    pg.click("#play")
-    shot("06_about", "renderAbout(); document.querySelector('#about').showModal()")
+    shot("01_first_view")
+    shot("02_routeA_midwalk", "S.route='A'; document.querySelector('#rSel').value='A'; setT(cur().act_t.at(-1) * 0.4)")
+    shot("03_routeB_midwalk", "S.route='B'; document.querySelector('#rSel').value='B'; drawRoutes(); setT(cur().act_t.at(-1) * 0.4)")
+    shot("04_rover_seen_loop5", "document.querySelector('#showSeen').click(); S.k=5; refresh()")
+    shot("05_west_target_bracket", "document.querySelector('#showAp').click(); document.querySelector('#showRef').click(); S.k=30; "
+         "selectTarget(S.C.rows.findIndex(r => r.x === -600 && r.y === 0))", 2.0)
+    shot("06_full_table", "renderTable(); document.querySelector('#table').showModal()")
+    pg.evaluate("document.querySelector('#table').close()")
+    shot("07_about", "renderAbout(); document.querySelector('#about').showModal()")
     print("errors:", errors)
     br.close()

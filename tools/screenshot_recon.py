@@ -27,7 +27,7 @@ with sync_playwright() as p:
         pg.wait_for_timeout(int(wait * 1000))
         pg.evaluate("new Promise(r => { const t = setTimeout(() => r(false), 30000); S.map.once('idle', () => { clearTimeout(t); r(true); }); S.map.triggerRepaint(); })")
         pg.wait_for_timeout(400)
-        pg.screenshot(path=str(out / f"S3_recon_v2_{name}.png")); print("saved", name)
+        pg.screenshot(path=str(out / f"T1_recon_rerun_{name}.png")); print("saved", name)
 
     shot("00_before_departure", "setLoop(0)")
     shot("01_loop1_end", "setLoop(1)")

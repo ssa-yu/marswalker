@@ -28,7 +28,7 @@ try:
             pg.screenshot(path=str(out / f"{name}.png")); print("saved", name)
         for sc in scenes:
             sid = sc["id"]; t0 = time.time()
-            pg.goto(f"http://localhost:{a.port}/#{sid}")
+            pg.goto(f"http://localhost:{a.port}/data.html#{sid}")
             pg.wait_for_function("window.__mapIdle === true", timeout=120000)
             timing[sid] = round(time.time() - t0, 2)
             shot(f"{sid}_01_default")
@@ -61,7 +61,7 @@ try:
             if r.request.url.startswith(f"http://localhost:{a.port}/"): r.continue_()
             else: ext.append(r.request.url); r.abort()
         pg2.route("**/*", route)
-        pg2.goto(f"http://localhost:{a.port}/#{scenes[0]['id']}")
+        pg2.goto(f"http://localhost:{a.port}/data.html#{scenes[0]['id']}")
         pg2.wait_for_function("window.__mapIdle === true", timeout=120000); pg2.wait_for_timeout(2000)
         pg2.screenshot(path=str(out / "offline_check.png"))
         print("timing (s, page load to first map idle):", timing)

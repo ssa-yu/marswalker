@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marswalk Recon</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="lib/maplibre-gl.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header id="top">
+  <div class="brand"><span class="logo">&#9679;</span> Marswalk Recon <span class="muted">· Checkpoint 1: terrain maps &amp; real imagery</span></div>
+  <nav id="scenes" aria-label="Scenes"></nav>
+  <a class="btn" href="index.html">Astronaut map</a>
+  <a class="btn" href="recon.html">Step 1 · Scout rover recon</a>
+  <a class="btn active" href="data.html" aria-current="page">Map data</a>
+  <button id="aboutBtn" class="btn">About &amp; Limitations</button>
+</header>
+<main>
+  <aside id="panel" aria-label="Layers">
+    <section id="sceneInfo"></section>
+    <section>
+      <h3>Compare terrain resolution</h3>
+      <div class="presets">
+        <button class="btn sm" data-preset="ref">Reference (HiRISE)</button>
+        <button class="btn sm" data-preset="prior">Prior (CTX)</button>
+        <button class="btn sm" data-preset="swipe" id="swipeBtn">Swipe</button>
+      </div>
+      <p class="hint">Same hillshade sun and slope colours for both; only the source resolution differs.</p>
+    </section>
+    <section id="layers"></section>
+    <section id="checks"></section>
+  </aside>
+  <div id="mapwrap">
+    <div id="map"></div>
+    <div id="map2"></div>
+    <div id="swipeHandle" hidden><span>HiRISE ◀ ▶ CTX</span></div>
+    <div id="scale"><div id="scaleBar"></div><span id="scaleLabel"></span></div>
+    <div id="coords"></div>
+    <div id="review"></div>
+  </div>
+  <aside id="photoPanel" hidden aria-label="Ground photos">
+    <button id="photoClose" class="btn sm close" aria-label="Close">✕</button>
+    <div id="photoBody"></div>
+  </aside>
+</main>
+<dialog id="about">
+  <form method="dialog"><button class="btn sm close" aria-label="Close">✕</button></form>
+  <div id="aboutBody"></div>
+</dialog>
+<script src="lib/maplibre-gl.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

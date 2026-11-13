@@ -1,255 +1,258 @@
-/* Marswalk Recon — Step 3 skeleton: astronaut walk planner. Plain JS, no build step.
-   Data: data/jezero/astronaut/astronaut.json + class_prior_4m.png (prior terrain classes on a 4 m grid).
-   The planner is a port of pipeline/astro_plan.py: least-oxygen paths (Dijkstra, 8-connected, a step costs the
-   mean of the two cells' per-metre oxygen times the step length), then the stop order that visits the most stops
-   and uses the least oxygen while always keeping enough oxygen to walk home. Planned values only, on the prior. */
+/* Marswalk Recon — astronaut map: route A (orbital data only) vs route B (after the simulated rover recon),
+   both walked on the HiRISE reference terrain. Plain JS, no build step.
+   Data: data/jezero/compare/compare.json (definitions + summary tables) and compare/routes/t<i>.json (per test point:
+   each route with cumulative distance, predicted and actual time / oxygen, oxygen needed to get home on the plan's map
+   and on the reference terrain, hazard flag and reference class at every kept vertex). Nothing is recomputed here
+   except the budget verdicts, which follow the oxygen sliders. Source: pipeline/compare_ab.py, export_compare.py. */
 'use strict';
 const R_MARS = 3396190, DEG = Math.PI / 180;
-const SCENE = 'jezero', BASE = `data/${SCENE}/`, AB = BASE + 'astronaut/';
+const SCENE = 'jezero', BASE = `data/${SCENE}/`, CB = BASE + 'compare/';
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const abs = (u) => new URL(u, location.href).href;
-const f0 = (v) => Math.round(v).toLocaleString('en-US');
+const f0 = (v) => v == null || !isFinite(v) ? '–' : Math.round(v).toLocaleString('en-US');
+const f1 = (v) => v == null || !isFinite(v) ? '–' : (Math.round(v * 10) / 10).toLocaleString('en-US');
+const sg = (v, f = f0) => (v > 0 ? '+' : v < 0 ? '−' : '') + f(Math.abs(v));
 const fmtMin = (m) => { const h = Math.floor(m / 60), r = Math.round(m - 60 * h); return h ? `${h} h ${String(r).padStart(2, '0')} min` : `${r} min`; };
-const S = { t: 0, playing: false, include: null, plan: null };
+const COL = { A: '#ff9f43', B: '#43b0f1', 'A+': '#c38bff', REF: '#e9e4dc' };
+const CLS = ['firm', 'rough', 'sand', 'blocked'];
+const S = { k: 30, tgt: 0, route: 'A', t: 0, playing: false, cache: {} };
 
 async function getJSON(u) { const r = await fetch(u); if (!r.ok) throw new Error(`${u}: ${r.status}`); return r.json(); }
+async function bitmap(u) { return createImageBitmap(await (await fetch(u)).blob(), { colorSpaceConversion: 'none', premultiplyAlpha: 'none' }); }
+const stateOf = (r) => (r === 'B' ? `B@${S.k}` : r);
+const nameOf = (r) => ({ A: 'Route A · orbital data only', B: `Route B · after ${S.k} recon loop${S.k > 1 ? 's' : ''}`, 'A+': 'A+ · optimistic prior (bracket)', REF: 'Reference upper bound (not a recon result)' }[r]);
+function usable() { return +$('#cap').value * (1 - +$('#res').value / 100); }
 
-/* ---------------- planner ---------------- */
-class Heap { // binary min-heap of (key, value)
-  constructor() { this.k = []; this.v = []; }
-  push(key, val) { const k = this.k, v = this.v; let i = k.length; k.push(key); v.push(val);
-    while (i > 0) { const p = (i - 1) >> 1; if (k[p] <= key) break; k[i] = k[p]; v[i] = v[p]; i = p; } k[i] = key; v[i] = val; }
-  pop() { const k = this.k, v = this.v, top = v[0], topk = k[0], lk = k.pop(), lv = v.pop(); const n = k.length;
-    if (n) { let i = 0; for (;;) { let c = 2 * i + 1; if (c >= n) break; if (c + 1 < n && k[c + 1] < k[c]) c++; if (k[c] >= lk) break; k[i] = k[c]; v[i] = v[c]; i = c; } k[i] = lk; v[i] = lv; }
-    this.lastKey = topk; return top; }
-  get size() { return this.k.length; }
-}
-const NB = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
-function dijkstra(src) {
-  const { W, H, o2m, res } = S.g, n = W * H, dist = new Float64Array(n).fill(Infinity), prev = new Int32Array(n).fill(-1);
-  const h = new Heap(); dist[src] = 0; h.push(0, src);
-  while (h.size) {
-    const u = h.pop(), du = h.lastKey; if (du > dist[u]) continue;
-    const r = (u / W) | 0, c = u - r * W, cu = o2m[u];
-    for (const [dr, dc] of NB) {
-      const rr = r + dr, cc = c + dc; if (rr < 0 || rr >= H || cc < 0 || cc >= W) continue;
-      const v = rr * W + cc, cv = o2m[v]; if (!isFinite(cv)) continue;
-      const nd = du + 0.5 * (cu + cv) * res * (dr && dc ? Math.SQRT2 : 1);
-      if (nd < dist[v]) { dist[v] = nd; prev[v] = u; h.push(nd, v); }
-    }
-  }
-  return { dist, prev };
-}
-function legPath(a, b) { // stop index a -> stop index b, using the field rooted at a
-  const p = [], pr = S.fields[a].prev; let v = S.pts[b];
-  while (v !== -1) { p.push(v); if (v === S.pts[a]) break; v = pr[v]; }
-  return p.reverse();
-}
-function permutations(arr) { if (arr.length <= 1) return [arr.slice()]; const out = []; arr.forEach((x, i) => { for (const p of permutations([...arr.slice(0, i), ...arr.slice(i + 1)])) out.push([x, ...p]); }); return out; }
-function combinations(arr, k) { if (k === 0) return [[]]; if (arr.length < k) return []; const [h, ...t] = arr; return [...combinations(t, k - 1).map((c) => [h, ...c]), ...combinations(t, k)]; }
-function lexLess(a, b) { for (let i = 0; i < Math.min(a.length, b.length); i++) if (a[i] !== b[i]) return a[i] < b[i]; return a.length < b.length; }
-
-function planTour(cap, reserve, include) {
-  const D = S.D, U = cap * (1 - reserve), ids = include.map((on, j) => on ? j : -1).filter((j) => j >= 0);
-  const tourCost = (order) => { let used = 0, cur = 0; for (const j of order) { used += D[cur][j + 1]; if (!isFinite(used) || used + D[j + 1][0] > U + 1e-9) return Infinity; cur = j + 1; } return used + D[cur][0]; };
-  let best = [], bestC = 0;
-  for (let k = ids.length; k > 0; k--) {
-    let found = null, fc = Infinity;
-    for (const s of combinations(ids, k)) for (const o of permutations(s)) { const c = tourCost(o); if (c < fc - 1e-12 || (Math.abs(c - fc) <= 1e-12 && found && lexLess(o, found))) { fc = c; found = o; } }
-    if (found && isFinite(fc)) { best = found; bestC = fc; break; }
-  }
-  const stops = [0, ...best.map((j) => j + 1), 0];
-  let path = [S.pts[0]]; const legEnds = [];
-  for (let i = 0; i + 1 < stops.length; i++) { if (stops[i] === stops[i + 1]) continue; path = path.concat(legPath(stops[i], stops[i + 1]).slice(1)); legEnds.push(path.length - 1); }
-  const { W, o2m, tm, res } = S.g, home = S.fields[0].dist;
-  const T = [0], O = [0], Dm = [0], Hm = [home[path[0]]];
-  for (let i = 1; i < path.length; i++) {
-    const a = path[i - 1], b = path[i], diag = ((a / W) | 0) !== ((b / W) | 0) && (a % W) !== (b % W), L = res * (diag ? Math.SQRT2 : 1);
-    T.push(T[i - 1] + 0.5 * (tm[a] + tm[b]) * L); O.push(O[i - 1] + 0.5 * (o2m[a] + o2m[b]) * L); Dm.push(Dm[i - 1] + L); Hm.push(home[b]);
-  }
-  const M = O.map((o, i) => U - o - Hm[i]);
-  const skipped = ids.filter((j) => !best.includes(j));
-  return { U, cap, reserve, order: best, skipped, excluded: include.map((on, j) => on ? -1 : j).filter((j) => j >= 0), path, legEnds, T, O, Dm, Hm, M,
-    o2: O[O.length - 1], time: T[T.length - 1], dist: Dm[Dm.length - 1], minMargin: Math.min(...M), tourC: bestC };
-}
-
-/* ---------------- geometry ---------------- */
-function rcToXY(i) { const { W, res, ext } = S.g, r = (i / W) | 0, c = i - r * W; return [ext[0] + (c + 0.5) * res, ext[3] - (r + 0.5) * res]; }
-function xyToLL(x, y) { const b = S.A.base; return [b.lon + (x / b.k_coslat) / R_MARS / DEG, b.lat + y / R_MARS / DEG]; }
-function idxLL(i) { return xyToLL(...rcToXY(i)); }
-
-/* ---------------- init ---------------- */
 async function init() {
-  const [A, sc] = await Promise.all([getJSON(AB + 'astronaut.json'), getJSON(BASE + 'scene.json')]);
-  S.A = A; S.sc = sc;
-  const img = await createImageBitmap(await (await fetch(AB + A.grid.class_png)).blob(), { colorSpaceConversion: 'none', premultiplyAlpha: 'none' });
-  const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height;
-  const cx = cv.getContext('2d', { willReadFrequently: true }); cx.drawImage(img, 0, 0);
-  const px = cx.getImageData(0, 0, img.width, img.height).data;
-  const W = img.width, H = img.height, cls = new Uint8Array(W * H);
-  for (let i = 0; i < W * H; i++) cls[i] = px[4 * i];
-  const pm = A.per_metre, o2m = new Float64Array(W * H), tm = new Float64Array(W * H);
-  for (let i = 0; i < W * H; i++) { const k = cls[i]; o2m[i] = k < 3 ? pm.o2_nominal_min[k] : Infinity; tm[i] = k < 3 ? pm.time_min[k] : Infinity; }
-  S.g = { W, H, cls, o2m, tm, res: A.grid.res_m, ext: A.grid.extent_local_m };
-  S.pts = [A.base.rc, ...A.targets.map((t) => t.rc)].map(([r, c]) => r * W + c);
-  const t0 = performance.now();
-  S.fields = S.pts.map((p) => dijkstra(p));
-  S.D = S.pts.map((_, a) => S.pts.map((p) => S.fields[a].dist[p]));
-  S.planMs = performance.now() - t0;
-  S.include = A.targets.map(() => true);
-  drawClassCanvas();
-  buildMap();
-  const P = A.params;
-  $('#cap').value = P.o2_capacity_nominal_min; $('#res').value = Math.round(P.reserve_frac * 100);
-  $('#cap').oninput = $('#res').oninput = () => replan();
-  $('#scrub').oninput = () => { stop(); setT(+$('#scrub').value / 1000 * S.plan.time); };
+  const [C, sc] = await Promise.all([getJSON(CB + 'compare.json'), getJSON(BASE + 'scene.json')]);
+  S.C = C; S.sc = sc;
+  S.ks = C.states.filter((s) => s.startsWith('B@')).map((s) => +s.slice(2));
+  S.k = S.ks[S.ks.length - 1];
+  // default test point: the lattice point at (600, 0) m (the step-3 skeleton's first placeholder rule), else the first
+  S.tgt = Math.max(0, C.rows.findIndex((r) => r.x === 600 && r.y === 0));
+  $('#tSel').innerHTML = C.rows.map((r, i) => `<option value="${i}">T${r.target} · x ${f0(r.x)} m, y ${f0(r.y)} m · ${r.band} m</option>`).join('');
+  $('#kBtns').innerHTML = S.ks.map((k) => `<button class="btn sm" data-k="${k}">${k}</button>`).join('') + '<span class="muted">loops</span>';
+  document.querySelectorAll('#kBtns button').forEach((b) => b.onclick = () => { S.k = +b.dataset.k; refresh(); });
+  $('#tSel').onchange = () => selectTarget(+$('#tSel').value);
+  $('#tPrev').onclick = () => selectTarget((S.tgt - 1 + C.rows.length) % C.rows.length);
+  $('#tNext').onclick = () => selectTarget((S.tgt + 1) % C.rows.length);
+  $('#cap').oninput = $('#res').oninput = () => { renderCmp(); setT(S.t); };
+  $('#showAp').onchange = $('#showRef').onchange = () => { renderRouteSel(); drawRoutes(); renderCmp(); };
+  $('#rSel').onchange = () => { stop(); S.route = $('#rSel').value; setT(0); drawRoutes(); };
+  $('#scrub').oninput = () => { stop(); setT(+$('#scrub').value / 1000 * cur().act_t.at(-1)); };
   $('#play').onclick = () => (S.playing ? stop() : play());
-  $('#showClasses').onchange = () => S.map.setLayoutProperty('classes', 'visibility', $('#showClasses').checked ? 'visible' : 'none');
   $('#aboutBtn').onclick = () => { renderAbout(); $('#about').showModal(); };
-  $('#targetRule').textContent = 'Rule (fixed before running): ' + A.target_rule;
-  replan();
-  parityCheck();
+  $('#tableBtn').onclick = () => { renderTable(); $('#table').showModal(); };
+  for (const [id, lay] of [['showCls', 'cls'], ['showHaz', 'haz'], ['showSeen', 'seen'], ['showHi', 'hfull']])
+    $('#' + id).onchange = () => S.map.setLayoutProperty(lay, 'visibility', $('#' + id).checked ? 'visible' : 'none');
+  const tImg = await bitmap(CB + C.files.reveal_t);
+  const c = document.createElement('canvas'); c.width = tImg.width; c.height = tImg.height;
+  const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(tImg, 0, 0);
+  const d = x.getImageData(0, 0, c.width, c.height).data, n = c.width * c.height, tt = new Uint32Array(n);
+  for (let i = 0; i < n; i++) tt[i] = (d[4 * i] << 16) | (d[4 * i + 1] << 8) | d[4 * i + 2];
+  S.revealT = tt; S.tw = c.width; S.th = c.height;
+  buildMap();
 }
 
-function parityCheck() {
-  const P = S.A.params, p = planTour(P.o2_capacity_nominal_min, P.reserve_frac, S.A.targets.map(() => true)), r = S.A.reference_plan_python;
-  const d = Math.abs(p.o2 - r.o2_total), same = JSON.stringify(p.order) === JSON.stringify(r.order);
-  S.parity = { js_o2: p.o2, py_o2: r.o2_total, diff: d, sameOrder: same };
-  $('#parity').innerHTML = `Browser planner vs pipeline (<code>astro_plan.py</code>) at the default budget: oxygen ${p.o2.toFixed(2)} vs ${r.o2_total.toFixed(2)} min, stop order ${same ? 'identical' : 'DIFFERENT'} <span class="${d < 0.05 && same ? 'pass' : 'fail'}">${d < 0.05 && same ? 'match' : 'mismatch'}</span>. Paths computed in ${S.planMs.toFixed(0)} ms.`;
+function cur() { return S.routes.states[stateOf(S.route)]; }
+function row() { return S.C.rows[S.tgt]; }
+
+async function selectTarget(i) {
+  stop(); S.tgt = i; $('#tSel').value = i;
+  const r = row();
+  if (!S.cache[r.target]) S.cache[r.target] = await getJSON(`${CB}routes/t${r.target}.json`);
+  S.routes = S.cache[r.target];
+  $('#tInfo').textContent = `Straight-line distance ${f0(r.dist_m)} m from the habitat (${r.band} m band). Test points are a fixed 300 m grid, not science targets (step 2 is not decided).`;
+  refresh();
 }
 
-function drawClassCanvas() {
-  const { W, H, cls } = S.g, c = $('#classCanvas'); c.width = W; c.height = H;
-  const x = c.getContext('2d'), im = x.createImageData(W, H);
-  const col = [null, [244, 183, 64, 150], [255, 90, 78, 160], [138, 63, 174, 220]];
-  for (let i = 0; i < W * H; i++) { const k = col[cls[i]]; if (!k) continue; im.data.set(k, 4 * i); }
-  x.putImageData(im, 0, 0);
+function refresh() {
+  document.querySelectorAll('#kBtns button').forEach((b) => b.classList.toggle('active', +b.dataset.k === S.k));
+  const of = S.C.observed_frac[`B@${S.k}`];
+  $('#kInfo').textContent = `After ${S.k} loop${S.k > 1 ? 's' : ''} the rover had seen ${(100 * of).toFixed(1)}% of the study area. Route B uses the reference terrain only where the rover saw it, orbital data elsewhere.`;
+  renderRouteSel(); renderCmp(); renderOverall(); drawSeen(); drawRoutes(); drawTargets(); setT(0);
 }
 
-function aoiCorners() { const e = S.g.ext; return [xyToLL(e[0], e[3]), xyToLL(e[2], e[3]), xyToLL(e[2], e[1]), xyToLL(e[0], e[1])]; }
+function renderRouteSel() {
+  const opts = ['A', 'B', ...($('#showAp').checked ? ['A+'] : []), ...($('#showRef').checked ? ['REF'] : [])];
+  if (!opts.includes(S.route)) S.route = 'A';
+  $('#rSel').innerHTML = opts.map((o) => `<option value="${o}" ${o === S.route ? 'selected' : ''}>${esc(nameOf(o))}</option>`).join('');
+}
+
+function renderCmp() {
+  const r = row(), U = usable(), cols = ['A', 'B', ...($('#showAp').checked ? ['A+'] : []), ...($('#showRef').checked ? ['REF'] : [])];
+  $('#capLbl').textContent = `${$('#cap').value} min`; $('#resLbl').textContent = `${$('#res').value}%`; $('#usableLbl').textContent = f0(U);
+  const v = (c) => r[stateOf(c)];
+  const fits = (o2) => o2 <= U + 1e-9 ? '<span class="pass">yes</span>' : '<span class="fail">no</span>';
+  const lines = [
+    ['Planned oxygen', (c) => f1(v(c).pred_o2)],
+    ['Actual oxygen', (c) => `<b>${f1(v(c).actual_o2)}</b>`],
+    ['Error (actual − planned)', (c) => sg(v(c).o2_error, f1)],
+    ['Planned walk fits budget', (c) => fits(v(c).pred_o2)],
+    ['Actual walk fits budget', (c) => fits(v(c).actual_o2)],
+    ['Planned time', (c) => fmtMin(v(c).pred_time_min)],
+    ['Actual time', (c) => fmtMin(v(c).actual_time_min)],
+    ['Metres in hazard zones', (c) => `<b>${f0(v(c).hazard_m)}</b>`],
+    ['Hazard crossings', (c) => `<b>${v(c).crossings}</b>`],
+    ['Metres on blocked cells', (c) => f0(v(c).blocked_m)],
+    ['Walk length (m)', (c) => f0(v(c).length_m)],
+  ];
+  $('#cmp').innerHTML = `<table class="cmp"><thead><tr><th></th>${cols.map((c) => `<th class="c${c === 'A+' ? 'Ap' : c === 'REF' ? 'R' : c}">${c === 'B' ? 'B@' + S.k : c}</th>`).join('')}</tr></thead>
+<tbody>${lines.map(([n, f]) => `<tr><td>${n}</td>${cols.map((c) => `<td>${f(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>
+<p class="hint">Habitat → test point → back on the same path. Oxygen in nominal minutes. Hazard zone: a patch of sand or blocked ground ≥ 400 m² on the reference terrain that the orbital map does not show; a crossing is a stretch ≥ 10 m inside one. A+ and the reference bound are context, not results.</p>`;
+}
+
+function renderOverall() {
+  const s = S.C.summary.all, A = s.A, B = s[`B@${S.k}`], R = s.REF, sh = B.share_of_possible_improvement;
+  const pc = (v) => v == null ? '–' : Math.round(100 * v) + '%';
+  $('#overall').innerHTML = `<table class="cmp"><thead><tr><th>mean per walk</th><th class="cA">A</th><th class="cB">B@${S.k}</th><th class="cR">ref. bound</th></tr></thead><tbody>
+<tr><td>Metres in hazard zones</td><td>${f0(A.hazard_m.mean)}</td><td><b>${f0(B.hazard_m.mean)}</b></td><td>${f0(R.hazard_m.mean)}</td></tr>
+<tr><td>Hazard crossings</td><td>${f1(A.crossings.mean)}</td><td><b>${f1(B.crossings.mean)}</b></td><td>${f1(R.crossings.mean)}</td></tr>
+<tr><td>Actual oxygen</td><td>${f1(A.actual_o2.mean)}</td><td><b>${f1(B.actual_o2.mean)}</b></td><td>${f1(R.actual_o2.mean)}</td></tr>
+<tr><td>Oxygen underestimated by</td><td>${f1(A.o2_error.mean)}</td><td><b>${f1(B.o2_error.mean)}</b></td><td>${f1(R.o2_error.mean)}</td></tr></tbody></table>
+<p class="hint">After ${S.k} loop${S.k > 1 ? 's' : ''} the rover's map recovers ${pc(sh.hazard_m)} of the hazard metres and ${pc(sh.actual_o2)} of the oxygen that perfect knowledge (reference bound) would save. Details by distance: <a href="#" id="tblLink">full table</a>.</p>`;
+  $('#tblLink').onclick = (e) => { e.preventDefault(); renderTable(); $('#table').showModal(); };
+}
+
+/* ---------------- map ---------------- */
 function fc(f) { return { type: 'FeatureCollection', features: f }; }
+function xyToLL(x, y) { const b = S.C.base; return [b.lon + (x / S.C.k_coslat) / R_MARS / DEG, b.lat + y / R_MARS / DEG]; }
 
 function buildMap() {
-  const c = aoiCorners(), sc = S.sc;
+  const C = S.C, c = C.aoi_corners, sc = S.sc;
   const map = new maplibregl.Map({
     container: 'map', bounds: [[c[0][0], c[2][1]], [c[1][0], c[0][1]]], fitBoundsOptions: { padding: { top: 30, bottom: 30, left: 300, right: 30 } },
     maxZoom: 19, minZoom: 9, renderWorldCopies: false, dragRotate: false, pitchWithRotate: false,
     style: { version: 8, sources: {}, layers: [{ id: 'bg', type: 'background', paint: { 'background-color': '#0d0b0a' } }] },
-    attributionControl: { compact: true, customAttribution: 'NASA/JPL-Caltech/MSSS (CTX), USGS Astrogeology. Walk: planned (derived).' },
+    attributionControl: { compact: true, customAttribution: 'NASA/JPL-Caltech/UArizona (HiRISE), NASA/JPL-Caltech/MSSS (CTX), USGS Astrogeology. Routes: derived; rover: simulated.' },
   });
   S.map = map; window.__mapIdle = false;
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
-  map.on('load', () => {
-    const ctx = sc.layers.find((l) => l.id === 'ctx_ortho');
+  map.on('load', async () => {
+    const L = (id) => sc.layers.find((l) => l.id === id);
+    const ctx = L('ctx_ortho'), ho = L('hirise_ortho');
     map.addSource('ctx', { type: 'image', url: abs(BASE + ctx.url), coordinates: ctx.coordinates });
-    map.addLayer({ id: 'ctx', type: 'raster', source: 'ctx', paint: { 'raster-fade-duration': 0, 'raster-brightness-max': 0.8, 'raster-saturation': -0.3 } });
-    map.addSource('classes', { type: 'canvas', canvas: 'classCanvas', coordinates: c, animate: false });
-    map.addLayer({ id: 'classes', type: 'raster', source: 'classes', paint: { 'raster-opacity': 0.75, 'raster-fade-duration': 0, 'raster-resampling': 'nearest' } });
+    map.addLayer({ id: 'ctx', type: 'raster', source: 'ctx', paint: { 'raster-fade-duration': 0, 'raster-brightness-max': 0.75, 'raster-saturation': -0.3 } });
+    map.addSource('hfull', { type: 'raster', tiles: [abs(BASE) + ho.url], tileSize: 256, minzoom: ho.minzoom, maxzoom: ho.maxzoom, bounds: ho.bounds });
+    map.addLayer({ id: 'hfull', type: 'raster', source: 'hfull', layout: { visibility: 'none' }, paint: { 'raster-fade-duration': 0 } });
+    map.addSource('cls', { type: 'image', url: abs(CB + C.files.class_ref), coordinates: c });
+    map.addLayer({ id: 'cls', type: 'raster', source: 'cls', paint: { 'raster-opacity': 0.55, 'raster-fade-duration': 0, 'raster-resampling': 'nearest' } });
+    map.addSource('haz', { type: 'image', url: abs(CB + C.files.hazard_zones), coordinates: c });
+    map.addLayer({ id: 'haz', type: 'raster', source: 'haz', layout: { visibility: 'none' }, paint: { 'raster-opacity': 0.35, 'raster-fade-duration': 0, 'raster-resampling': 'nearest' } });
+    map.addSource('seen', { type: 'canvas', canvas: 'seenCanvas', coordinates: c, animate: false });
+    map.addLayer({ id: 'seen', type: 'raster', source: 'seen', layout: { visibility: 'none' }, paint: { 'raster-opacity': 0.55, 'raster-fade-duration': 0 } });
     map.addSource('aoi', { type: 'geojson', data: { type: 'Feature', geometry: { type: 'LineString', coordinates: [...c, c[0]] } } });
     map.addLayer({ id: 'aoi', type: 'line', source: 'aoi', paint: { 'line-color': '#f2b36b', 'line-width': 1.2, 'line-dasharray': [3, 2] } });
-    map.addSource('route', { type: 'geojson', data: fc([]) });
-    map.addLayer({ id: 'route-case', type: 'line', source: 'route', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '#000', 'line-width': 5, 'line-opacity': 0.6 } });
-    map.addLayer({ id: 'route-todo', type: 'line', source: 'route', filter: ['!', ['get', 'done']], layout: { 'line-join': 'round' },
-      paint: { 'line-color': '#43b0f1', 'line-width': 2, 'line-opacity': 0.8, 'line-dasharray': [2, 1.5] } });
-    map.addLayer({ id: 'route', type: 'line', source: 'route', filter: ['get', 'done'], layout: { 'line-join': 'round', 'line-cap': 'round' },
-      paint: { 'line-color': '#43b0f1', 'line-width': 3.2 } });
-    map.addSource('pts', { type: 'geojson', data: fc([]) });
-    map.addLayer({ id: 'pts', type: 'circle', source: 'pts', paint: {
-      'circle-radius': ['case', ['==', ['get', 'kind'], 'base'], 8, 7], 'circle-stroke-width': 2.5, 'circle-stroke-color': '#000',
-      'circle-color': ['match', ['get', 'state'], 'base', '#f2b36b', 'visit', '#6cc28a', 'skip', '#e0625a', '#777'] } });
-    S.marker = new maplibregl.Marker({ element: Object.assign(document.createElement('div'), { className: 'astro-marker', title: 'Astronaut (planned position)' }) }).setLngLat(idxLL(S.pts[0])).addTo(map);
+    map.addSource('routes', { type: 'geojson', data: fc([]) });
+    map.addLayer({ id: 'routes-case', type: 'line', source: 'routes', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '#000', 'line-width': ['get', 'cw'], 'line-opacity': 0.75 } });
+    map.addLayer({ id: 'routes', type: 'line', source: 'routes', layout: { 'line-join': 'round', 'line-cap': 'round' },
+      paint: { 'line-color': ['get', 'col'], 'line-width': ['get', 'w'] } });
+    map.addLayer({ id: 'routes-haz', type: 'line', source: 'routes', filter: ['==', ['get', 'haz'], 1], layout: { 'line-join': 'round', 'line-cap': 'round' },
+      paint: { 'line-color': '#ff2d1a', 'line-width': ['+', ['get', 'w'], 1.5], 'line-dasharray': [1, 0.8] } });
+    map.addSource('tg', { type: 'geojson', data: fc([]) });
+    map.addLayer({ id: 'tg', type: 'circle', source: 'tg', paint: { 'circle-radius': ['case', ['get', 'sel'], 8, 4.5], 'circle-color': ['case', ['get', 'sel'], '#ffffff', 'rgba(255,255,255,0.35)'],
+      'circle-stroke-color': '#000', 'circle-stroke-width': ['case', ['get', 'sel'], 2.5, 1] } });
+    const b = C.base;
+    map.addSource('base', { type: 'geojson', data: { type: 'Feature', geometry: { type: 'Point', coordinates: [b.lon, b.lat] } } });
+    map.addLayer({ id: 'base', type: 'circle', source: 'base', paint: { 'circle-radius': 8, 'circle-color': '#e8743b', 'circle-stroke-color': '#fff', 'circle-stroke-width': 2 } });
+    S.marker = new maplibregl.Marker({ element: Object.assign(document.createElement('div'), { className: 'astro-marker', title: 'Astronaut' }) }).setLngLat([b.lon, b.lat]).addTo(map);
+    const pop = new maplibregl.Popup({ closeButton: false, offset: 8 });
+    map.on('click', 'tg', (e) => selectTarget(e.features[0].properties.i));
+    map.on('mouseenter', 'tg', (e) => { map.getCanvas().style.cursor = 'pointer'; const p = e.features[0].properties; pop.setLngLat(e.lngLat).setHTML(`Test point T${p.id}<br>${esc(p.band)} m band · click to select`).addTo(map); });
+    map.on('mouseleave', 'tg', () => { map.getCanvas().style.cursor = ''; pop.remove(); });
+    map.on('mouseenter', 'base', (e) => pop.setLngLat(e.lngLat).setHTML('<b>Habitat</b> <span class="badge assumed">assumed</span>').addTo(map));
+    map.on('mouseleave', 'base', () => pop.remove());
+    map.on('move', updateScale); map.on('mousemove', (e) => showCoords(e.lngLat));
     map.once('idle', () => { window.__mapIdle = true; });
-    drawRoute(); drawPoints(); updateScale();
+    updateScale();
+    await selectTarget(S.tgt);
   });
-  map.on('move', updateScale);
-  map.on('mousemove', (e) => showCoords(e.lngLat));
 }
 
-/* ---------------- plan / UI ---------------- */
-function replan() {
-  stop();
-  const cap = +$('#cap').value, reserve = +$('#res').value / 100;
-  $('#capLbl').textContent = `${cap} min`; $('#resLbl').textContent = `${Math.round(reserve * 100)}%`;
-  $('#usableLbl').textContent = f0(cap * (1 - reserve));
-  S.plan = planTour(cap, reserve, S.include);
-  renderTargets(); renderSummary(); drawPoints(); setT(0);
+function drawTargets() {
+  if (!S.map.getSource('tg')) return;
+  S.map.getSource('tg').setData(fc(S.C.rows.map((r, i) => ({ type: 'Feature', properties: { i, id: r.target, band: r.band, sel: i === S.tgt }, geometry: { type: 'Point', coordinates: xyToLL(r.x, r.y) } }))));
 }
 
-function renderTargets() {
-  const p = S.plan, A = S.A;
-  $('#targets').innerHTML = A.targets.map((t, j) => {
-    const vi = p.order.indexOf(j), on = S.include[j];
-    const st = !on ? '<span class="st">left out by you</span>' : vi >= 0 ? `<span class="st ok">stop ${vi + 1} of ${p.order.length}</span>`
-      : `<span class="st skip">skipped: ${isFinite(S.D[0][j + 1]) ? 'not enough oxygen to reach it and still get home' : 'no passable path on the prior'}</span>`;
-    return `<label class="tgt"><input type="checkbox" data-j="${j}" ${on ? 'checked' : ''}><span class="id">${esc(t.id)}</span><span class="muted">x ${f0(t.xy_m[0])} m, y ${f0(t.xy_m[1])} m · ${esc(t.label)}</span>${st}</label>`;
-  }).join('');
-  document.querySelectorAll('#targets input').forEach((el) => el.onchange = () => { S.include[+el.dataset.j] = el.checked; replan(); });
+function drawRoutes() {
+  if (!S.map || !S.map.getSource('routes') || !S.routes) return;
+  const shown = ['REF', 'A+', 'A', 'B'].filter((r) => r === 'A' || r === 'B' || (r === 'A+' && $('#showAp').checked) || (r === 'REF' && $('#showRef').checked));
+  const feats = [];
+  for (const r of shown) {
+    const st = S.routes.states[stateOf(r)], n = st.turn_idx + 1, sel = r === S.route;
+    const w = sel ? 3.6 : (r === 'A' || r === 'B' ? 2.4 : 1.6);
+    // outbound half only (the walk comes back on the same path); split by hazard flag for the red dashes
+    let seg = [[st.lon[0], st.lat[0]]], hz = st.haz[0];
+    for (let j = 1; j < n; j++) {
+      seg.push([st.lon[j], st.lat[j]]);
+      const h = st.haz[j];
+      if (h !== hz || j === n - 1) { feats.push({ type: 'Feature', properties: { col: COL[r], w, cw: w + 2.5, haz: hz && h ? 1 : 0 }, geometry: { type: 'LineString', coordinates: seg } }); seg = [[st.lon[j], st.lat[j]]]; hz = h; }
+    }
+  }
+  S.map.getSource('routes').setData(fc(feats));
 }
 
-function renderSummary() {
-  const p = S.plan;
-  const rows = [['Stops visited', `${p.order.length} of ${S.include.filter(Boolean).length}`], ['Distance', `${(p.dist / 1000).toFixed(2)} km`], ['Walking time', fmtMin(p.time)],
-    ['Oxygen used', `${f0(p.o2)} of ${f0(p.U)} usable min`], ['Lowest return margin on the way', `${f0(p.minMargin)} min`],
-    ['Reserve kept untouched', `${f0(p.cap * p.reserve)} min`]];
-  $('#summary').innerHTML = `<div class="kv">${rows.map((r) => `<span>${esc(r[0])}</span><b>${esc(r[1])}</b>`).join('')}</div>
-    <p class="hint">Planned on the orbital prior (CTX 20 m), before any recon. Not checked against the HiRISE reference terrain on this page; walks planned from recon data are compared later, once terrain classes are locked.</p>`;
+function drawSeen() {
+  const c = $('#seenCanvas'); c.width = S.tw; c.height = S.th;
+  const x = c.getContext('2d'), im = x.createImageData(S.tw, S.th), t1 = S.C.recon_t1[String(S.k)];
+  for (let i = 0; i < S.revealT.length; i++) if (S.revealT[i] <= t1) { im.data[4 * i] = 88; im.data[4 * i + 1] = 180; im.data[4 * i + 2] = 255; im.data[4 * i + 3] = 200; }
+  x.putImageData(im, 0, 0);
+  const src = S.map && S.map.getSource('seen'); if (src) { src.play(); src.pause(); }
 }
 
-function drawRoute() {
-  if (!S.map || !S.map.getSource('route') || !S.plan) return;
-  const p = S.plan, i = idxAt(S.t);
-  const ll = p.path.map(idxLL);
-  const done = ll.slice(0, i + 1), rest = ll.slice(i);
-  S.map.getSource('route').setData(fc([
-    ...(rest.length > 1 ? [{ type: 'Feature', properties: { done: false }, geometry: { type: 'LineString', coordinates: rest } }] : []),
-    ...(done.length > 1 ? [{ type: 'Feature', properties: { done: true }, geometry: { type: 'LineString', coordinates: done } }] : [])]));
-}
-
-
-function drawPoints() {
-  if (!S.map || !S.map.getSource('pts') || !S.plan) return;
-  const p = S.plan;
-  const pts = [{ type: 'Feature', properties: { kind: 'base', state: 'base', label: 'Habitat' }, geometry: { type: 'Point', coordinates: idxLL(S.pts[0]) } }];
-  S.A.targets.forEach((t, j) => {
-    const vi = p.order.indexOf(j), state = !S.include[j] ? 'off' : vi >= 0 ? 'visit' : 'skip';
-    pts.push({ type: 'Feature', properties: { kind: 'target', state, label: `${t.id}${vi >= 0 ? ' · stop ' + (vi + 1) : state === 'skip' ? ' · skipped' : ''} (placeholder)` }, geometry: { type: 'Point', coordinates: idxLL(S.pts[j + 1]) } });
-  });
-  S.map.getSource('pts').setData(fc(pts));
-  (S.lbls || []).forEach((m) => m.remove());
-  S.lbls = pts.map((f) => new maplibregl.Marker({ element: Object.assign(document.createElement('div'), { className: 'pt-lbl', textContent: f.properties.label }), anchor: 'top', offset: [0, 10] }).setLngLat(f.geometry.coordinates).addTo(S.map));
-}
-
-function idxAt(t) { const T = S.plan.T; let lo = 0, hi = T.length - 1; while (lo < hi) { const m = (lo + hi + 1) >> 1; if (T[m] <= t) lo = m; else hi = m - 1; } return lo; }
-
+/* ---------------- replay ---------------- */
+function idxAt(t) { const T = cur().act_t; let lo = 0, hi = T.length - 1; while (lo < hi) { const m = (lo + hi + 1) >> 1; if (T[m] <= t) lo = m; else hi = m - 1; } return lo; }
+function lerp(a, i, f) { return i + 1 < a.length ? a[i] + (a[i + 1] - a[i]) * f : a[i]; }
 function setT(t) {
-  const p = S.plan; S.t = Math.max(0, Math.min(t, p.time));
-  const i = idxAt(S.t);
-  $('#scrub').value = p.time ? Math.round(S.t / p.time * 1000) : 0;
-  $('#tLbl').textContent = `${f0(S.t)} of ${f0(p.time)}`;
-  const o2Left = p.cap - p.O[i], margin = p.M[i];
-  $('#o2Val').textContent = `${f0(o2Left)} / ${f0(p.cap)} min`;
-  const ob = $('#o2Bar'); ob.querySelector('.fill').style.width = `${Math.max(0, o2Left / p.cap * 100)}%`; ob.querySelector('.res').style.width = `${p.reserve * 100}%`;
-  ob.classList.toggle('low', o2Left - p.cap * p.reserve < p.U * S.A.ui.margin_warn_frac);
-  $('#mgVal').textContent = `${f0(margin)} min`;
-  const mb = $('#mgBar'), warn = margin < p.U * S.A.ui.margin_warn_frac;
-  mb.querySelector('.fill').style.width = `${Math.max(0, margin / p.U * 100)}%`; mb.classList.toggle('crit', warn);
-  $('#warn').hidden = !warn || i === p.path.length - 1;
-  $('#tdVal').textContent = `${fmtMin(p.T[i])} · ${(p.Dm[i] / 1000).toFixed(2)} km`;
-  $('#homeVal').textContent = `${f0(p.Hm[i])} min`;
-  if (S.marker) S.marker.setLngLat(idxLL(p.path[i]));
-  drawRoute();
+  const st = cur(), T = st.act_t, tot = T.at(-1); S.t = Math.max(0, Math.min(t, tot));
+  const i = idxAt(S.t), f = i + 1 < T.length && T[i + 1] > T[i] ? (S.t - T[i]) / (T[i + 1] - T[i]) : 0;
+  const cap = +$('#cap').value, U = usable(), resv = cap - U;
+  const used = lerp(st.act_o2, i, f), hk = lerp(st.home_k, i, f), hr = lerp(st.home_ref, i, f);
+  const left = cap - used, mPlan = U - used - hk, mTrue = U - used - hr;
+  $('#scrub').value = tot ? Math.round(S.t / tot * 1000) : 0;
+  $('#tLbl').textContent = `${f0(S.t)} of ${f0(tot)}`;
+  $('#hudRoute').innerHTML = `<span style="color:${COL[S.route]}">●</span> ${esc(nameOf(S.route))}`;
+  $('#hudTerr').textContent = `${CLS[st.cls[i]]}${st.haz[i] ? ' · hazard zone' : ''}`;
+  $('#o2Val').textContent = `${f0(left)} / ${f0(cap)} min`;
+  const ob = $('#o2Bar'); ob.querySelector('.fill').style.width = `${Math.max(0, left / cap * 100)}%`; ob.querySelector('.res').style.width = `${resv / cap * 100}%`;
+  ob.classList.toggle('low', left < resv);
+  const bar = (id, vid, m) => { $(vid).textContent = `${f0(m)} min`; const b = $(id); b.querySelector('.fill').style.width = `${Math.max(0, Math.min(1, m / U)) * 100}%`; b.classList.toggle('crit', m < 0.15 * U); b.classList.toggle('neg', m < 0); };
+  bar('#mgBar', '#mgVal', mPlan); bar('#mtBar', '#mtVal', mTrue);
+  const w = $('#warn');
+  if (mTrue < 0) { w.hidden = false; w.textContent = 'True return margin below zero: on the real terrain the oxygen would run into the reserve before getting home.'; }
+  else if (mTrue < mPlan - 0.15 * U) { w.hidden = false; w.textContent = 'The plan overestimates the margin: the terrain costs more than the map said.'; }
+  else w.hidden = true;
+  $('#tdVal').textContent = `${fmtMin(S.t)} · ${(lerp(st.d, i, f) / 1000).toFixed(2)} km`;
+  if (S.marker) S.marker.setLngLat([lerp(st.lon, i, f), lerp(st.lat, i, f)]);
 }
-
 function play() {
-  if (S.t >= S.plan.time) setT(0);
+  if (S.t >= cur().act_t.at(-1)) setT(0);
   S.playing = true; $('#play').textContent = '❚❚ Pause';
   let last = performance.now();
-  const step = (now) => { if (!S.playing) return; const dt = (now - last) / 1000; last = now; setT(S.t + dt * +$('#speed').value); if (S.t >= S.plan.time) { stop(); return; } requestAnimationFrame(step); };
+  const step = (now) => { if (!S.playing) return; const dt = (now - last) / 1000; last = now; setT(S.t + dt * +$('#speed').value); if (S.t >= cur().act_t.at(-1)) { stop(); return; } requestAnimationFrame(step); };
   requestAnimationFrame(step);
 }
 function stop() { S.playing = false; $('#play').textContent = '▶ Play'; }
 
+/* ---------------- full table ---------------- */
+function renderTable() {
+  const C = S.C, G = ['all', ...Object.keys(C.definitions.bands_m)];
+  const st = C.states;
+  const lab = (s) => s === 'A' ? 'A · orbital only' : s === 'A+' ? 'A+ · bracket (uses reference)' : s === 'REF' ? 'Reference · upper bound' : `B · after ${s.slice(2)} loop${s.slice(2) === '1' ? '' : 's'}`;
+  const share = (d, q) => d.share_of_possible_improvement && d.share_of_possible_improvement[q] != null ? Math.round(100 * d.share_of_possible_improvement[q]) + '%' : '–';
+  const tbl = (g) => {
+    const s = C.summary[g]; if (!s || !s.A) return `<p class="hint">No test points in this band.</p>`;
+    return `<table class="full"><thead><tr><th>Knowledge used for planning</th><th>Planned O2 (mean)</th><th>Actual O2 (mean)</th><th>Error (mean)</th><th>Actual fits 384</th><th>Actual time (mean)</th><th>Hazard metres (mean / total)</th><th>Crossings (total)</th><th>Blocked m (total)</th><th>Zones entered (mean)</th><th>vs A: hazard m (mean)</th><th>vs A: actual O2 (mean)</th><th>vs A: crossings (mean)</th><th>Share of possible gain (O2 / hazard m)</th></tr></thead><tbody>
+${st.map((k) => { const d = s[k], dv = d.diff_vs_A; return `<tr class="${k === `B@${S.k}` ? 'hl' : ''}"><td>${esc(lab(k))}</td><td>${f1(d.pred_o2.mean)}</td><td>${f1(d.actual_o2.mean)}</td><td>${sg(d.o2_error.mean, f1)}</td><td>${d.n_actual_within_budget} / ${d.n}</td><td>${fmtMin(d.actual_time_min.mean)}</td><td>${f0(d.hazard_m.mean)} / ${f0(d.hazard_m.total)}</td><td>${f0(d.crossings.total)}</td><td>${f0(d.blocked_m.total)}</td><td>${f1(d.zones_entered.mean)}</td><td>${dv ? sg(dv.hazard_m.mean) : '–'}</td><td>${dv ? sg(dv.actual_o2.mean, f1) : '–'}</td><td>${dv ? sg(dv.crossings.mean, f1) : '–'}</td><td>${k.startsWith('B@') || k === 'A+' ? share(d, 'actual_o2') + ' / ' + share(d, 'hazard_m') : '–'}</td></tr>`; }).join('')}</tbody></table>`;
+  };
+  $('#tableBody').innerHTML = `<h2>Before vs after recon: every test point <span class="badge derived">derived</span></h2>
+<p>${C.rows.length} test points (300 m grid around the habitat, ≥ 300 m away, passable on both maps). For each: walk habitat → point → habitat on the least-oxygen path of the map named in the first column, then walk that same path on the HiRISE reference terrain. Oxygen in nominal minutes; usable budget 384 (480 with a 20% reserve). Computed ${esc(C.computed_at)}; definitions fixed before the first run (see DATA_LOG). Sand classes are <i>heuristic, not yet reviewed</i>.</p>
+${G.map((g) => `<h3>${g === 'all' ? 'All test points' : g + ' m from the habitat'} (n = ${C.summary[g].A ? C.summary[g].A.n : 0})</h3>${tbl(g)}`).join('')}
+<p class="hint">Share of possible gain = (A − B) / (A − reference upper bound), on the means. A+ adds the large sand belts to the orbital map using the reference terrain (60 m blocks ≥ 50% sand): it is not real pre-departure knowledge and only brackets the result. The reference upper bound is what perfect knowledge would give; it is not a recon result.</p>`;
+}
+
+/* ---------------- misc ---------------- */
 function marsDist(a, b) { const dlat = (b.lat - a.lat) * DEG, dlon = (b.lng - a.lng) * DEG; const h = Math.sin(dlat / 2) ** 2 + Math.cos(a.lat * DEG) * Math.cos(b.lat * DEG) * Math.sin(dlon / 2) ** 2; return 2 * R_MARS * Math.asin(Math.sqrt(h)); }
 function updateScale() {
   const m = S.map, H = m.getContainer().clientHeight, maxPx = 120, a = m.unproject([20, H - 40]), b = m.unproject([20 + maxPx, H - 40]);
@@ -257,24 +260,28 @@ function updateScale() {
   $('#scaleBar').style.width = (maxPx * nice / d) + 'px'; $('#scaleLabel').textContent = (nice >= 1000 ? nice / 1000 + ' km' : nice + ' m') + ' (Mars)';
 }
 function showCoords(ll) {
-  const b = S.A.base, x = (ll.lng - b.lon) * DEG * R_MARS * b.k_coslat, y = (ll.lat - b.lat) * DEG * R_MARS;
-  $('#coords').innerHTML = `${ll.lat.toFixed(5)}°N ${ll.lng.toFixed(5)}°E<br>x ${x.toFixed(0)} m E, y ${y.toFixed(0)} m N of base`;
+  const b = S.C.base, x = (ll.lng - b.lon) * DEG * R_MARS * S.C.k_coslat, y = (ll.lat - b.lat) * DEG * R_MARS;
+  $('#coords').innerHTML = `${ll.lat.toFixed(5)}°N ${ll.lng.toFixed(5)}°E<br>x ${x.toFixed(0)} m E, y ${y.toFixed(0)} m N of the habitat`;
 }
 
 function renderAbout() {
-  const P = S.A.params, pm = S.A.per_metre;
-  $('#aboutBody').innerHTML = `<h2>Step 3 · Astronaut walk planner (skeleton)</h2>
-<p><b>This page is a skeleton.</b> The stops are placeholders: where it is worth sending the astronaut is step 2, which is not decided yet. The walk is planned on the orbital prior only (CTX 20 m terrain model, before any recon). It is not checked against the HiRISE reference terrain here, and no "before vs after recon" comparison is shown.</p>
-<h3>Model</h3>
-<ul><li>Walking speed ${P.speed_kmh} km/h on firm ground; speed factor firm / rough / sand = ${P.speed_factor.firm} / ${P.speed_factor.rough} / ${P.speed_factor.sand}. Slopes ≥ 25° are blocked.</li>
-<li>Oxygen is counted in <i>nominal minutes</i>: one minute of walking on firm ground uses 1. Oxygen-use factor firm / rough / sand = ${P.o2_factor.firm} / ${P.o2_factor.rough} / ${P.o2_factor.sand}. Per metre: ${pm.o2_nominal_min.map((v) => v.toFixed(4)).join(' / ')} nominal min.</li>
-<li>Suit oxygen ${P.o2_capacity_nominal_min} nominal minutes, ${Math.round(P.reserve_frac * 100)}% kept as an emergency reserve (sliders change both).</li>
-<li><b>Return margin</b> = oxygen still usable − oxygen needed to walk home from here on the cheapest route. The planner only accepts stop orders that keep this at or above zero all the way.</li>
-<li>Paths: least oxygen on a 4 m grid (each 4 m cell takes the most costly 2 m class inside it). Stop order: visits the most stops, then uses the least oxygen.</li></ul>
-<h3>Labels</h3><p><span class="badge derived">derived</span> planned time, distance, oxygen and margin · <span class="badge assumed">assumed</span> speed, factors, suit oxygen, reserve (locked by the team, sources being checked by teammates) · <span class="badge placeholder">placeholder</span> stops.</p>
-<h3>Limitations</h3><ul><li>No physiological values: only oxygen, time, distance and return margin, all from the parameters above.</li>
-<li>Oxygen factors are assumptions from the team's earlier prototype; their original sources are still being checked.</li>
-<li>The prior has no sand class yet (the terrain classes are being reviewed).</li></ul>`;
+  const P = S.C.astronaut_params;
+  $('#aboutBody').innerHTML = `<h2>Marswalk Recon · astronaut map</h2>
+<p>A scout rover leaves the habitat first and maps the ground; then an astronaut's walk is planned within the suit's oxygen budget. This page shows what that recon is worth: the same walk planned from orbital data only (route A) and from the rover's map (route B), both checked on the HiRISE reference terrain.</p>
+<h3>How the numbers are made</h3>
+<ul><li><b>Orbital map (prior)</b>: CTX 20 m terrain model → slope classes. It cannot see sand ripples, so it has no sand.</li>
+<li><b>Reference terrain</b>: HiRISE 1 m terrain model and 0.25 m image → firm / rough / sand / blocked on a 2 m grid. It is orbital data too; we use it as the stand-in for the ground, never as ground truth.</li>
+<li><b>Rover recon</b> (simulated): the rover drives loops from the habitat on its own; within 15 m of its path the reference terrain replaces the orbital map. Route B uses the rover's map after 1, 5, 10, 20 or 30 loops.</li>
+<li><b>Walk model</b> (assumed): ${P.speed_kmh} km/h on firm ground; speed factor firm / rough / sand ${P.speed_factor.firm} / ${P.speed_factor.rough} / ${P.speed_factor.sand}; oxygen factor ${P.o2_factor.firm} / ${P.o2_factor.rough} / ${P.o2_factor.sand}; slopes ≥ 25° blocked; suit ${P.o2_capacity_nominal_min} nominal minutes with ${Math.round(P.reserve_frac * 100)}% reserve.</li>
+<li><b>Return margin</b> = usable oxygen left − oxygen needed to walk home on the cheapest route. "As the plan sees it" uses the map the route was planned on; "true" uses the reference terrain. Oxygen used so far is always the actual (reference) value.</li></ul>
+<h3>Labels</h3><p><span class="badge measured">measured</span> HiRISE, CTX (orbital) · <span class="badge derived">derived</span> classes, routes, oxygen, time · <span class="badge assumed">assumed</span> walk and rover parameters, habitat position · <span class="badge simulated">simulated</span> rover recon.</p>
+<h3>Limitations</h3><ul>
+<li>Sand classes are an automatic texture rule, not yet reviewed by a person (heuristic). Long bright/dark edges (scarps, albedo contacts) are sometimes called sand; thin small ripples and large ripples get the same cost.</li>
+<li>The orbital map has no sand: the same texture test on the CTX image could not find the sand fields (AUC 0.48). An experienced image interpreter might guess the large sand belt from CTX; our prior does not. The A+ column brackets that case.</li>
+<li>Walk speed and oxygen factors come from the team's earlier prototype; their original sources are still being checked. No physiological values are modelled.</li>
+<li>Test points are a fixed grid, not science targets: where it is worth sending the astronaut (step 2) is not decided yet.</li>
+<li>Routes are not replanned during the walk; route A walks into what it did not know about.</li>
+<li>Full list: <code>README.md</code> and <code>DATA_LOG.md</code> in the repository.</li></ul>`;
 }
 
 init().catch((e) => { document.body.insertAdjacentHTML('afterbegin', `<pre style="color:#f88;padding:12px">Failed to load: ${esc(e.message)}</pre>`); console.error(e); });

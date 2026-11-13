@@ -359,14 +359,16 @@ function renderAbout() {
 <li><b>While driving</b> it "scratches off" a disc of ${P.sense_radius_m} m around itself. Inside that disc the map switches to the <i>HiRISE reference terrain</i> (1 m terrain model, 0.25 m image). HiRISE is also orbital: it stands in for what the rover's own cameras would measure (simulated sensing). It is not ground truth.</li>
 <li>The planner never reads HiRISE values it has not scratched off (enforced in code and tested).</li></ul>
 <h3>One loop</h3>
-<ol><li>Pick a goal with the most unexplored area around it, 25–45% of the planning budget away (terrain only: no science value is used yet).</li>
+<ol><li>Pick a goal (rule v2): the eight compass sectors take turns (N, S, E, W, NE, SW, SE, NW), and distance bands near 100–600 m, mid 600–1200 m, far &gt;1200 m take turns every eight loops; within that sector and band, the goal with the most unexplored area around it, at most ${Math.round(P.outbound_frac * 100)}% of the planning budget away. Terrain only: no science value and no Perseverance data are used.</li>
 <li>Drive there on its current map. If a newly seen cell ahead is impassable or twice as costly as expected, replan.</li>
 <li>Turn back by itself when (energy spent + planned cost home × margin) reaches the planning budget. The margin starts at ×${P.home_margin} and is raised to how much more the terrain has cost than the orbital map predicted.</li>
 <li>Go home a different way: cells already seen cost ×${1 + P.revisit_penalty} on the way back.</li>
 <li>Reserve rule (guarantee): it always keeps enough energy to get home over terrain it has <i>already seen</i>. When that margin runs out, it goes home that way (dashed green). So no loop can exceed its budget.</li></ol>
 <h3>Labels</h3><p><span class="badge simulated">simulated</span> rover routes, events and statistics · <span class="badge assumed">assumed</span> budget, costs, radius, thresholds (proposed, review pending) · <span class="badge measured">measured</span> HiRISE and CTX data (orbital).</p>
-<h3>Limitations</h3><ul><li>Terrain classes are a heuristic from slope, roughness and an image texture index; the sand class in particular still needs a person to check it.</li>
+<h3>Limitations</h3><ul><li>Terrain classes are a heuristic from slope, roughness and an image texture index; the sand class in particular (heuristic, not yet reviewed) still needs a person to check it.</li>
 <li>Rover energy units are relative (1 = 1 m of firm ground), not watt-hours.</li>
+<li>Budget, cost factors (firm 1, rough 2.5, sand 6) and the 15 m sensing radius are assumptions locked before the run. With sand now about 40% of the reference terrain the rover rarely gets beyond ~600 m from the habitat; this is reported as is, not tuned away.</li>
+<li>The first run of this rule had a defect (5 loops ended 1.3–4.8 units over budget). It was fixed (the reserve rule keeps a margin of two steps instead of one) and the simulation was re-run once; this page shows the rerun. Both runs are listed in DATA_LOG.</li>
 <li>The big difference between what the rover saw and the orbital prior comes from data resolution (CTX 20 m vs HiRISE 1 m), not from cleverness of the rover.</li></ul>`;
 }
 
