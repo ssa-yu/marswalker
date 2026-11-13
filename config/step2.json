@@ -1,0 +1,13 @@
+{
+ "step2": {
+  "enabled": true,
+  "link_rule": "i",
+  "unlock_radius_m": 15,
+  "_help": {
+   "enabled": "false = step 2 is switched off: pipeline.step2_chem writes only {enabled:false}, round 7 refuses to run, and the web pages show nothing of step 2. Every other feature is unchanged.",
+   "link_rule": "i = the simulated rover unlocks a Perseverance SuperCam measurement only when it drives within unlock_radius_m of where it was taken; the product uses what is unlocked after loop 30 and the full set appears only in 'View all data'. ii = Perseverance's full set is treated as the recon result (the rover's path does not matter).",
+   "unlock_radius_m": "locked at 15 m (direction.md); 10 / 25 m are sensitivity only"
+  },
+  "rules_locked_by": "manager 2026-11-14 (direction.md, 第 2 步 A 的鎖定規則); copied in pipeline/step2_chem.py"
+ }
+}
