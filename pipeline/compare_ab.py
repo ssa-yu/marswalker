@@ -62,6 +62,7 @@ CMP = {
     "crossing_min_m": 10.0, "crossing_merge_gap_m": 10.0,
 }
 SAND, BLOCKED = 2, 3
+GAP_TARGET_DROP_M = 50.0  # direction.md 嚴謹度 2 (locked): targets within 50 m of a HiRISE gap are dropped
 
 
 # ---------------------------------------------------------------------------------------------- knowledge
@@ -83,9 +84,12 @@ def belief_after(prior, ref, first_t, t1):
     return np.where(obs, ref, prior).astype(np.uint8), obs
 
 
-def hazard_zones(ref, prior, res, P=CMP):
-    """Label array (0 = not a hazard zone) and the number of zones."""
+def hazard_zones(ref, prior, res, P=CMP, exclude=None):
+    """Label array (0 = not a hazard zone) and the number of zones. `exclude`: cells removed from the set before
+    labelling (T6 gap rule (b), window (-4,0) only; None everywhere else)."""
     haz = (ref == SAND) | (ref == BLOCKED)
+    if exclude is not None:
+        haz &= ~exclude
     lab, n = label(haz, structure=np.ones((3, 3), int))
     if n == 0:
         return lab, 0
@@ -229,24 +233,37 @@ def summarise(rows_by_state, idx, states):
     return out
 
 
-def compare(T, first_t, loop_t1, ext, res, P=CMP, base_xy=(0.0, 0.0)):
-    """Pure function: arrays in, results out (used by the tests on synthetic grids and by run())."""
+def compare(T, first_t, loop_t1, ext, res, P=CMP, base_xy=(0.0, 0.0), gap=None, base_rc=None):
+    """Pure function: arrays in, results out (used by the tests on synthetic grids and by run()).
+    gap / base_rc: only for the T6 gap rule (manager 2026-11-14; window (-4,0)); None reproduces the frozen T2 code.
+    With a gap: the caller has already made gap cells blocked in prior and reference (rule (a)); here gap cells
+    leave the hazard-zone set (b), the observed share is taken over non-gap cells (c), lattice targets within
+    50 m of the gap are dropped (d), and no route may touch a gap cell (asserted)."""
     prior, ref = T["class_prior"].astype(np.uint8), T["class_ref"].astype(np.uint8)
-    base_rc = (int((ext[3] - base_xy[1]) / res), int((base_xy[0] - ext[0]) / res))
-    zones, nz = hazard_zones(ref, prior, res, P)
+    if base_rc is None:
+        base_rc = (int((ext[3] - base_xy[1]) / res), int((base_xy[0] - ext[0]) / res))
+    zones, nz = hazard_zones(ref, prior, res, P, exclude=gap)
     targets = lattice_targets(ext, res, prior, ref, P)
+    dropped_near_gap = []
+    if gap is not None and gap.any():
+        from scipy.ndimage import distance_transform_edt
+        dgap = distance_transform_edt(~gap) * res
+        dropped_near_gap = [t for t in targets if dgap[t["rc"]] <= GAP_TARGET_DROP_M]
+        targets = [t for t in targets if dgap[t["rc"]] > GAP_TARGET_DROP_M]
     states = {"A": prior, "A+": aplus_classes(prior, ref, P)}
     observed_frac = {}
     for k in P["b_loops"]:
         if k in loop_t1:
             b, obs = belief_after(prior, ref, first_t, loop_t1[k])
             states[f"B@{k}"] = b
-            observed_frac[f"B@{k}"] = float(obs.mean())
+            observed_frac[f"B@{k}"] = float(obs[~gap].mean()) if gap is not None else float(obs.mean())
     states["REF"] = ref
     names = list(states)
     paths = {s: route_all(states[s], base_rc, [t["rc"] for t in targets], res) for s in names}
     unreachable = [i for i in range(len(targets)) if any(paths[s][i] is None for s in names)]
     keep = [i for i in range(len(targets)) if i not in unreachable]
+    if gap is not None:
+        assert not any(gap[c] for s in names for i in keep for c in paths[s][i]), "a route touched a gap cell"
     rows = {s: {i: evaluate_path(paths[s][i], states[s], ref, zones, res, P) for i in keep} for s in names}
     groups = {"all": keep}
     for b in P["bands_m"]:
@@ -254,7 +271,8 @@ def compare(T, first_t, loop_t1, ext, res, P=CMP, base_xy=(0.0, 0.0)):
     summary = {g: summarise(rows, idx, names) for g, idx in groups.items()}
     return {"targets": targets, "unreachable": unreachable, "states": names, "rows": rows, "paths": paths,
             "summary": summary, "n_hazard_zones": nz, "base_rc": base_rc, "observed_frac": observed_frac,
-            "aplus_sand_frac": float(np.mean(states["A+"] == SAND)), "zones": zones}
+            "aplus_sand_frac": float(np.mean(states["A+"] == SAND)), "zones": zones,
+            **({"dropped_near_gap": dropped_near_gap} if gap is not None else {})}
 
 
 def run(scene: str, recon_file="recon_loops.json", state_file="recon_state.npz", out_name="compare_ab.json"):

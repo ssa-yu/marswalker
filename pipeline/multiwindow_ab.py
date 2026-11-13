@@ -20,10 +20,20 @@ Rules (direction.md 嚴謹度 2, locked before any route number; TECH_LEAD_BRIEF
   `selftest` must reproduce the main AOI's terrain_2m.npz cell for cell before any window is used.
 - Recon: pipeline/rover_sim.simulate with rover_sim.PARAMS unchanged (budget 4,000, sand x6, 15 m, rule v2,
   30 loops). Comparison: pipeline/compare_ab.compare unchanged (frozen definitions, commit e17452a).
-- HiRISE gaps (only window (-4,0), 97.4 % DTM cover): the locked rule says "gap = impassable, targets within
-  50 m of the gap dropped", but not in which knowledge states the gap is impassable nor how it enters the
-  hazard-zone / blocked-metre definitions. This code records the gap mask and REFUSES to run recon / compare
-  on a window with any no-data cell until manager writes that down.
+- HiRISE gaps (only window (-4,0), 97.4 % DTM cover): GAP RULE, manager 2026-11-14 (direction.md 嚴謹度 2
+  補充定義; decided after the other five windows' numbers, before any (-4,0) route number). Gap = the recorded
+  no-data mask `nodata` (DTM or ortho missing, slope not computable; 2 m cells).
+  (a) gap cells are blocked in EVERY knowledge state (A, A+, B@k, REF and the rover's belief), and stay blocked
+      when the rover senses them: apply_gap_rule() sets them blocked in class_prior, class_ref and both
+      rover-blocked masks before anything else runs;
+  (b) gap cells leave the hazard-zone set (compare_ab.hazard_zones exclude=) and no route can step on them
+      (asserted), so they add no hazard / blocked / sand metre;
+  (c) "share of the AOI the rover saw" is over non-gap cells (recon_outputs, coverage_stats, compare);
+  (d) lattice targets within 50 m of the gap are dropped (compare_ab.GAP_TARGET_DROP_M);
+  (e) if the habitat cell is impassable on the prior it moves to the nearest (Euclidean; tie -> smallest prior
+      slope) cell passable for both rover (< 20 deg) and astronaut (< 25 deg) (habitat_rc). The target lattice
+      stays aligned to the nominal habitat. Not triggered by any of the six windows.
+  Nothing else in the code depends on the gap.
 """
 from __future__ import annotations
 
@@ -172,74 +182,101 @@ def selftest():
     return out
 
 
+def apply_gap_rule(T):
+    """Gap rule (a): gap cells blocked in prior, reference and both rover masks. Returns (T', gap mask)."""
+    gap = T["nodata"].astype(bool)
+    T = dict(T)
+    for k in ("class_prior", "class_ref"):
+        a = T[k].copy(); a[gap] = 3; T[k] = a
+    for k in ("blocked_rover_prior", "blocked_rover_ref"):
+        a = T[k].copy(); a[gap] = True; T[k] = a
+    return T, gap
+
+
+def habitat_rc(T, base_rc):
+    """Gap rule (e): nominal habitat cell, or the nearest cell passable for rover and astronaut on the prior."""
+    ok = (T["class_prior"] != 3) & ~T["blocked_rover_prior"].astype(bool)
+    if ok[base_rc]:
+        return tuple(base_rc), False
+    rr, cc = np.nonzero(ok)
+    d = np.hypot(rr - base_rc[0], cc - base_rc[1])
+    cand = np.nonzero(d == d.min())[0]
+    k = cand[np.argmin(T["slope_prior"][rr[cand], cc[cand]])] if "slope_prior" in T else cand[0]
+    return (int(rr[k]), int(cc[k])), True
+
+
 def load_T(i, j):
     d = OUT / f"{i}_{j}"
     T = dict(np.load(d / "terrain_2m.npz"))
     meta = read_json(d / "terrain_2m.json")
-    if T["nodata"].any():
-        raise SystemExit(f"window ({i},{j}) has {int(T['nodata'].sum())} no-data cells: the gap rule's knowledge "
-                         "states are not written down yet -> not run (waiting for manager)")
-    hb = meta["habitat"]
-    if hb["class_prior"] == 3 or hb["blocked_rover_prior"]:
-        raise SystemExit(f"window ({i},{j}) habitat impassable on the prior {hb}: 'nearest passable cell' needs a "
-                         "definition (astronaut or rover) -> not run (waiting for manager)")
-    return T, meta
+    T, gap = apply_gap_rule(T)
+    base, moved = habitat_rc(T, tuple(meta["habitat"]["base_rc"]))
+    meta = dict(meta, gap_rule={"gap_cells": int(gap.sum()), "gap_pct": round(100 * float(gap.mean()), 3),
+                                "habitat_rc": list(base), "habitat_moved": moved})
+    return T, meta, gap
 
 
 # -------------------------------------------------------------------------------------------------- recon
-def recon_outputs(T, P, base_rc, ext, bel, loops, secs, extra=None):
-    """Same post-processing as rover_sim.run (that function writes to the main AOI's files, so it is not called)."""
+def recon_outputs(T, P, base_rc, ext, bel, loops, secs, extra=None, gap=None):
+    """Same post-processing as rover_sim.run (that function writes to the main AOI's files, so it is not called).
+    gap: observed share over non-gap cells (gap rule (c))."""
     res = P["grid_res_m"]
     H, W = bel.cls.shape
     ref = T["class_ref"]
+    valid = ~gap if gap is not None else np.ones((H, W), bool)
     for L in loops:
         obs = (bel.first_t >= 0) & (bel.first_t <= L["t1"])
-        L["observed_frac_aoi"] = round(float(obs.mean()), 4)
+        L["observed_frac_aoi"] = round(float(obs[valid].mean()), 4)
         bl = np.where(obs, ref, T["class_prior"])
         L["belief_agrees_with_reference_frac"] = round(float(np.mean(bl == ref)), 4)
     out = {"params": P, "base_rc": list(base_rc), "extent_local_m": ext, "aoi_area_m2": H * W * res * res,
            "seconds": secs, "ref_cells_revealed": bel.ref_reads, "label": "simulated", "review": "pending",
            "initial_belief_agrees_with_reference_frac": round(float(np.mean(T["class_prior"] == ref)), 4),
            "loops": loops, **(extra or {})}
+    if gap is not None:
+        out["observed_share_denominator"] = f"non-gap cells ({int(valid.sum())} of {H * W}; gap rule (c))"
     return out
 
 
-def coverage_stats(observed, ext, res, base_xy=(0.0, 0.0)):
-    """Same statistics as spikes/t1_report.py (by 8 directions within 1200 m, by distance band)."""
+def coverage_stats(observed, ext, res, base_xy=(0.0, 0.0), gap=None):
+    """Same statistics as spikes/t1_report.py (by 8 directions within 1200 m, by distance band).
+    gap: every share is over non-gap cells (gap rule (c))."""
     H, W = observed.shape
+    v = ~gap if gap is not None else np.ones((H, W), bool)
     yy, xx = np.mgrid[0:H, 0:W]
     X = ext[0] + (xx + .5) * res - base_xy[0]; Y = ext[3] - (yy + .5) * res - base_xy[1]
     dist = np.hypot(X, Y); bear = (np.degrees(np.arctan2(X, Y)) + 360) % 360
     names = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
     sec = np.array(names)[((bear + 22.5) // 45).astype(int) % 8]
-    return {"observed_aoi_pct": round(100 * float(observed.mean()), 1),
-            "by_direction_within_1200m_pct": {s: round(100 * float(observed[(sec == s) & (dist <= 1200)].mean()), 1) for s in names},
-            "by_band_pct": {b: round(100 * float(observed[(dist >= lo) & (dist < hi)].mean()), 1) for b, (lo, hi) in
+    return {"observed_aoi_pct": round(100 * float(observed[v].mean()), 1),
+            "by_direction_within_1200m_pct": {s: round(100 * float(observed[(sec == s) & (dist <= 1200) & v].mean()), 1) for s in names},
+            "by_band_pct": {b: round(100 * float(observed[(dist >= lo) & (dist < hi) & v].mean()), 1) for b, (lo, hi) in
                             (("0-600 m", (0, 600)), ("600-1200 m", (600, 1200)), (">1200 m", (1200, 1e9)))}}
 
 
 def run_recon(i, j):
     from .rover_sim import PARAMS, simulate
-    T, meta = load_T(i, j)
+    T, meta, gap = load_T(i, j)
     d = OUT / f"{i}_{j}"
     if (d / "recon_loops.json").exists():
         raise SystemExit(f"window ({i},{j}) recon already run once: {d / 'recon_loops.json'}")
     P = dict(PARAMS)
     ext = meta["extent_local_m"]; res = P["grid_res_m"]
-    base_rc = tuple(meta["habitat"]["base_rc"])
+    base_rc = tuple(meta["gap_rule"]["habitat_rc"])
     t0 = time.time()
     bel, loops = simulate(T, P, base_rc, log_fn=lambda m: log("jezero", f"mwab {i},{j}", m))
     secs = round(time.time() - t0, 1)
     np.savez_compressed(d / "recon_state.npz", first_t=bel.first_t, observed=bel.observed, belief_cls=bel.cls)
     out = recon_outputs(T, P, base_rc, ext, bel, loops, secs,
                         {"window": [i, j], "started": time.strftime("%Y-%m-%d %H:%M:%S %Z", time.localtime(t0)),
-                         "coverage": coverage_stats(bel.observed, ext, res)})
+                         "coverage": coverage_stats(bel.observed, ext, res, gap=gap), "gap_rule": meta["gap_rule"]},
+                        gap=gap)
     write_json(d / "recon_loops.json", out)
     log("jezero", "mwab", f"({i},{j}) recon {len(loops)} loops {secs} s observed {out['coverage']['observed_aoi_pct']} %")
 
 
 # ------------------------------------------------------------------------------------------------ compare
-def write_compare(d, T, ext, res, recon_file, state_file, extra=None):
+def write_compare(d, T, ext, res, recon_file, state_file, extra=None, gap=None, base_rc=None):
     """Same output as compare_ab.run, written into directory d (compare_ab.run writes the main AOI files)."""
     from .astro_plan import PARAMS as ASTRO, usable_o2
     from .compare_ab import CMP, compare
@@ -249,9 +286,12 @@ def write_compare(d, T, ext, res, recon_file, state_file, extra=None):
     st = dict(np.load(d / state_file))
     loop_t1 = {L["id"]: L["t1"] for L in R["loops"]}
     t0 = time.time()
-    res_ = compare(T, st["first_t"], loop_t1, ext, res)
+    res_ = compare(T, st["first_t"], loop_t1, ext, res, gap=gap, base_rc=base_rc)
     secs = round(time.time() - t0, 1)
     tg = res_["targets"]
+    if gap is not None:
+        extra = dict(extra or {}, dropped_near_gap=[{q: (list(v) if q == "rc" else v) for q, v in t.items()}
+                                                    for t in res_["dropped_near_gap"]])
     rows_out = []
     for k in sorted(res_["rows"]["A"]):
         rows_out.append({"target": k, "x": tg[k]["x"], "y": tg[k]["y"], "dist_m": tg[k]["dist_m"], "band": tg[k]["band"],
@@ -273,10 +313,11 @@ def write_compare(d, T, ext, res, recon_file, state_file, extra=None):
 
 
 def run_compare(i, j):
-    T, meta = load_T(i, j)
+    T, meta, gap = load_T(i, j)
     d = OUT / f"{i}_{j}"
     out = write_compare(d, T, meta["extent_local_m"], meta["params"]["grid_res_m"], "recon_loops.json", "recon_state.npz",
-                        {"window": [i, j]})
+                        {"window": [i, j], "gap_rule": meta["gap_rule"]}, gap=gap,
+                        base_rc=tuple(meta["gap_rule"]["habitat_rc"]))
     log("jezero", "mwab", f"({i},{j}) compare {out['n_targets']} targets, {len(out['unreachable_targets'])} unreachable, "
                          f"{out['n_hazard_zones']} zones, {out['seconds']} s")
 
@@ -332,6 +373,8 @@ def window_stats(vals):
     if n >= 6 and same_sign:
         from scipy.stats import wilcoxon
         out["wilcoxon_exact_two_sided_p"] = float(wilcoxon(v, alternative="two-sided", method="exact").pvalue)
+        out["p_note"] = (f"with {n} windows all of one sign this is the smallest p the design can give; it equals the "
+                         "sign test and says nothing about the size of the differences (manager 2026-11-14)")
     else:
         out["wilcoxon_exact_two_sided_p"] = None
         out["p_not_reported_because"] = (f"{n} windows (< 6)" if n < 6 else "signs differ")
@@ -339,6 +382,13 @@ def window_stats(vals):
 
 
 def table():
+    """Six-window statistics are computed ONCE (after (-4,0)); the five-window table stays as t6_table_5windows.json."""
+    prev = OUT / "t6_table.json"
+    if prev.exists() and len(read_json(prev)["windows"]) >= 6:
+        raise SystemExit("six-window table already computed once: " + str(prev))
+    five = OUT / "t6_table_5windows.json"
+    if prev.exists() and not five.exists():
+        raise SystemExit("keep the five-window table first: copy t6_table.json to t6_table_5windows.json")
     rows = {"0,0": window_row(read_json(APP / "data_work/jezero/compare_ab.json"), None)}
     not_run = {}
     for i, j in WINDOWS:

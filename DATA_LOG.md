@@ -451,3 +451,19 @@ Code committed before the run (`1656923`), after T6 and T7. 63 targets, 0 unreac
 | B*@30 | 0.378 | 109.0 | 142.8 | +33.8 | 696 | 6.78 | 2320 | 63 | −51.8 / −460 | −23.7 / −209 / −74.4 |
 
 For reference (frozen T2): A 50.8 / 194.6 / +143.8 / 1156; B@30 58.3 / 166.5 / +108.2 / 905; REF 83.5 / 83.5 / 0 / 147. B*@30 recovers 47 % of the possible O2 gain and 46 % of the hazard-metre gain (B@30: 25 % / 25 %). Exploratory only; the rule was written by manager after seeing round 6.
+
+### 2026-11-14 round 8 (W0, V1, W1, W2; tech-lead; TECH_LEAD_BRIEF 第九次更新)
+
+#### W0 top bar
+All pages share one top bar: same markup (brand, `nav#pages` with Astronaut map / Step 1 · Scout rover recon / Map data / Interactive demo → `scratch/`, then page actions on the right), CSS only in `web/style.css`, current page highlighted (`aria-current`). The data page's scene switcher moved into its side panel. Test `tests/test_nav.py`; screenshots `qa/screenshots/nav_before_*` / `nav_after_*` (1600 / 1280 / 1024 px). No number involved.
+
+#### V1 window (−4,0) — gap rule implemented, written here BEFORE its recon and comparison (run once each)
+Rule: manager 2026-11-14 (direction.md 嚴謹度 2 補充定義; TECH_LEAD_BRIEF 第八次更新 裁定 1), decided after the five other windows' numbers and before any (−4,0) route number. Code (`pipeline/multiwindow_ab.py` apply_gap_rule / habitat_rc / load_T; `pipeline/compare_ab.py` `gap=` option, default None = the frozen T2 path):
+- gap = the recorded no-data mask of `windows/-4_0/terrain_2m.npz` (37,095 cells of 1,440,000 = 2.576 %).
+- (a) gap cells set blocked in class_prior, class_ref, and both rover-blocked masks before anything runs, so they are blocked in A, A+, B@k, REF and the rover's belief, also after sensing. Consequence of applying (a) literally (no extra branch): in the A+ rule the 60 m blocks that overlap the gap count gap cells as reference "blocked", i.e. not sand, in their ≥ 50 % sand share; and the rover's goal gain counts gap cells as unobserved area exactly like any other prior-blocked cell (rover rule v2 unchanged).
+- (b) gap cells removed from the hazard-zone set before labelling; no route touches a gap cell (asserted).
+- (c) every "share seen" (per loop, by direction and distance band, compare's observed share) is over non-gap cells.
+- (d) lattice targets within 50 m (≤ 50 m, cell-centre distance) of the gap dropped and listed (expected: (−1500, −900), 11.7 m).
+- (e) habitat impassable on the prior → nearest cell passable for rover and astronaut (tie → smallest prior slope); target lattice stays aligned to the nominal habitat. Not triggered in (−4,0) (habitat prior class firm, rover-passable).
+- Synthetic tests `tests/test_multiwindow.py` (gap blocked in every state incl. the rover belief after sensing; not in hazard zones; denominators; target drop; `gap=None` reproduces the frozen code path; habitat move). All 43 tests pass.
+- Then: recon once, comparison once (code refuses a second run), and the window statistics recomputed ONCE over six windows with the same `STATS` (table() refuses a second six-window run). The five-window table is kept as `data_work/jezero/windows/t6_table_5windows.json` and figure `qa/jezero/multiwindow/T6_windows_A_vs_B_5windows.png`. p-value only if all six windows have the same sign, with the note that p = 0.031 is the design minimum and equals the sign test.
