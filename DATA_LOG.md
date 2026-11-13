@@ -380,10 +380,10 @@ Describes the spread of the 63 test points; **not a significance test** (shared 
 
 | B@30 − A, all 63 | better / worse / same | mean [95 % resampling interval] | median (q1, q3; min, max) |
 |---|---|---|---|
-| actual O2 | 56 / 6 / 1 | −28.16 [−36.37, −20.48] | −18.98 (−36.70, −7.73; −104.85, +34.76) |
-| hazard m | 52 / 6 / 5 | −250.8 [−322.0, −184.9] | −167.1 |
-| O2 error (abs) | 57 / 5 / 1 | −35.61 [−43.91, −27.53] | −27.14 |
-| crossings | 39 / 14 / 10 | −1.56 [−2.57, −0.52] | −2.0 |
+| actual O2 | 56 / 6 / 1 | −28.16 [−36.37, −20.48] | −18.98 (−40.78, −5.57; −104.85, +34.76) |
+| hazard m | 52 / 6 / 5 | −250.8 [−322.0, −184.9] | −167.1 (−361.5, −67.8; −942.7, +291.8) |
+| O2 error (abs) | 57 / 5 / 1 | −35.61 [−43.91, −27.53] | −27.14 (−48.8, −13.1; −113.9, +31.4) |
+| crossings | 39 / 14 / 10 | −1.56 [−2.57, −0.52] | −2.0 (−4.0, 0.0; −16, +8) |
 
 Against manager's check (O2 56/6/1, mean −28.2 (−36.1 to −20.4); metres 52/6/5, −251 (−320 to −184)): counts and means identical; the interval ends differ by ≤ 2 (different resampling draws).
 
