@@ -95,7 +95,7 @@ def run(scene: str):
            "max_cost_over_budget": max(L["cost_total"] - L["budget"] for L in R["loops"]) <= 0,
            "median_overlap": ov[(len(ov) - 1) // 2] if ov else None}
     P = R["params"]
-    doc = {"acceptance": acc, "label": "simulated", "review": "pending", "status": "parameters proposed, not locked",
+    doc = {"acceptance": acc, "label": "simulated", "review": "pending", "status": "parameters locked (manager 2026-11-14); sand classes heuristic, not yet reviewed",
            "aoi_corners": gm["aoi"]["corners_lonlat"], "extent_local_m": ext, "grid_res_m": res,
            "base": sc.cfg["base"], "aoi_area_m2": R["aoi_area_m2"],
            "initial_belief_agrees_with_reference_frac": R["initial_belief_agrees_with_reference_frac"],

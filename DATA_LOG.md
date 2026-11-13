@@ -17,7 +17,7 @@ Label: measured = instrument data as published; derived = computed by us from me
 | MOLA + HRSC colour hillshade 200 m | MGS MOLA + MEx HRSC; NASA JPL Mars Trek tiles | https://trek.nasa.gov/tiles/Mars/EQ/Mars_MOLA_blend200ppx_HRSC_ClrShade_clon0dd_200mpp_lzw/1.0.0/default/default028mm/{z}/{row}/{col}.jpg | Regional context basemap (±250 km), stored locally | derived | yes (Mars Trek) | in use |
 | Perseverance waypoints (M20_waypoints.json) | Mars 2020, NASA JPL MMGIS | https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json | Waypoint layer; photo location; base position; C1 chain check | measured | no | in use |
 | Perseverance traverse (M20_traverse.json) | Mars 2020, NASA JPL MMGIS | https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_traverse.json | Traverse layer; C2 check | measured | no | in use |
-| Perseverance Raw Images (Navcam, Front Hazcam, Mastcam-Z left) | Mars 2020, NASA/JPL-Caltech (Mastcam-Z: ASU) | https://mars.nasa.gov/mars2020/multimedia/raw-images/ (JSON API `https://mars.nasa.gov/rss/api/?feed=raw_images&category=mars2020`) | Ground photos stored locally, placed on waypoints by site/drive | measured | yes | in use |
+| Perseverance Raw Images (Navcam, Front Hazcam, Mastcam-Z left) | Mars 2020, NASA/JPL-Caltech (Mastcam-Z: ASU) | https://mars.nasa.gov/mars2020/multimedia/raw-images/ (JSON API `https://mars.nasa.gov/rss/api/?feed=raw_images&category=mars2020`) | Ground photos stored locally, placed on waypoints by site/drive; Navcam viewing directions (camera model + rover attitude, T5) | measured (directions: derived) | yes | in use |
 | Habitat (base) location | — | — | Local grid origin (Octavia E. Butler Landing) | assumed | — | in use |
 | USGS SIM 3464 Jezero geologic map | USGS-NASA Planetary Geologic Mapping | https://pubs.usgs.gov/sim/3464/sim3464_database.zip | Map layer (GeoUnits_v1, 12 km context window; read remotely via /vsizip, 216 kB GeoJSON); Q1 unit at SuperCam sites | measured | yes | in use (layer, not registered to HiRISE) |
 | SWIM ice-consistency maps | PSI/JPL (NASA) | https://swim.psi.edu/ | Regional layer, Arcadia | measured (consistency, not detection) | no | paused (Arcadia paused 2026-11-14) |
@@ -220,3 +220,46 @@ Same method as `pipeline/align.py` (CTX 6 m ortho vs HiRISE ortho on a 6 m grid,
 | (−4,0) rim | −9600, 0 | 97.5 % | −0.6, −1.2 | +2.98 | 0.7 / 0.3 / 1.2 / 0.7 | pass | −24.7 ± 49.9 (fail) | 47.3 (fail) | 152 MB / 329 s |
 
 All six windows pass X3 items 1–2 (largest quadrant deviation 1.2 m against 20 m) → none is dropped; the locked multi-window rule keeps all 6. Items 3–4 (MOLA 463 m grid) fail in every window except item 4 in (−1,1), the same pattern as the main AOI; the larger misfits at (−3,1) and (−4,0) are on the rough crater-rim terrain, where the 463 m grid is coarsest relative to relief (observation, not tested). The (0,0) item-4 value here (11.7 m, 30 interior cells) differs from checkpoint 1 (14.3 m, 675 cells) because this code samples MOLA cells inside the window only; the checkpoint-1 value stays the record.
+
+### 2026-11-14 round 6 (T1–T7, tech-lead)
+
+#### T1 rover recon: the single rerun with the fixed hard energy rule
+
+Run 2026-11-14 04:20–04:30 (local), commit `bc3068a`, 30 loops, 556 s. Code difference from the first v2 run (round 5): only the hard energy rule's margin (one → two maximum steps, `rover_sim.py`, two lines; already in commit `c0ddfdc`) and the test file (xfail removed from `test_no_loop_over_budget`). Goal rule v2, sand v2 classes (manager lock), budget 4,000, sand ×6, 15 m, 30 loops: unchanged. Run once; acceptance tests 7/7 pass (`tests/test_recon.py`). **The rerun is the record**; the first run stays here marked "budget defect". Report `qa/jezero/T1_rover_v2_rerun_report.json` (`spikes/t1_report.py`, evaluation only), figure `qa/jezero/T1_coverage_run1_rerun.png`; first-run outputs kept as `data_work/jezero/recon_*_v2_run1_defect.*`.
+
+| | First v2 run (budget defect) | **Rerun (record)** |
+|---|---|---|
+| Loops over the 4,000 budget | 5 (loops 1, 12, 13, 20, 24: 4,003.9 / 4,004.5 / 4,004.8 / 4,003.7 / 4,001.3) | **0** (max 3,987.5) |
+| Distance / AOI observed | 46.5 km / 11.3 % | 46.5 km / 11.3 % |
+| Observed after loops 1/5/10/20/30 | 0.5 / 3.2 / 5.4 / 9.0 / 11.3 % | 0.5 / 3.2 / 5.4 / 8.9 / 11.3 % |
+| Goals reached / safety returns | 12 / 14 | 12 / 14 |
+| Within 1200 m: N NE E SE S SW W NW | 11.7 23.2 27.1 22.2 27.8 16.8 14.1 10.4 | 11.7 23.2 27.1 22.2 27.9 16.8 13.9 10.7 |
+| By distance 0–600 / 600–1200 / > 1200 m | 49.8 / 3.3 / 0.0 % | 49.8 / 3.3 / 0.0 % |
+| SuperCam sites unlocked (15 m, of 59) after loops 1/5/10/20/30 | 2 / 10 / 12 / 19 / 22 | 2 / 10 / 12 / 19 / 22 |
+| Units of unlocked sites | all 22 Njf | all 22 Njf |
+
+The fix changed only where a few safety returns start (a few metres earlier); the trajectories and every reported statistic are the same within 0.3 percentage points. Nothing else was changed and the simulation was not run again.
+
+#### T2 route A vs B — definitions, written here BEFORE the first real-terrain run (locked afterwards)
+
+Code `pipeline/compare_ab.py` (docstring repeats this), tests `tests/test_compare.py` (synthetic grids only; 8 pass before the real run). Sources of each rule: direction.md 第六次改版「偵察前後的量化對比」「參數鎖定狀態」, TECH_LEAD_BRIEF 第六次更新 T2, R3 proposals above, MVP_PLAN P7-3/P7-6.
+
+- Knowledge states (2 m class grids, 0 firm / 1 rough / 2 sand / 3 blocked; astronaut blocked = slope ≥ 25°):
+  - **A** prior only (CTX 20 m classes; no sand class).
+  - **A+** `optimistic prior, uses reference, bracket only`: A plus sand on every cell of each 60 m block (30 × 30 cells aligned to the AOI corner, the S2 blocks) whose reference cells are ≥ 50 % sand; prior-blocked cells stay blocked.
+  - **B@k** rover knowledge after loop k = 1, 5, 10, 20, 30 of the T1 rerun (the record): reference class where the rover had observed the cell by the end of loop k, prior elsewhere.
+  - **REF** reference classes everywhere = upper bound of what recon can give; **not route B**.
+- Targets (locked R3): every point of the 300 m lattice aligned to the habitat inside the AOI, ≥ 300 m from the habitat, whose 2 m cell is not blocked on the prior nor on the reference. Independent of step 2. Distance bands by straight-line distance: [300, 600), [600, 1200), ≥ 1200 m (same bands as the rover rule).
+- One test route per target: habitat → target on the least-O2 path of the knowledge state (locked astronaut model, `pipeline/astro_plan.py`: 2.5 km/h, speed 1/0.6/0.35, O2 factor 1/1.5/2.1; 8-connected; step cost = mean of the two cells × step length), then back along the same path reversed. Grid: the native 2 m class grid (the 4 m grid of the step-3 skeleton was a web-display choice). No dwell time at the target (the locked parameters have none).
+- Evaluated on the reference (same path, nothing replanned on the way):
+  - predicted time / O2 = on the state the route was planned on; actual = on the reference classes, with reference-blocked cells charged at the sand rate and counted separately (MVP_PLAN P7-3);
+  - O2 error = actual − predicted (nominal min) and 100 × (actual − predicted) / predicted; time error likewise;
+  - within budget = O2 ≤ usable 384 nominal min (480 × 0.8), predicted and actual;
+  - **hazard metres** (main signal) = metres walked inside hazard zones; blocked metres = metres on reference-blocked cells; sand metres = metres on any reference sand cell (informative);
+  - **crossings** = runs inside hazard zones: in-zone stretches separated by < 10 m outside a zone are merged; a merged run counts once if its in-zone metres are ≥ 10 m;
+  - zones entered = distinct hazard zones touched (footnote only).
+  - Metres of a step a→b (length L) are split L/2 to a, L/2 to b (same convention as the cost).
+- Hazard zone (locked): 8-connected component of reference sand-or-blocked cells, area ≥ 400 m², ≥ 80 % of its cells firm or rough on the prior (R3 wording of "not marked on the prior").
+- A target unreachable on any state is listed and dropped from all columns (paired table).
+- Reported per state and per band: n; mean and median of each quantity; counts within budget; totals of hazard / blocked metres and crossings; paired differences (state − A) mean and median; recon share of the possible improvement = (A − B@k) / (A − REF) on the means of actual O2, hazard metres and crossings (A+ reported the same way, as the bracket).
+- All outputs: derived from simulated recon and assumed parameters; sand classes `heuristic, not yet reviewed`; review pending.

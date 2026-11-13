@@ -1,4 +1,4 @@
-"""Run the checkpoint-1 pipeline for one scene: fetch -> trek -> align -> grid -> rover -> layers -> qa -> export.
+"""Run the checkpoint-1 pipeline for one scene: fetch -> trek -> align -> grid -> rover -> layers -> qa -> export -> heading.
 
 python -m pipeline.run --scene jezero [--from layers]
 """
@@ -6,10 +6,10 @@ from __future__ import annotations
 
 import argparse
 
-from . import align, export, fetch, grid, layers, qa, rover_m20, trek
+from . import align, export, fetch, grid, layers, photo_heading, qa, rover_m20, trek
 from .common import Scene
 
-STEPS = ["fetch", "trek", "align", "grid", "rover", "layers", "qa", "export"]
+STEPS = ["fetch", "trek", "align", "grid", "rover", "layers", "qa", "export", "heading"]
 
 
 def main(scene: str, start: str = "fetch"):
@@ -31,6 +31,8 @@ def main(scene: str, start: str = "fetch"):
             qa.run(scene)
         elif st == "export":
             export.run(scene)
+        elif st == "heading" and "waypoints" in sc.cfg["sources"]:
+            photo_heading.run(scene)  # T5: Navcam viewing directions into web photos.json
 
 
 if __name__ == "__main__":
