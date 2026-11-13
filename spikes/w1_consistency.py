@@ -41,6 +41,12 @@ def main(paths):
                                  "ari": None if a is None else round(a, 3), "majority_match": None if not ct else round(majority(ct), 3)}
         q = Path(p).with_name(Path(p).stem + "_consistency.json")
         q.write_text(json.dumps(out, indent=1))
+        web = APP / "web/data/jezero/step2/step2.json"
+        if Path(p).name == "step2_result_r15.json" and web.exists():
+            W = json.loads(web.read_text())
+            if W.get("enabled"):
+                W["consistency"] = out
+                web.write_text(json.dumps(W, indent=1, ensure_ascii=False))
         print(p, json.dumps(out["by_loop"]))
 
 
