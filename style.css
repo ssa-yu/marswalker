@@ -72,3 +72,4 @@ a { color: var(--accent2); }
   aside#panel, aside#photoPanel { width: 100%; max-height: 45vh; } #mapwrap { height: 60vh; }
   .brand .muted { display: none; }
 }
+a.btn { text-decoration: none; display: inline-block; }
