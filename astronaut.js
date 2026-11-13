@@ -69,7 +69,7 @@ async function selectTarget(i) {
   const r = row();
   if (!S.cache[r.target]) S.cache[r.target] = await getJSON(`${CB}routes/t${r.target}.json`);
   S.routes = S.cache[r.target];
-  $('#tInfo').textContent = `Straight-line distance ${f0(r.dist_m)} m from the habitat (${r.band} m band). Test points are a fixed 300 m grid, not science targets (step 2 is not decided).`;
+  $('#tInfo').textContent = `Straight-line distance ${f0(r.dist_m)} m from the habitat (${r.band} m band). Test points are a fixed 300 m grid chosen before step 2 existed, not science targets; the step-2 stops have their own walk above.`;
   refresh();
 }
 
@@ -321,7 +321,10 @@ function renderAbout() {
 <li>Sand classes are an automatic texture rule, not yet reviewed by a person (heuristic). Long bright/dark edges (scarps, albedo contacts) are sometimes called sand; thin small ripples and large ripples get the same cost.</li>
 <li>The orbital map has no sand: the same texture test on the CTX image could not find the sand fields (AUC 0.48). An experienced image interpreter might guess the large sand belt from CTX; our prior does not. The A+ column brackets that case.</li>
 <li>Walk speed and oxygen factors come from the team's earlier prototype; their original sources are still being checked. No physiological values are modelled.</li>
-<li>Test points are a fixed grid, not science targets: where it is worth sending the astronaut (step 2) is not decided yet.</li>
+<li>Test points are a fixed grid chosen before step 2 existed. The walk to the step-2 stops was designed after the main comparison; its stops lie within 0.9 km, so every plan reaches every stop.</li>
+<li>Step 2 groups Perseverance's SuperCam chemistry; it gives no science score. The number-of-groups rule was written after a check table made with earlier positions (4 groups there); with the final site/drive positions it gives 3 groups for all data — the 4-group boundary was fragile. Positions are the rover's position (rock within about 7 m).</li>
+<li>Six 2.4 km windows of the same mosaic all show route B better than route A; the windows' statistic details were ratified after five windows were seen, and the crater-rim window's HiRISE gap rule was set before its numbers.</li>
+<li>A literature-based rover rule (version 3) is written but not in these results; its first run was stopped after one loop because its candidate rule could not reach beyond the first lattice points.</li>
 <li>Routes are not replanned during the walk; route A walks into what it did not know about.</li>
 <li>After recon the plan still underestimates a walk by 108 nominal minutes on average (plans 58, costs 167); loops 20 to 30 brought no further gain; knowing part of the map is sometimes worse than knowing none (a detour around seen sand can run into unseen sand).</li>
 <li>Three comparison definitions (hazard metres only inside hazard zones; crossings measured by in-zone metres; no dwell time at the point) were set by the implementer before the run and ratified by the manager after the numbers were seen.</li>

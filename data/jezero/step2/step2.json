@@ -1596,5 +1596,61 @@
     }
    }
   }
- ]
+ ],
+ "consistency": {
+  "label": "metrics specified after the cross-tables were seen (manager 2026-11-14); the cross-tables are the record",
+  "by_loop": {
+   "1": {
+    "n_targets": 4,
+    "k_unlocked": 1,
+    "crosstab": {
+     "1|1": 4
+    },
+    "ari": null,
+    "majority_match": 1.0
+   },
+   "5": {
+    "n_targets": 24,
+    "k_unlocked": 3,
+    "crosstab": {
+     "1|1": 18,
+     "2|2": 3,
+     "3|1": 3
+    },
+    "ari": 0.573,
+    "majority_match": 1.0
+   },
+   "10": {
+    "n_targets": 28,
+    "k_unlocked": 2,
+    "crosstab": {
+     "1|1": 25,
+     "2|2": 3
+    },
+    "ari": 1.0,
+    "majority_match": 1.0
+   },
+   "20": {
+    "n_targets": 56,
+    "k_unlocked": 2,
+    "crosstab": {
+     "1|1": 51,
+     "2|1": 2,
+     "2|2": 3
+    },
+    "ari": 0.701,
+    "majority_match": 0.964
+   },
+   "30": {
+    "n_targets": 62,
+    "k_unlocked": 2,
+    "crosstab": {
+     "1|1": 59,
+     "2|2": 3
+    },
+    "ari": 1.0,
+    "majority_match": 1.0
+   }
+  }
+ }
 }
