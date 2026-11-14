@@ -649,3 +649,36 @@ B_v3@30 by band (n; vs A O2 / hazard m; share O2 / hazard m): 300–600 m (8) �
 
 #### W3 step 4 — step 2 (i) recomputed once with the v3 rover's unlock set (2026-11-14 09:20:42 CST), reported as computed
 `data_work/jezero/step2/step2_result_v3_r15.json`; locked A rules unchanged; (ii) reused unchanged. **72 targets at 28 places, all Njf** (version 2: 62 / 25); min centroid-pair separation k = 2: 10.9, k = 3: 1.9, k = 4: 2.5 → **k = 2**. G1: 68 targets / 28 places, MgO 2.8, SiO2 50.0, FeOT 17.0 wt% (MgO −10.9 RMSEP vs G2); G2: 4 targets / 4 places, MgO 14.8, SiO2 44.2, FeOT 21.1. **Candidate stops (4):** 3_110 (3, −5) G1 representative `tselchee` sol 15; 4_48 (75, −28) G1 anomaly `tseebi_tsaadah` sol 88; 3_2208 (79, −6) G2 representative `a_koo` sol 72; 4_592 (−11, −155) G2 anomaly `hastaa` sol 106 — all within 156 m of the habitat, 8 photos within 15 m each. Unlocked by loop 1 / 5 / 10 / 20 / 30: targets 4 / 46 / 62 / 71 / 72, places 3 / 14 / 22 / 27 / 28, k 1 / 2 / 2 / 2 / 2. Cross-tables (unlocked × all-data group): loop 5 {1|1 43, 2|1 2, 2|2 1}; loops 10 / 20 / 30 {1|1 58 / 67 / 68, 2|1 2, 2|2 1, 2|3 1}. ARI / majority match (metrics specified after the version-2 cross-tables were seen): loop 1 undefined / 1.00; 5: 0.459 / 0.978; 10: 0.626 / 0.968; 20: 0.631 / 0.972; 30: 0.632 / 0.972. Sample sites: only Sid unlocked (`sid_362`, G1; 16 targets within 15 m, all G1); Rochette, Brac, Issole not unlocked.
+
+#### W3 step 5 — round 7 table (i), version-3 chain, the single run (2026-11-14 09:21:35 CST, 34.1 s), reported as computed
+**Designed after seeing round 6; round 6 is the pre-registered main comparison; version 3 designed after seeing version 2.** Stops = W3 step 4 (3_110, 4_48, 3_2208, 4_592). Main B column = B_v3@k (expected-cost map); beside it Bv3prior@k (v3 knowledge, unseen = orbital class); both with own order and A's order; A, A+, REF computed with the same code for the new stops. W2 tables unchanged; (ii) not re-run. Oxygen in nominal minutes (usable 384, dwell 18 per stop included).
+
+| State | Column | Stops planned | Reached (ii) / (i) | Planned O2 | Actual O2 | Error | Hazard m | Sand m | Crossings | Length m | Actual ≤ 384 | Order | Diff O2 / hazard m |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| A | own order | 4 | 4 / 4 | 82.2 | 88.1 | +5.9 | 49 | 49 | 1 | 427 | yes | [0, 2, 1, 3] | — |
+| A+ | own order | 4 | 4 / 4 | 82.2 | 88.1 | +5.9 | 49 | 49 | 1 | 427 | yes | [0, 2, 1, 3] | +0.0 / +0 |
+| B_v3@1 | own order | 4 | 4 / 4 | 93.3 | 85.6 | -7.7 | 28 | 28 | 1 | 428 | yes | [2, 1, 3, 0] | -2.5 / -21 |
+| B_v3@1 | keeps A order | 4 | 4 / 4 | 93.3 | 85.6 | -7.7 | 28 | 28 | 1 | 427 | yes | [0, 2, 1, 3] | -2.5 / -21 |
+| Bv3prior@1 | own order | 4 | 4 / 4 | 82.2 | 88.1 | +5.9 | 49 | 49 | 1 | 427 | yes | [0, 2, 1, 3] | +0.0 / +0 |
+| Bv3prior@1 | keeps A order | 4 | 4 / 4 | 82.2 | 88.1 | +5.9 | 49 | 49 | 1 | 427 | yes | [0, 2, 1, 3] | +0.0 / +0 |
+| B_v3@5 | own order | 4 | 4 / 4 | 85.4 | 82.7 | -2.7 | 0 | 0 | 0 | 446 | yes | [0, 3, 1, 2] | -5.4 / -49 |
+| B_v3@5 | keeps A order | 4 | 4 / 4 | 85.4 | 82.7 | -2.7 | 0 | 0 | 0 | 447 | yes | [0, 2, 1, 3] | -5.4 / -49 |
+| Bv3prior@5 | own order | 4 | 4 / 4 | 82.7 | 82.7 | +0.0 | 0 | 0 | 0 | 446 | yes | [2, 1, 3, 0] | -5.4 / -49 |
+| Bv3prior@5 | keeps A order | 4 | 4 / 4 | 82.7 | 82.7 | +0.0 | 0 | 0 | 0 | 447 | yes | [0, 2, 1, 3] | -5.4 / -49 |
+| B_v3@10 | own order | 4 | 4 / 4 | 82.7 | 82.7 | +0.0 | 0 | 0 | 0 | 446 | yes | [2, 1, 3, 0] | -5.4 / -49 |
+| B_v3@10 | keeps A order | 4 | 4 / 4 | 82.7 | 82.7 | +0.0 | 0 | 0 | 0 | 447 | yes | [0, 2, 1, 3] | -5.4 / -49 |
+| Bv3prior@10 | own order | 4 | 4 / 4 | 82.7 | 82.7 | +0.0 | 0 | 0 | 0 | 446 | yes | [2, 1, 3, 0] | -5.4 / -49 |
+| Bv3prior@10 | keeps A order | 4 | 4 / 4 | 82.7 | 82.7 | +0.0 | 0 | 0 | 0 | 447 | yes | [0, 2, 1, 3] | -5.4 / -49 |
+| B_v3@20 | own order | 4 | 4 / 4 | 82.7 | 82.7 | +0.0 | 0 | 0 | 0 | 446 | yes | [2, 1, 3, 0] | -5.4 / -49 |
+| B_v3@20 | keeps A order | 4 | 4 / 4 | 82.7 | 82.7 | +0.0 | 0 | 0 | 0 | 447 | yes | [0, 2, 1, 3] | -5.4 / -49 |
+| Bv3prior@20 | own order | 4 | 4 / 4 | 82.7 | 82.7 | +0.0 | 0 | 0 | 0 | 446 | yes | [2, 1, 3, 0] | -5.4 / -49 |
+| Bv3prior@20 | keeps A order | 4 | 4 / 4 | 82.7 | 82.7 | +0.0 | 0 | 0 | 0 | 447 | yes | [0, 2, 1, 3] | -5.4 / -49 |
+| B_v3@30 | own order | 4 | 4 / 4 | 82.7 | 82.7 | +0.0 | 0 | 0 | 0 | 446 | yes | [2, 1, 3, 0] | -5.4 / -49 |
+| B_v3@30 | keeps A order | 4 | 4 / 4 | 82.7 | 82.7 | +0.0 | 0 | 0 | 0 | 447 | yes | [0, 2, 1, 3] | -5.4 / -49 |
+| Bv3prior@30 | own order | 4 | 4 / 4 | 82.7 | 82.7 | +0.0 | 0 | 0 | 0 | 446 | yes | [2, 1, 3, 0] | -5.4 / -49 |
+| Bv3prior@30 | keeps A order | 4 | 4 / 4 | 82.7 | 82.7 | +0.0 | 0 | 0 | 0 | 447 | yes | [0, 2, 1, 3] | -5.4 / -49 |
+| REF | own order | 4 | 4 / 4 | 82.7 | 82.7 | +0.0 | 0 | 0 | 0 | 446 | yes | [2, 1, 3, 0] | -5.4 / -49 |
+
+True return margin negative anywhere: none.
+
+Observation (no change follows): the v3 stops all lie within 156 m of the habitat, inside the ground the rover saw in every loop, so B_v3@k from loop 5 on, Bv3prior@k and REF plan the same 446 m tour (82.7 actual, 0 hazard m); A walks 49 m of hazard terrain (88.1). Round 7 (i) therefore says little in the v3 chain.
