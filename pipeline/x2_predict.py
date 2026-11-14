@@ -3,9 +3,9 @@
 python -m pipeline.x2_predict   -> data_work/jezero/ai4mars/x2_result.json, web/data/jezero/ai4mars/x2_map.png
 
 Rules (manager 2026-11-14, TECH_LEAD_BRIEF 第十一次更新 B1-B8; fixed before any number):
-B1 answers: per waypoint, mean over its labelled Navcam images (AI4MARS NAV merged labels, NLF, sol >= 13) of the
+B1 answers: per waypoint, mean over its labelled Navcam images (AI4MARS NAV merged labels, NLF, all sols, as X1 A3) of the
    sand share (main) and bedrock share (secondary) of labelled pixels. Main table: main-AOI waypoints. Second
-   table: waypoints with labels inside the six 2.4 km windows (the only places where the HiRISE inputs are local).
+   table: "waypoints inside the six windows" (the only places where the HiRISE inputs are local).
    Targets: share regression and "sand-dominant" (share >= 0.5) classification.
 B2 inputs, same models and splits: HiRISE version = means within a 30 m circle around the waypoint of the S1 fine /
    coarse coherence and contrast (sandfield.features on the 0.5 m ortho, at 2 m), reference slope and roughness
@@ -89,7 +89,7 @@ def answers():
     """Per waypoint: mean sand / bedrock share over its NLF (sol >= 13) labelled images."""
     per = {}
     for r in csv.DictReader(open(AI / "index.csv")):
-        if r["naming"] != "NLF" or int(r["sol"]) < 13 or r["has_label"] != "yes" or not r["waypoint_id"]:
+        if r["naming"] != "NLF" or r["has_label"] != "yes" or not r["waypoint_id"]:
             continue
         f = AI / "ai4mars-dataset-merged-0.6/m2020/labels/NAV" / r["label_file"].split("/")[-1]
         if not f.exists():
@@ -124,11 +124,14 @@ def evaluate(rows, folds, buffer_m):
     xy = np.array([[r["gx"], r["gy"]] for r in rows])
     fold = np.array([r["fold"] for r in rows])
     pred = {}
+    fold_info = []
     M = models()
     for f in sorted(set(fold)):
         te = fold == f
         d = np.min(np.hypot(xy[:, None, 0] - xy[None, te, 0], xy[:, None, 1] - xy[None, te, 1]), axis=1) if buffer_m else np.full(len(rows), np.inf)
         tr = (~te) & (d > buffer_m)
+        fold_info.append({"fold": str(f), "n_test": int(te.sum()), "n_train_after_buffer": int(tr.sum()),
+                          "n_train_sand_dominant": int(yb[tr].sum()), "n_test_sand_dominant": int(yb[te].sum())})
         for v, Xv in X.items():
             for mn, (mr, mc) in M.items():
                 m = mr().fit(Xv[tr], y[tr]); pred.setdefault(f"{mn}_{v}", np.zeros(len(rows)))[te] = m.predict(Xv[te])
@@ -147,7 +150,7 @@ def evaluate(rows, folds, buffer_m):
             continue
         cls = pred.get(k + "_cls", (p >= 0.5).astype(int))
         out[k] = {"mae": float(np.mean(np.abs(p - y))), "balanced_accuracy": float(balanced_accuracy_score(yb, cls)) if len(set(yb)) > 1 else None}
-    return out, {"n": len(rows), "n_sand_dominant": int(yb.sum()), "units": units}
+    return out, {"n": len(rows), "n_sand_dominant": int(yb.sum()), "units": units, "folds": fold_info}
 
 
 def run():
@@ -188,7 +191,7 @@ def run():
     res_all, info_all = evaluate(rows, None, 0.0) if len(rows) >= 10 else ({}, {"n": len(rows)})
     out = {"label": "derived, model estimate; answers = AI4MARS crowd labels (measured); agreement with crowd labels, not expert accuracy",
            "rules": __doc__.split("Rules", 1)[1], "computed_at": time.strftime("%Y-%m-%d %H:%M:%S %Z"),
-           "main_aoi": {"info": info_main, "results": res_main}, "six_windows": {"info": info_all, "results": res_all},
+           "main_aoi": {"info": info_main, "results": res_main}, "waypoints_inside_the_six_windows": {"info": info_all, "results": res_all},
            "rows": rows}
     out["seconds"] = round(time.time() - t0, 1)
     write_json(f, out)

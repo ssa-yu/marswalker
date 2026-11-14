@@ -4,7 +4,8 @@ python -m pipeline.ai4mars_check   -> data_work/jezero/ai4mars/x1_result.json, q
 
 Rules (manager 2026-11-14, TECH_LEAD_BRIEF 第十一次更新 A1-A5, A7-A8, and 第十三次更新 3; fixed before any number):
 A1 data: AI4MARS merged 0.6, m2020 NAV merged labels (0 soil, 1 bedrock, 2 sand, 3 big rock, 255 unlabelled),
-   NLF-named images with sol >= 13 whose site/drive (from the file name) equals a main-AOI waypoint. Vgnc
+   NLF-named images whose site/drive (from the file name) equals a main-AOI waypoint: all 2,215 (incl. sol 9-12 at
+   the landing site; manager 14th update). Vgnc
    (SCLK-only) labels are not used. Labels: `measured (crowd labels)`.
 A2 placement: each image -> its waypoint (exact site/drive). Viewing direction: Navcam camera model rotated by the
    rover attitude (photo_heading.heading, Raw Images JSON cached in data_raw/jezero/raw_api); field-of-view sector =
@@ -49,7 +50,7 @@ def label_index():
     import csv
     out = []
     for r in csv.DictReader(open(AI.parents[1] / "index.csv")):
-        if r["naming"] != "NLF" or int(r["sol"]) < 13 or r["has_label"] != "yes":
+        if r["naming"] != "NLF" or r["has_label"] != "yes":         # manager 14th update: all NLF labels (2,215 in the AOI)
             continue
         f = AI / "labels/NAV" / Path(r["label_file"]).name
         if not f.exists():
@@ -125,7 +126,7 @@ def run():
                      "prior_sand": float(np.mean(pc == SAND)) if len(pc) else None})
     out = {"label": "AI4MARS: measured (crowd labels); HiRISE classes: derived (heuristic, not yet reviewed); "
                     "agreement with crowd labels, not ground truth", "rules": __doc__.split("Rules", 1)[1],
-           "computed_at": time.strftime("%Y-%m-%d %H:%M:%S %Z"), "n_labels_nlf_sol13": len(labs), "n_not_in_aoi": n_not_aoi,
+           "computed_at": time.strftime("%Y-%m-%d %H:%M:%S %Z"), "n_labels_nlf": len(labs), "n_not_in_aoi": n_not_aoi,
            "n_no_labelled_pixel": n_empty, "n_images": len(imgs), "groups": {}}
     for geo in ("sector", "circle"):
         G = [i for i in imgs if i["geometry"] == geo and i["hirise_sand"] is not None]
