@@ -298,6 +298,7 @@ function analyse() {
   for (const c of cands) { if (pick.length >= want) break; if (pick.every((p) => Math.hypot(p.x - c.x, p.y - c.y) >= 150)) pick.push(c); }
   pick.forEach((p, i) => { p.n = i + 1; p.dSand = nearestSand(p.x, p.y); });
   S.targets = pick; S.stale = false; S.analysis = { nRevealedLattice, nPass, nReach, nCand: cands.length };
+  localStorage.removeItem('marswalker-scratch-route');
   S.plan = null; stop(); clearRoute();
   drawTargets(); renderTargets(); renderPlanOut();
 }
@@ -336,7 +337,7 @@ function renderTargets() {
 // ---------- step 3: tour + replay
 function planTour() {
   stop();
-  if (!S.targets.length) { S.plan = null; renderPlanOut(); return; }
+  if (!S.targets.length) { S.plan = null; localStorage.removeItem('marswalker-scratch-route'); renderPlanOut(); return; }
   const U = usable(), stay = STAY_MIN * STAY_RATE, G = S.G, T = S.targets, n = T.length;
   const nodes = [S.baseK, ...T.map((t) => t.k4)];
   const F = [S.F0, ...T.map((t) => dijkstra(G.kO, t.k4, nodes))];
@@ -354,7 +355,7 @@ function planTour() {
       if (!best || p.length > best.order.length || (p.length === best.order.length && used < best.o2)) best = { order: p, o2: used };
     }
   }
-  if (!best) { S.plan = { fail: true }; renderPlanOut(); clearRoute(); return; }
+  if (!best) { S.plan = { fail: true }; localStorage.removeItem('marswalker-scratch-route'); renderPlanOut(); clearRoute(); return; }
   // build the vertex timeline (actual = HiRISE reference classes; planned = your map)
   const legs = [], seq = [0, ...best.order, 0];
   for (let s = 0; s < seq.length - 1; s++) {
@@ -383,9 +384,38 @@ function planTour() {
   const mPlan = tl.op.map((o, i) => U - o - tl.home[i]);
   S.plan = { U, order: best.order, skipped: range(1, n).filter((i) => !best.order.includes(i)), legs, tl, nBlk, stay,
     o2Plan: op, o2Act: oa, tPlan: tp, tAct: t, dist: d, minMarginPlan: Math.min(...mPlan), minMarginAct: Math.min(...margins) };
+  publishPlannerRoute();
   S.map.getSource('route').setData(fc([{ type: 'Feature', geometry: { type: 'LineString', coordinates: tl.x.map((x, i) => xyToLL(x, tl.y[i])) } }]));
   $('#play').disabled = false; $('#scrub').disabled = false;
   renderPlanOut(); setT(0);
+}
+
+// Export the exact Step 3 replay route; only stationary duplicates during target stops are omitted.
+function publishPlannerRoute() {
+  const tl = S.plan?.tl;
+  if (!tl || !tl.x.length) { localStorage.removeItem('marswalker-scratch-route'); return; }
+  const points = [], sourceIds = [];
+  for (let i = 0; i < tl.x.length; i++) {
+    const p = [tl.x[i], tl.y[i]], q = points.at(-1);
+    if (!q || Math.hypot(p[0] - q[0], p[1] - q[1]) > 0.01) { points.push(p); sourceIds.push(i); }
+  }
+  const coords = points.map(([x, y]) => xyToLL(x, y));
+  const levels = points.slice(0, -1).map((_, j) => {
+    const i = Math.floor((sourceIds[j] + sourceIds[j + 1]) / 2), c = classAt(tl.x[i], tl.y[i]);
+    return c === 1 ? 'medium' : c === 2 ? 'high' : c === 3 ? 'blocked' : 'low';
+  });
+  const waypoints = S.plan.order.map((n) => {
+    const t = S.targets[n - 1], c = classAt(t.x, t.y);
+    return { n: `目標點 ${n}`, coords: xyToLL(t.x, t.y), cls: c === 1 ? 'medium' : c === 2 ? 'high' : c === 3 ? 'blocked' : 'low' };
+  });
+  localStorage.setItem('marswalker-scratch-route', JSON.stringify({ coords, levels, waypoints, created: Date.now() }));
+}
+
+function open3dWalk() {
+  if (!S.plan || S.plan.fail || S.stale) { alert('請先完成第 3 步「規劃來回路線」，再開啟 3D 徒步。'); return; }
+  publishPlannerRoute();
+  $('#walk3dShell').hidden = false;
+  $('#walk3dFrame').src = `3d%20first%20point%20view.html?route=${Date.now()}`;
 }
 
 function clearRoute() {
@@ -518,6 +548,8 @@ function setStep(n) {
 }
 function bindUI() {
   document.querySelectorAll('.step').forEach((b) => (b.onclick = () => setStep(+b.dataset.step)));
+  $('#open3d').onclick = open3dWalk;
+  $('#close3d').onclick = () => { $('#walk3dShell').hidden = true; $('#walk3dFrame').src = 'about:blank'; };
   const lbl = () => { $('#capLbl').textContent = $('#cap').value; };
   lbl(); $('#play').textContent = tr('common.play'); $('#tLbl').textContent = fmtMin(0);
   $('#cap').addEventListener('input', () => { lbl(); if (S.plan) { planTour(); } });
