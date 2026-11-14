@@ -19,7 +19,7 @@ async function step2Init() {
   $('#step2').hidden = false;
   if (R7) $('#round7').hidden = false;
   const modes = D.link_rule === 'i'
-    ? [['i', 'Brought back by this rover'], ['ii', 'View all data']]
+    ? (D.datasets.i_v3 ? [['i_v3', 'Brought back by this rover'], ['i', 'v2 rover (record)'], ['ii', 'View all data']] : [['i', 'Brought back by this rover'], ['ii', 'View all data']])
     : [['ii', 'Recon result (link rule ii)']];
   $('#s2Mode').innerHTML = modes.map(([k, n]) => `<button class="btn sm" data-ds="${k}">${esc(n)}</button>`).join('');
   document.querySelectorAll('#s2Mode button').forEach((b) => b.onclick = () => { S2.ds = b.dataset.ds; S2.sel = null; step2Render(); });
@@ -42,7 +42,10 @@ function step2Map() {
   step2Render();
 }
 
+const isI = (k) => k === 'i' || k === 'i_v3';
 function dsLabel(k) {
+  if (k === 'i_v3') return 'Measurements the rover unlocked: Perseverance SuperCam targets within 15 m of the simulated rover\'s path by loop 30 (link rule i; rover rule version 3, designed after seeing version 2).';
+  if (k === 'i' && S2.D.datasets.i_v3) return 'Record: what the version-2 rover (the pre-registered run) unlocked by loop 30 (link rule i).';
   return k === 'i'
     ? 'Measurements the rover unlocked: Perseverance SuperCam targets within 15 m of the simulated rover\'s path by loop 30 (link rule i).'
     : (S2.D.link_rule === 'i'
@@ -59,11 +62,11 @@ function step2Render() {
   if (!S2.on) return;
   const D = S2.D, B = D.datasets[S2.ds]; S2.cur = B;
   document.querySelectorAll('#s2Mode button').forEach((b) => b.classList.toggle('active', b.dataset.ds === S2.ds));
-  const ul = D.unlock_by_loop;
+  const ul = S2.ds === 'i_v3' ? D.unlock_by_loop_v3 : D.unlock_by_loop;
   $('#s2Info').innerHTML = `<p class="hint">${dsLabel(S2.ds)}</p>
 <p class="hint">${B.n_targets} targets at ${B.n_locations} places → <b>${B.k} chemistry group${B.k > 1 ? 's' : ''}</b>. Rule fixed before any group was seen: the most groups (at most 4) whose centres all differ by at least 5× the instrument's prediction error (RMSEP) in some oxide. Candidate stops: each group's most typical target and its most unusual one — no score, no weighting.</p>
 <div class="glist">${B.groups.map((g) => `<div>${groupLine(g)}</div>`).join('')}</div>
-${S2.ds === 'i' ? `<p class="hint">Unlocked after loops ${Object.keys(ul).join(' / ')}: ${Object.values(ul).map((u) => u.n_targets).join(' / ')} targets at ${Object.values(ul).map((u) => u.n_locations).join(' / ')} places, ${Object.values(ul).map((u) => u.k).join(' / ')} groups${D.consistency ? `; agreement with the all-data groups (adjusted Rand index / majority match, metrics chosen after the cross-tables were seen): ${Object.values(D.consistency.by_loop).map((c) => c.ari == null ? '–' : c.ari.toFixed(2) + ' / ' + Math.round(c.majority_match * 100) + '%').join(' · ')}` : ''}; ${Object.values(ul).every((u) => Object.keys(u.units).every((x) => x === 'Njf')) ? 'all on the Jezero floor unit (Njf); none yet on the other mapped unit (Nle).' : ''}</p>` : ''}`;
+${isI(S2.ds) ? `<p class="hint">Unlocked after loops ${Object.keys(ul).join(' / ')}: ${Object.values(ul).map((u) => u.n_targets).join(' / ')} targets at ${Object.values(ul).map((u) => u.n_locations).join(' / ')} places, ${Object.values(ul).map((u) => u.k).join(' / ')} groups${D.consistency && S2.ds === 'i' ? `; agreement with the all-data groups (adjusted Rand index / majority match, metrics chosen after the cross-tables were seen): ${Object.values(D.consistency.by_loop).map((c) => c.ari == null ? '–' : c.ari.toFixed(2) + ' / ' + Math.round(c.majority_match * 100) + '%').join(' · ')}` : ''}; ${Object.values(ul).every((u) => Object.keys(u.units).every((x) => x === 'Njf')) ? 'all on the Jezero floor unit (Njf); none yet on the other mapped unit (Nle).' : ''}</p>` : ''}`;
   $('#s2Stops').innerHTML = B.stops.map((s, i) => `<button class="btn sm stopbtn ${S2.sel === i ? 'active' : ''}" data-i="${i}"><span class="gdot" style="background:${GCOL[s.roles[0].group - 1]}"></span>S${i + 1} · ${s.roles.map((r) => `G${r.group} ${r.role === 'representative' ? 'typical' : 'unusual'}`).join(' + ')}</button>`).join('');
   document.querySelectorAll('#s2Stops button').forEach((b) => b.onclick = () => { S2.sel = +b.dataset.i; step2Render(); });
   $('#s2Card').innerHTML = S2.sel == null ? '<p class="hint">Pick a stop (list or map) for its card.</p>' : stopCard(B.stops[S2.sel], S2.sel);
@@ -85,15 +88,15 @@ ${s.roles.map((r) => `<p>${roleTxt(r)}</p>`).join('')}
 <p class="hint">Oxides: Perseverance SuperCam LIBS, PDS <span class="badge measured">measured</span>; group and role <span class="badge derived">derived</span>. Differences smaller than the RMSEP are not treated as different rock.</p>
 <div class="kv"><span>Geologic unit (SIM 3464)</span><span>${s.sim3464_unit ? `${esc(s.sim3464_unit.symbol)} · ${esc(s.sim3464_unit.name)}` : '–'}</span>
 <span>Where</span><span>x ${f0(s.x)} m, y ${f0(s.y)} m · site ${s.site}, drive ${s.drive}</span></div>
-<p class="hint">Position = the rover's position when it fired the laser (site/drive); the rock is within about 7 m of it. Measured by Perseverance, not by our simulated rover${S2.ds === 'i' ? '; our rover unlocked it by driving within 15 m' : ''}.</p>
+<p class="hint">Position = the rover's position when it fired the laser (site/drive); the rock is within about 7 m of it. Measured by Perseverance, not by our simulated rover${isI(S2.ds) ? '; our rover unlocked it by driving within 15 m' : ''}.</p>
 ${ph.length ? `<div class="thumbs">${ph.map((p) => `<a href="${esc(p.page)}" target="_blank" rel="noopener" title="${esc(p.camera)} · sol ${p.sol} · ${f0(p.dist_m)} m away · ${esc(p.credit)}"><img loading="lazy" src="${BASE + p.local}" alt="Perseverance ${esc(p.camera)} image, sol ${p.sol}"></a>`).join('')}</div>
 <p class="hint">Perseverance raw images taken within 15 m (credit ${esc(ph[0].credit)}; Mastcam-Z NASA/JPL-Caltech/ASU)${more ? ` · ${more.more} more` : ''}. <span class="badge measured">measured</span></p>` : '<p class="hint">No Perseverance photo within 15 m.</p>'}
 </div>`;
 }
 
 function samplesText() {
-  const D = S2.D, key = S2.ds === 'i' ? 'i_unlocked@30' : 'ii_all';
-  const rows = D.samples.map((s) => {
+  const D = S2.D, key = isI(S2.ds) ? 'i_unlocked@30' : 'ii_all';
+  const rows = (S2.ds === 'i_v3' ? D.samples_v3 : D.samples).map((s) => {
     const b = s.by_dataset[key], near = b.targets_within_15m_of_the_sample_waypoint;
     const named = b.targets_named_like_the_feature.map((t) => `${esc(t.target)} → G${t.group}`).join(', ');
     const roles = near.candidate_roles.map((t) => `${esc(t.target)} (G${t.candidate_role[0]} ${t.candidate_role[1] === 'representative' ? 'typical' : 'unusual'})`).join(', ');
@@ -112,7 +115,7 @@ function step2Draw() {
   const feats = [];
   const T = S2.R7 && S2.R7.tables[S2.ds];
   if (T && S2.showWalks) {
-    const k = `B@${S.k}`;
+    const k = S2.ds === 'i_v3' ? `B_v3@${S.k}` : `B@${S.k}`;
     for (const [st, col, c] of [['A', COL.A, 'main'], [k, COL.B, 'main']]) {
       const p = T.paths[st] && T.paths[st][c]; if (!p) continue;
       feats.push({ type: 'Feature', properties: { col }, geometry: { type: 'LineString', coordinates: p.lon.map((v, j) => [v, p.lat[j]]) } });
@@ -124,15 +127,17 @@ function step2Draw() {
 function round7Render() {
   const R7 = S2.R7; if (!R7) return;
   const T = R7.tables[S2.ds];
-  const k = `B@${S.k}`;
+  const k = S2.ds === 'i_v3' ? `B_v3@${S.k}` : `B@${S.k}`;
   const lab = { A: 'A · orbital only', 'A+': 'A+ · bracket', REF: 'Reference bound' };
-  const order = ['A', 'A+', ...Object.keys(T.rows).filter((s) => s.startsWith('B@')), 'REF'];
+  const order = ['A', 'A+', ...Object.keys(T.rows).filter((s) => s.startsWith('B') && (S2.ds !== 'i_v3' || s.endsWith('@' + S.k))), 'REF'];
+  const bName = (s) => s.startsWith('B_v3@') ? `B after ${s.slice(5)} loops (rover v3, expected cost)` : s.startsWith('Bv3prior@') ? `B after ${s.slice(9)} loops (rover v3, unseen = orbital class)` : `B after ${s.slice(2)} loops`;
+  const dists = T.stops.map((x) => Math.hypot(x.x, x.y)), allReached = Object.values(T.rows).every((cols) => Object.values(cols).every((r) => r.error || r.stops_reached_with_safe_return === r.n_planned_stops && r.n_planned_stops === T.stops.length));
   const line = (s, c) => { const r = T.rows[s][c]; if (!r || r.error) return ''; const d = r.diff_vs_A;
-    return `<tr class="${s === k ? 'hl' : ''}"><td>${esc(s.startsWith('B@') ? `B after ${s.slice(2)} loops${c === 'main' ? '' : ' · keeps A\'s order'}` : lab[s])}</td><td>${r.stops_reached_with_safe_return} / ${r.n_planned_stops}</td><td>${f1(r.pred_o2)}</td><td><b>${f1(r.actual_o2)}</b></td><td>${sg(r.o2_error, f1)}</td><td>${f0(r.hazard_m)}</td><td>${d ? sg(d.actual_o2, f1) + ' / ' + sg(d.hazard_m) : '–'}</td></tr>`; };
-  $('#r7Body').innerHTML = `<p class="hint">${S2.ds === 'i' ? 'Main table' : 'Second table — stops <b>not brought back by this rover</b>'}: one walk from the habitat to the ${T.stops.length} stops and back, ${R7.dwell.dwell_min} minutes at each stop (counted as ${R7.dwell.dwell_min} nominal minutes of oxygen, <span class="badge assumed">assumed</span>). Each map picks its own order; the plan is then walked on the reference terrain without replanning.</p>
+    return `<tr class="${s === k ? 'hl' : ''}"><td>${esc(s.startsWith('B') ? `${bName(s)}${c === 'main' ? '' : ' · keeps A\'s order'}` : lab[s])}</td><td>${r.stops_reached_with_safe_return} / ${r.n_planned_stops}</td><td>${f1(r.pred_o2)}</td><td><b>${f1(r.actual_o2)}</b></td><td>${sg(r.o2_error, f1)}</td><td>${f0(r.hazard_m)}</td><td>${d ? sg(d.actual_o2, f1) + ' / ' + sg(d.hazard_m) : '–'}</td></tr>`; };
+  $('#r7Body').innerHTML = `<p class="hint">${isI(S2.ds) ? (S2.ds === 'i' && S2.D.datasets.i_v3 ? 'Record (version-2 rover)' : 'Main table') : 'Second table — stops <b>not brought back by this rover</b>'}: one walk from the habitat to the ${T.stops.length} stops and back, ${R7.dwell.dwell_min} minutes at each stop (counted as ${R7.dwell.dwell_min} nominal minutes of oxygen, <span class="badge assumed">assumed</span>). Each map picks its own order; the plan is then walked on the reference terrain without replanning.</p>
 <div class="r7wrap"><table class="cmp r7"><thead><tr><th>Map used for planning</th><th>Stops reached / planned</th><th>Planned O2</th><th>Actual O2</th><th>Error</th><th>Hazard m</th><th>vs A: O2 / hazard m</th></tr></thead><tbody>
-${order.map((s) => line(s, 'main') + (s === k ? line(s, 'secondary_A_order') : '')).join('')}</tbody></table></div>
-<p class="hint">"Reached" = after the stay at a stop, walking home the plan's own way still fits the usable ${f0(R7.usable_o2)} on the reference terrain. Every map reaches every stop here: these stops are within about ${S2.ds === 'i' ? '0.3' : '0.9'} km of the habitat. Oxygen in nominal minutes. <b>This round was designed after seeing the first comparison; the 63-point comparison above stays the pre-registered main result.</b> The row "keeps A's order" (for the selected loop count) separates a better route from a better order. Map: dashed lines = this walk for route A (orange) and route B after ${S.k} loops (blue).</p>`;
+${order.map((s) => line(s, 'main') + (s === k || s.startsWith('Bv3prior@') ? line(s, 'secondary_A_order') : '')).join('')}</tbody></table></div>
+<p class="hint">"Reached" = after the stay at a stop, walking home the plan's own way still fits the usable ${f0(R7.usable_o2)} on the reference terrain. ${allReached ? `Every map reaches every stop here: these stops are within ${f1(Math.max(...dists) / 1000)} km of the habitat.` : `The stops lie up to ${f1(Math.max(...dists) / 1000)} km from the habitat; not every plan reaches every stop.`} Oxygen in nominal minutes. <b>This round was designed after seeing the first comparison; the 63-point comparison above stays the pre-registered main result.</b> The row "keeps A's order" (for the selected loop count) separates a better route from a better order. Map: dashed lines = this walk for route A (orange) and route B after ${S.k} loops (blue).</p>`;
 }
 
 document.addEventListener('DOMContentLoaded', step2Init);

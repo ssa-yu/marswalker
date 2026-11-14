@@ -26,11 +26,16 @@ def run():
     g = Scene("jezero").grid
     ext, res = P["ext"], P["res"]
     tables = {}
-    for tab, T in R["tables"].items():
+    v3 = APP / "data_work/jezero/round7/round7_v3.json"
+    srcs = [(tab, T, P["paths"][tab]) for tab, T in R["tables"].items()]
+    if v3.exists():
+        R3 = read_json(v3); P3 = read_json(APP / "data_work/jezero/round7/round7_v3_paths.json")
+        srcs.append(("i_v3", R3["tables"]["i"], P3["paths"]["i"]))
+    for tab, T, PP in srcs:
         rows = {s: {c: ({q: r[q] for q in KEEP if q in r} if "error" not in r or not isinstance(r["error"], str) else r)
                     for c, r in cols.items()} for s, cols in T["rows"].items()}
         paths = {}
-        for s, cols in P["paths"][tab].items():
+        for s, cols in PP.items():
             for c, p in cols.items():
                 rc = np.array(p["path_rc"], float).reshape(-1, 2)
                 x = ext[0] + (rc[:, 1] + .5) * res; y = ext[3] - (rc[:, 0] + .5) * res

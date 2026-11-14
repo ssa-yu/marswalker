@@ -381,6 +381,16 @@ def export_web(out, cfg):
     for d in W_["datasets"].values():
         for s in d["stops"]:
             s["photos_within_15m"] = s["photos_within_15m"][:6] + ([{"more": len(s["photos_within_15m"]) - 6}] if len(s["photos_within_15m"]) > 6 else [])
+    v3 = OUT / f"step2_result_v3_r{int(cfg['unlock_radius_m'])}.json"
+    if v3.exists():                       # version-3 chain (product for link rule i): its (i) block beside the record
+        V = read_json(v3)
+        d = {q: x for q, x in V["datasets"]["i"].items() if q != "labels"}
+        for st in d["stops"]:
+            st["photos_within_15m"] = st["photos_within_15m"][:6] + ([{"more": len(st["photos_within_15m"]) - 6}] if len(st["photos_within_15m"]) > 6 else [])
+        W_["datasets"]["i_v3"] = d
+        W_["unlock_by_loop_v3"] = {k: {q: x for q, x in u.items() if q != "crosstab_unlocked_group_vs_all_data_group"} for k, u in V["unlock_by_loop"].items()}
+        W_["samples_v3"] = V["samples"]
+        W_["product"] = "i_v3" if cfg["link_rule"] == "i" else W_["product"]
     write_json(WEB / "step2.json", W_)
 
 
