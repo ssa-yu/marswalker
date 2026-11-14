@@ -17,8 +17,9 @@ R1 expected cost (Sofman et al. 2006; Beta-Bernoulli): for prior class k in {fir
 R2 repeat penalty (Burgard et al. 2005): c'(x) = E[c](x) (1 + 1.5 seen(x)), seen = seen in any loop, except within
    30 m of the habitat. Outbound AND return paths planned on c'; feasibility / budget on E[c] x margin.
 R3 candidates (Yamauchi 1997): frontier cell = seen, belief-passable, with an unseen 8-neighbour; 8-connected
-   frontier components < 3 cells ignored. Candidate = 40 m lattice point within 20 m of a frontier cell and
-   belief-passable (and not the rover's current cell).
+   frontier components < 3 cells ignored. Candidate = a frontier cell itself (manager 13th update, after the
+   stopped run 1: the original "40 m lattice point within 20 m of a frontier cell" cannot be met beyond the first
+   lattice points with 15 m sensing), not the rover's current cell; a candidate with loop gain 0 is not feasible.
 R4 score (Singh et al. 2009; Bircher et al. 2016): from the current cell s, Dijkstra on c' gives the outbound paths;
    E[s->q] = E[c] summed along that c' path; E[q->home] = least E[c] cost home (field on E[c]).
    feasible: spent + (E[s->q] + E[q->home]) x margin <= 0.75 x 4,000. Coarse value A150(q) / (E[s->q] + E[q->home])
@@ -48,7 +49,7 @@ from .rover_sim import PARAMS as PARAMS_V2, Belief, cell_cost_array, path_cost, 
 PARAMS = dict(PARAMS_V2)
 PARAMS.update({"status": "locked (manager 2026-11-14, version 3)", "goal_rule": "v3_literature",
                "alpha0": 1.0, "beta0": 4.0, "rho": 1.5, "K": 30, "reselect_ratio": 1.5,
-               "frontier_min_cells": 3, "cand_frontier_m": 20.0, "corridor_m": 15.0})
+               "frontier_min_cells": 3, "candidates": "frontier cells (13th update)", "corridor_m": 15.0})
 READINGS = {
     "candidate_not_current_cell": "the rover's current cell is never a candidate (else it would 'reach' it at once, forever)",
     "feasible_before_top_k": "the K = 30 coarse shortlist is taken among feasible candidates; first-pass feasibility uses the coarse quantities E[s->q] (E[c] summed along the c' tree from s) and E[q->home] (E[c] home field); the chosen candidate is re-checked with E[c] summed along its traced outbound path, else the next by score (manager 12th update)",
@@ -122,6 +123,11 @@ def tree_sum(cc, tb, offsets, step_cost, res):
     return out
 
 
+def needs_reselect(E, path, idx, est, ratio, res):
+    """R5 (2): expected remaining cost to the target (E[c] along the rest of the path) > ratio x estimate at selection."""
+    return path_cost(E, path[idx:], res) > ratio * est
+
+
 def frontier_cells(bel, P):
     obs = bel.observed
     pas = np.isfinite(bel.cost) & obs
@@ -181,8 +187,8 @@ class Selector:
         fr = frontier_cells(bel, P)
         if not fr.any():
             return None, {"n_cand": 0}
-        dfr = distance_transform_edt(~fr) * res
-        cand = self.lattice & (dfr <= P["cand_frontier_m"]) & np.isfinite(E)
+        # manager 13th update: candidates are the frontier cells themselves (Yamauchi 1997), not the 40 m lattice
+        cand = fr & np.isfinite(E)
         cand[tuple(cur)] = False
         tot = Es + Eh
         feas = cand & np.isfinite(tot) & (spent + tot * bel.margin(P) <= Bp)
@@ -199,6 +205,8 @@ class Selector:
             out = [tuple(int(v) for v in x) for x in ms.traceback(q)]
             back = [tuple(int(v) for v in x) for x in mh.traceback(q)][::-1]
             G = corridor_gain([out, back], bel.observed, res, P["corridor_m"])
+            if G <= 0:                                              # 13th update: zero loop gain = not feasible
+                continue
             scored.append({"goal": q, "path": out, "est": float(Es[q]), "score": float(G / max(tot[q], 1e-9)), "gain_m2": G,
                            "home_E": float(Eh[q]), "tot": float(tot[q])})
         # order: score, ties (within 1 m2 of gain) -> smaller E[s->q]
@@ -296,8 +304,7 @@ def simulate(T, P, base_rc, log_fn=print):
                             events.append({"t": t, "type": "turn_back", "spent": round(spent, 1)})
                             mode = "return_start"
                         else:
-                            rem = path_cost(E, path[idx:], res)
-                            if rem > P["reselect_ratio"] * est:
+                            if needs_reselect(E, path, idx, est, P["reselect_ratio"], res):
                                 events.append({"t": t, "type": "replan", "reason": "cost_x1.5"})
                                 choose("cost_x1.5")
                 if mode == "return_start":
