@@ -50,7 +50,7 @@ def run():
     Xp = np.c_[feats, oh]
     trees = np.stack([t.predict(Xp) for t in rf.estimators_])
     pred = trees.mean(0).reshape(H, W); unc = trees.std(0).reshape(H, W)
-    out = APP / "web/data/jezero/ai4mars"; out.mkdir(parents=True, exist_ok=True)
+    out = APP / "qa/jezero/ai4mars"; out.mkdir(parents=True, exist_ok=True)
     def png(a, name, vmax):
         v = np.clip(a / vmax, 0, 1); rgba = np.zeros((H, W, 4), np.uint8)
         rgba[..., 0] = 255; rgba[..., 1] = (200 * (1 - v)).astype(np.uint8); rgba[..., 2] = 60; rgba[..., 3] = (220 * v).astype(np.uint8)
