@@ -53,6 +53,7 @@ def compare_v3(Tm, first_t, loops, ext, res, P=CMP):
         out["observed_frac"][k] = float(obs.mean())
         out["unreachable"][k] = [i for i, pth in enumerate(paths) if pth is None]
         out["rows"][k] = {i: evaluate_bstar(pth, T, O, cls_b, ref, zones, res) for i, pth in enumerate(paths) if pth is not None}
+        out.setdefault("paths", {})[k] = {i: pth for i, pth in enumerate(paths) if pth is not None}
     out["targets"] = targets
     return out
 
@@ -99,6 +100,8 @@ def run():
            "p": o["p"], "observed_frac": o["observed_frac"], "unreachable": o["unreachable"], "summary": summ,
            "rows": {str(k): {str(i): {n: (round(v, 3) if isinstance(v, float) else v) for n, v in r.items()} for i, r in rows.items()} for k, rows in o["rows"].items()}}
     write_json(d / "compare_bv3.json", out)
+    write_json(d / "compare_bv3_paths.json", {"base_rc": [int(ext[3] / res), int(-ext[0] / res)], "res": res, "ext": ext,
+                                              "paths": {f"B_v3@{k}": {str(i): p for i, p in ps.items()} for k, ps in o["paths"].items()}})
     log("jezero", "compare_v3", f"{out['seconds']} s; B_v3@30 actual {summ['B_v3@30']['all']['actual_o2_mean']:.1f}")
     return out
 
