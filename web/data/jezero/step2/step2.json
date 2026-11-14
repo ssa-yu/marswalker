@@ -43,7 +43,7 @@
   "same_waypoint_both_rules_aoi_targets": 146
  },
  "position_accuracy": "rover position (site/drive waypoint); LIBS targets are within about 7 m of the rover",
- "product": "i",
+ "product": "i_v3",
  "datasets": {
   "i": {
    "dataset": "unlocked@30",
@@ -1268,6 +1268,537 @@
      ]
     }
    ]
+  },
+  "i_v3": {
+   "dataset": "unlocked_v3@30",
+   "n_targets": 72,
+   "n_locations": 28,
+   "k": 2,
+   "min_pair_sep_rmsep_by_k": {
+    "2": 10.869,
+    "3": 1.907,
+    "4": 2.506
+   },
+   "groups": [
+    {
+     "group": 1,
+     "n_targets": 68,
+     "n_locations": 28,
+     "centroid_wt%": {
+      "SiO2": 50.04,
+      "TiO2": 0.54,
+      "Al2O3": 9.3,
+      "FeOT": 16.98,
+      "MgO": 2.84,
+      "CaO": 5.11,
+      "Na2O": 2.94,
+      "K2O": 1.12
+     },
+     "diff_vs_other_groups_rmsep": {
+      "SiO2": 0.96,
+      "TiO2": 0.22,
+      "Al2O3": 0.78,
+      "FeOT": -1.33,
+      "MgO": -10.87,
+      "CaO": 0.81,
+      "Na2O": 1.91,
+      "K2O": 0.82
+     },
+     "sim3464_units": {
+      "Njf": 68
+     }
+    },
+    {
+     "group": 2,
+     "n_targets": 4,
+     "n_locations": 4,
+     "centroid_wt%": {
+      "SiO2": 44.19,
+      "TiO2": 0.47,
+      "Al2O3": 7.9,
+      "FeOT": 21.12,
+      "MgO": 14.79,
+      "CaO": 4.06,
+      "Na2O": 1.99,
+      "K2O": 0.63
+     },
+     "diff_vs_other_groups_rmsep": {
+      "SiO2": -0.96,
+      "TiO2": -0.22,
+      "Al2O3": -0.78,
+      "FeOT": 1.33,
+      "MgO": 10.87,
+      "CaO": -0.81,
+      "Na2O": -1.91,
+      "K2O": -0.82
+     },
+     "sim3464_units": {
+      "Njf": 4
+     }
+    }
+   ],
+   "stops": [
+    {
+     "wp": "3_110",
+     "roles": [
+      {
+       "group": 1,
+       "role": "representative",
+       "target": "tselchee",
+       "sol": 15,
+       "n_points": 9,
+       "oxides_wt%": {
+        "SiO2": 50.74,
+        "TiO2": 0.58,
+        "Al2O3": 8.89,
+        "FeOT": 15.7,
+        "MgO": 3.7,
+        "CaO": 4.79,
+        "Na2O": 2.78,
+        "K2O": 1.38
+       },
+       "oxides_sd_between_points": {
+        "SiO2": 6.64,
+        "TiO2": 0.11,
+        "Al2O3": 3.1,
+        "FeOT": 11.84,
+        "MgO": 3.07,
+        "CaO": 2.33,
+        "Na2O": 0.78,
+        "K2O": 0.64
+       },
+       "rmsep_wt%": {
+        "SiO2": 6.1,
+        "TiO2": 0.3,
+        "Al2O3": 1.8,
+        "FeOT": 3.1,
+        "MgO": 1.1,
+        "CaO": 1.3,
+        "Na2O": 0.5,
+        "K2O": 0.6
+       },
+       "dist_to_group_centroid_rmsep": 1.11,
+       "libs_distance_m_median": 3.19
+      }
+     ],
+     "x": 3.43,
+     "y": -4.97,
+     "site": 3,
+     "drive": 110,
+     "sim3464_unit": {
+      "symbol": "Njf",
+      "name": "Jezero floor unit"
+     },
+     "photos_within_15m": [
+      {
+       "local": "photos/NLF_0014_0668191860_522ECM_N0030110NCAM00304_10_195J.jpg",
+       "camera": "NAVCAM_LEFT",
+       "sol": 14,
+       "credit": "NASA/JPL-Caltech",
+       "page": "https://mars.nasa.gov/mars2020/multimedia/raw-images/NLF_0014_0668191860_522ECM_N0030110NCAM00304_10_195J",
+       "wp": "3_110",
+       "dist_m": 0.0,
+       "heading_deg": 2.9
+      },
+      {
+       "local": "photos/NLF_0014_0668192052_178ECM_N0030110NCAM03014_10_195J.jpg",
+       "camera": "NAVCAM_LEFT",
+       "sol": 14,
+       "credit": "NASA/JPL-Caltech",
+       "page": "https://mars.nasa.gov/mars2020/multimedia/raw-images/NLF_0014_0668192052_178ECM_N0030110NCAM03014_10_195J",
+       "wp": "3_110",
+       "dist_m": 0.0,
+       "heading_deg": 56.2
+      },
+      {
+       "local": "photos/FLF_0014_0668191805_035ECM_N0030110FHAZ02002_01_295J.jpg",
+       "camera": "FRONT_HAZCAM_LEFT_A",
+       "sol": 14,
+       "credit": "NASA/JPL-Caltech",
+       "page": "https://mars.nasa.gov/mars2020/multimedia/raw-images/FLF_0014_0668191805_035ECM_N0030110FHAZ02002_01_295J",
+       "wp": "3_110",
+       "dist_m": 0.0
+      },
+      {
+       "local": "photos/ZLF_0015_0668273255_139FDR_N0030110ZCAM08000_1000LUJ.jpg",
+       "camera": "MCZ_LEFT",
+       "sol": 15,
+       "credit": "NASA/JPL-Caltech/ASU",
+       "page": "https://mars.nasa.gov/mars2020/multimedia/raw-images/ZLF_0015_0668273255_139FDR_N0030110ZCAM08000_1000LUJ",
+       "wp": "3_110",
+       "dist_m": 0.0
+      },
+      {
+       "local": "photos/NLF_0033_0669876929_412ECM_N0031374NCAM03033_10_195J.jpg",
+       "camera": "NAVCAM_LEFT",
+       "sol": 33,
+       "credit": "NASA/JPL-Caltech",
+       "page": "https://mars.nasa.gov/mars2020/multimedia/raw-images/NLF_0033_0669876929_412ECM_N0031374NCAM03033_10_195J",
+       "wp": "3_1374",
+       "dist_m": 13.1,
+       "heading_deg": 328.5
+      },
+      {
+       "local": "photos/NLM_0033_0669876745_349ECM_N0031374SAPP00601_00_2LLJ.jpg",
+       "camera": "NAVCAM_LEFT",
+       "sol": 33,
+       "credit": "NASA/JPL-Caltech",
+       "page": "https://mars.nasa.gov/mars2020/multimedia/raw-images/NLM_0033_0669876745_349ECM_N0031374SAPP00601_00_2LLJ",
+       "wp": "3_1374",
+       "dist_m": 13.1,
+       "heading_deg": 166.4
+      },
+      {
+       "more": 2
+      }
+     ]
+    },
+    {
+     "wp": "4_48",
+     "roles": [
+      {
+       "group": 1,
+       "role": "anomaly",
+       "target": "tseebi_tsaadah",
+       "sol": 88,
+       "n_points": 1,
+       "oxides_wt%": {
+        "SiO2": 43.93,
+        "TiO2": 0.49,
+        "Al2O3": 1.97,
+        "FeOT": 14.03,
+        "MgO": 4.25,
+        "CaO": 16.94,
+        "Na2O": 1.77,
+        "K2O": 0.0
+       },
+       "oxides_sd_between_points": {
+        "SiO2": 0.0,
+        "TiO2": 0.0,
+        "Al2O3": 0.0,
+        "FeOT": 0.0,
+        "MgO": 0.0,
+        "CaO": 0.0,
+        "Na2O": 0.0,
+        "K2O": 0.0
+       },
+       "rmsep_wt%": {
+        "SiO2": 6.1,
+        "TiO2": 0.3,
+        "Al2O3": 1.8,
+        "FeOT": 3.1,
+        "MgO": 1.1,
+        "CaO": 1.3,
+        "Na2O": 0.5,
+        "K2O": 0.6
+       },
+       "dist_to_group_centroid_rmsep": 10.58,
+       "libs_distance_m_median": 5.11
+      }
+     ],
+     "x": 74.97,
+     "y": -27.68,
+     "site": 4,
+     "drive": 48,
+     "sim3464_unit": {
+      "symbol": "Njf",
+      "name": "Jezero floor unit"
+     },
+     "photos_within_15m": [
+      {
+       "local": "photos/NLM_0086_0674586155_112ECM_N0040048SAPP00601_00_2LLJ.jpg",
+       "camera": "NAVCAM_LEFT",
+       "sol": 86,
+       "credit": "NASA/JPL-Caltech",
+       "page": "https://mars.nasa.gov/mars2020/multimedia/raw-images/NLM_0086_0674586155_112ECM_N0040048SAPP00601_00_2LLJ",
+       "wp": "4_48",
+       "dist_m": 0.0,
+       "heading_deg": 219.9
+      },
+      {
+       "local": "photos/NLF_0087_0674665939_863EBY_N0040048NCAM00177_06_0LLJ.jpg",
+       "camera": "NAVCAM_LEFT",
+       "sol": 87,
+       "credit": "NASA/JPL-Caltech",
+       "page": "https://mars.nasa.gov/mars2020/multimedia/raw-images/NLF_0087_0674665939_863EBY_N0040048NCAM00177_06_0LLJ",
+       "wp": "4_48",
+       "dist_m": 0.0,
+       "heading_deg": 209.0
+      },
+      {
+       "local": "photos/FLE_0086_0674586170_790ECM_N0040048FHAZ02008_02_0LLJ.jpg",
+       "camera": "FRONT_HAZCAM_LEFT_A",
+       "sol": 86,
+       "credit": "NASA/JPL-Caltech",
+       "page": "https://mars.nasa.gov/mars2020/multimedia/raw-images/FLE_0086_0674586170_790ECM_N0040048FHAZ02008_02_0LLJ",
+       "wp": "4_48",
+       "dist_m": 0.0
+      },
+      {
+       "local": "photos/ZL0_0087_0674656980_104ECM_N0040048ZCAM08046_110085J.jpg",
+       "camera": "MCZ_LEFT",
+       "sol": 87,
+       "credit": "NASA/JPL-Caltech/ASU",
+       "page": "https://mars.nasa.gov/mars2020/multimedia/raw-images/ZL0_0087_0674656980_104ECM_N0040048ZCAM08046_110085J",
+       "wp": "4_48",
+       "dist_m": 0.0
+      },
+      {
+       "local": "photos/NLF_0084_0674404761_927ECM_N0040000NCAM00303_01_195J.jpg",
+       "camera": "NAVCAM_LEFT",
+       "sol": 84,
+       "credit": "NASA/JPL-Caltech",
+       "page": "https://mars.nasa.gov/mars2020/multimedia/raw-images/NLF_0084_0674404761_927ECM_N0040000NCAM00303_01_195J",
+       "wp": "4_0",
+       "dist_m": 4.8,
+       "heading_deg": 253.8
+      },
+      {
+       "local": "photos/NLF_0084_0674405048_866ECM_N0040000NCAM03084_04_195J.jpg",
+       "camera": "NAVCAM_LEFT",
+       "sol": 84,
+       "credit": "NASA/JPL-Caltech",
+       "page": "https://mars.nasa.gov/mars2020/multimedia/raw-images/NLF_0084_0674405048_866ECM_N0040000NCAM03084_04_195J",
+       "wp": "4_0",
+       "dist_m": 4.8,
+       "heading_deg": 156.9
+      },
+      {
+       "more": 2
+      }
+     ]
+    },
+    {
+     "wp": "3_2208",
+     "roles": [
+      {
+       "group": 2,
+       "role": "representative",
+       "target": "a_koo",
+       "sol": 72,
+       "n_points": 10,
+       "oxides_wt%": {
+        "SiO2": 48.5,
+        "TiO2": 0.26,
+        "Al2O3": 6.44,
+        "FeOT": 24.61,
+        "MgO": 15.44,
+        "CaO": 2.47,
+        "Na2O": 1.71,
+        "K2O": 0.54
+       },
+       "oxides_sd_between_points": {
+        "SiO2": 5.55,
+        "TiO2": 0.24,
+        "Al2O3": 4.88,
+        "FeOT": 10.73,
+        "MgO": 10.73,
+        "CaO": 1.23,
+        "Na2O": 1.14,
+        "K2O": 0.96
+       },
+       "rmsep_wt%": {
+        "SiO2": 6.1,
+        "TiO2": 0.3,
+        "Al2O3": 1.8,
+        "FeOT": 3.1,
+        "MgO": 1.1,
+        "CaO": 1.3,
+        "Na2O": 0.5,
+        "K2O": 0.6
+       },
+       "dist_to_group_centroid_rmsep": 2.26,
+       "libs_distance_m_median": 2.27
+      }
+     ],
+     "x": 79.39,
+     "y": -5.84,
+     "site": 3,
+     "drive": 2208,
+     "sim3464_unit": {
+      "symbol": "Njf",
+      "name": "Jezero floor unit"
+     },
+     "photos_within_15m": [
+      {
+       "local": "photos/NLE_0066_0672797872_512ECM_N0032208NCAM00407_00_0LLJ.jpg",
+       "camera": "NAVCAM_LEFT",
+       "sol": 66,
+       "credit": "NASA/JPL-Caltech",
+       "page": "https://mars.nasa.gov/mars2020/multimedia/raw-images/NLE_0066_0672797872_512ECM_N0032208NCAM00407_00_0LLJ",
+       "wp": "3_2208",
+       "dist_m": 0.0,
+       "heading_deg": 285.7
+      },
+      {
+       "local": "photos/NLF_0066_0672809519_731EBY_N0032208NCAM00413_00_0LLJ.jpg",
+       "camera": "NAVCAM_LEFT",
+       "sol": 66,
+       "credit": "NASA/JPL-Caltech",
+       "page": "https://mars.nasa.gov/mars2020/multimedia/raw-images/NLF_0066_0672809519_731EBY_N0032208NCAM00413_00_0LLJ",
+       "wp": "3_2208",
+       "dist_m": 0.0,
+       "heading_deg": 148.4
+      },
+      {
+       "local": "photos/ZL0_0066_0672797876_961ECM_N0032208ZCAM05043_063085J.jpg",
+       "camera": "MCZ_LEFT",
+       "sol": 66,
+       "credit": "NASA/JPL-Caltech/ASU",
+       "page": "https://mars.nasa.gov/mars2020/multimedia/raw-images/ZL0_0066_0672797876_961ECM_N0032208ZCAM05043_063085J",
+       "wp": "3_2208",
+       "dist_m": 0.0
+      },
+      {
+       "local": "photos/FLF_0066_0672808928_161EBY_N0032208FHAZ02008_06_0LLJ.jpg",
+       "camera": "FRONT_HAZCAM_LEFT_A",
+       "sol": 66,
+       "credit": "NASA/JPL-Caltech",
+       "page": "https://mars.nasa.gov/mars2020/multimedia/raw-images/FLF_0066_0672808928_161EBY_N0032208FHAZ02008_06_0LLJ",
+       "wp": "3_2208",
+       "dist_m": 0.0
+      },
+      {
+       "local": "photos/NLF_0065_0672722083_038ECM_N0032150NCAM00407_00_095J.jpg",
+       "camera": "NAVCAM_LEFT",
+       "sol": 65,
+       "credit": "NASA/JPL-Caltech",
+       "page": "https://mars.nasa.gov/mars2020/multimedia/raw-images/NLF_0065_0672722083_038ECM_N0032150NCAM00407_00_095J",
+       "wp": "3_2150",
+       "dist_m": 9.1,
+       "heading_deg": 280.1
+      },
+      {
+       "local": "photos/NLF_0065_0672721869_542ECM_N0032150NCAM03065_13_195J.jpg",
+       "camera": "NAVCAM_LEFT",
+       "sol": 65,
+       "credit": "NASA/JPL-Caltech",
+       "page": "https://mars.nasa.gov/mars2020/multimedia/raw-images/NLF_0065_0672721869_542ECM_N0032150NCAM03065_13_195J",
+       "wp": "3_2150",
+       "dist_m": 9.1,
+       "heading_deg": 193.1
+      },
+      {
+       "more": 2
+      }
+     ]
+    },
+    {
+     "wp": "4_592",
+     "roles": [
+      {
+       "group": 2,
+       "role": "anomaly",
+       "target": "hastaa",
+       "sol": 106,
+       "n_points": 10,
+       "oxides_wt%": {
+        "SiO2": 44.6,
+        "TiO2": 0.22,
+        "Al2O3": 6.33,
+        "FeOT": 22.43,
+        "MgO": 20.99,
+        "CaO": 4.22,
+        "Na2O": 1.7,
+        "K2O": 0.4
+       },
+       "oxides_sd_between_points": {
+        "SiO2": 4.11,
+        "TiO2": 0.2,
+        "Al2O3": 6.3,
+        "FeOT": 8.28,
+        "MgO": 9.1,
+        "CaO": 3.46,
+        "Na2O": 1.62,
+        "K2O": 0.48
+       },
+       "rmsep_wt%": {
+        "SiO2": 6.1,
+        "TiO2": 0.3,
+        "Al2O3": 1.8,
+        "FeOT": 3.1,
+        "MgO": 1.1,
+        "CaO": 1.3,
+        "Na2O": 0.5,
+        "K2O": 0.6
+       },
+       "dist_to_group_centroid_rmsep": 5.82,
+       "libs_distance_m_median": 3.01
+      }
+     ],
+     "x": -10.63,
+     "y": -155.25,
+     "site": 4,
+     "drive": 592,
+     "sim3464_unit": {
+      "symbol": "Njf",
+      "name": "Jezero floor unit"
+     },
+     "photos_within_15m": [
+      {
+       "local": "photos/NLF_0105_0676269214_068ECM_N0040592NCAM03105_01_195J.jpg",
+       "camera": "NAVCAM_LEFT",
+       "sol": 105,
+       "credit": "NASA/JPL-Caltech",
+       "page": "https://mars.nasa.gov/mars2020/multimedia/raw-images/NLF_0105_0676269214_068ECM_N0040592NCAM03105_01_195J",
+       "wp": "4_592",
+       "dist_m": 0.0,
+       "heading_deg": 100.7
+      },
+      {
+       "local": "photos/NLF_0105_0676269377_099ECM_N0040592NCAM03105_04_195J.jpg",
+       "camera": "NAVCAM_LEFT",
+       "sol": 105,
+       "credit": "NASA/JPL-Caltech",
+       "page": "https://mars.nasa.gov/mars2020/multimedia/raw-images/NLF_0105_0676269377_099ECM_N0040592NCAM03105_04_195J",
+       "wp": "4_592",
+       "dist_m": 0.0,
+       "heading_deg": 172.7
+      },
+      {
+       "local": "photos/ZL0_0105_0676272609_147ECM_N0040592ZCAM08071_110085J.jpg",
+       "camera": "MCZ_LEFT",
+       "sol": 105,
+       "credit": "NASA/JPL-Caltech/ASU",
+       "page": "https://mars.nasa.gov/mars2020/multimedia/raw-images/ZL0_0105_0676272609_147ECM_N0040592ZCAM08071_110085J",
+       "wp": "4_592",
+       "dist_m": 0.0
+      },
+      {
+       "local": "photos/FLF_0105_0676268970_301ECM_N0040592FHAZ02003_01_195J.jpg",
+       "camera": "FRONT_HAZCAM_LEFT_A",
+       "sol": 105,
+       "credit": "NASA/JPL-Caltech",
+       "page": "https://mars.nasa.gov/mars2020/multimedia/raw-images/FLF_0105_0676268970_301ECM_N0040592FHAZ02003_01_195J",
+       "wp": "4_592",
+       "dist_m": 0.0
+      },
+      {
+       "local": "photos/NLF_0107_0676451875_145ECM_N0040644NCAM01107_01_195J.jpg",
+       "camera": "NAVCAM_LEFT",
+       "sol": 107,
+       "credit": "NASA/JPL-Caltech",
+       "page": "https://mars.nasa.gov/mars2020/multimedia/raw-images/NLF_0107_0676451875_145ECM_N0040644NCAM01107_01_195J",
+       "wp": "4_644",
+       "dist_m": 7.8,
+       "heading_deg": 258.6
+      },
+      {
+       "local": "photos/NLF_0107_0676454369_945ECM_N0040644NCAM04107_01_195J.jpg",
+       "camera": "NAVCAM_LEFT",
+       "sol": 107,
+       "credit": "NASA/JPL-Caltech",
+       "page": "https://mars.nasa.gov/mars2020/multimedia/raw-images/NLF_0107_0676454369_945ECM_N0040644NCAM04107_01_195J",
+       "wp": "4_644",
+       "dist_m": 7.8,
+       "heading_deg": 329.4
+      },
+      {
+       "more": 2
+      }
+     ]
+    }
+   ]
   }
  },
  "unlock_by_loop": {
@@ -1358,6 +1889,332 @@
   }
  },
  "samples": [
+  {
+   "feature": "Rochette",
+   "samples": [
+    {
+     "sample": "Montdenier",
+     "sol_sealed": 194,
+     "wp": "7_0",
+     "x": -366.62,
+     "y": -823.19
+    },
+    {
+     "sample": "Montagnac",
+     "sol_sealed": 196,
+     "wp": "7_0",
+     "x": -366.62,
+     "y": -823.19
+    }
+   ],
+   "location_rule": "waypoint by sol sealed (Q2)",
+   "by_dataset": {
+    "i_unlocked@30": {
+     "targets_named_like_the_feature": [],
+     "targets_within_15m_of_the_sample_waypoint": {
+      "n": 0,
+      "groups": {},
+      "candidate_roles": []
+     }
+    },
+    "ii_all": {
+     "targets_named_like_the_feature": [],
+     "targets_within_15m_of_the_sample_waypoint": {
+      "n": 16,
+      "groups": {
+       "1": 16
+      },
+      "candidate_roles": []
+     }
+    }
+   }
+  },
+  {
+   "feature": "Brac",
+   "samples": [
+    {
+     "sample": "Salette",
+     "sol_sealed": 262,
+     "wp": "8_0",
+     "x": -442.33,
+     "y": -632.05
+    },
+    {
+     "sample": "Coulettes",
+     "sol_sealed": 271,
+     "wp": "8_0",
+     "x": -442.33,
+     "y": -632.05
+    }
+   ],
+   "location_rule": "waypoint by sol sealed (Q2)",
+   "by_dataset": {
+    "i_unlocked@30": {
+     "targets_named_like_the_feature": [],
+     "targets_within_15m_of_the_sample_waypoint": {
+      "n": 0,
+      "groups": {},
+      "candidate_roles": []
+     }
+    },
+    "ii_all": {
+     "targets_named_like_the_feature": [
+      {
+       "target": "brac_246",
+       "sol": 246,
+       "group": 3,
+       "candidate_role": null
+      },
+      {
+       "target": "brac_247",
+       "sol": 247,
+       "group": 3,
+       "candidate_role": null
+      }
+     ],
+     "targets_within_15m_of_the_sample_waypoint": {
+      "n": 26,
+      "groups": {
+       "3": 13,
+       "1": 6,
+       "2": 7
+      },
+      "candidate_roles": [
+       {
+        "target": "chasteuil",
+        "sol": 274,
+        "group": 3,
+        "candidate_role": [
+         3,
+         "anomaly"
+        ]
+       },
+       {
+        "target": "chamatte_279_scam",
+        "sol": 279,
+        "group": 1,
+        "candidate_role": [
+         1,
+         "anomaly"
+        ]
+       }
+      ]
+     }
+    }
+   }
+  },
+  {
+   "feature": "Issole",
+   "samples": [
+    {
+     "sample": "Robine",
+     "sol_sealed": 298,
+     "wp": "9_0",
+     "x": -534.9,
+     "y": -709.31
+    },
+    {
+     "sample": "Malay",
+     "sol_sealed": 337,
+     "wp": "9_276",
+     "x": -538.21,
+     "y": -712.37
+    }
+   ],
+   "location_rule": "waypoint by sol sealed (Q2)",
+   "by_dataset": {
+    "i_unlocked@30": {
+     "targets_named_like_the_feature": [],
+     "targets_within_15m_of_the_sample_waypoint": {
+      "n": 0,
+      "groups": {},
+      "candidate_roles": []
+     }
+    },
+    "ii_all": {
+     "targets_named_like_the_feature": [
+      {
+       "target": "issole",
+       "sol": 202,
+       "group": 2,
+       "candidate_role": null
+      }
+     ],
+     "targets_within_15m_of_the_sample_waypoint": {
+      "n": 38,
+      "groups": {
+       "2": 19,
+       "3": 7,
+       "1": 12
+      },
+      "candidate_roles": [
+       {
+        "target": "quartier_297_scam",
+        "sol": 297,
+        "group": 2,
+        "candidate_role": [
+         2,
+         "representative"
+        ]
+       },
+       {
+        "target": "robine_hole",
+        "sol": 299,
+        "group": 2,
+        "candidate_role": [
+         2,
+         "anomaly"
+        ]
+       }
+      ]
+     }
+    }
+   }
+  },
+  {
+   "feature": "Sid",
+   "samples": [
+    {
+     "sample": "Ha'ahoni",
+     "sol_sealed": 371,
+     "wp": "11_108",
+     "x": 87.08,
+     "y": -43.0
+    },
+    {
+     "sample": "Atsa",
+     "sol_sealed": 377,
+     "wp": "11_108",
+     "x": 87.08,
+     "y": -43.0
+    }
+   ],
+   "location_rule": "waypoint by sol sealed (Q2)",
+   "by_dataset": {
+    "i_unlocked@30": {
+     "targets_named_like_the_feature": [
+      {
+       "target": "sid_362",
+       "sol": 362,
+       "group": 1,
+       "candidate_role": null
+      }
+     ],
+     "targets_within_15m_of_the_sample_waypoint": {
+      "n": 16,
+      "groups": {
+       "1": 16
+      },
+      "candidate_roles": []
+     }
+    },
+    "ii_all": {
+     "targets_named_like_the_feature": [
+      {
+       "target": "sid_362",
+       "sol": 362,
+       "group": 1,
+       "candidate_role": null
+      }
+     ],
+     "targets_within_15m_of_the_sample_waypoint": {
+      "n": 16,
+      "groups": {
+       "1": 16
+      },
+      "candidate_roles": []
+     }
+    }
+   }
+  }
+ ],
+ "unlock_by_loop_v3": {
+  "1": {
+   "n_targets": 4,
+   "n_locations": 3,
+   "k": 1,
+   "min_pair_sep_rmsep_by_k": {
+    "2": 2.644,
+    "3": 1.556,
+    "4": 1.249
+   },
+   "group_sizes": [
+    4
+   ],
+   "units": {
+    "Njf": 4
+   }
+  },
+  "5": {
+   "n_targets": 46,
+   "n_locations": 14,
+   "k": 2,
+   "min_pair_sep_rmsep_by_k": {
+    "2": 9.337,
+    "3": 2.213,
+    "4": 2.227
+   },
+   "group_sizes": [
+    43,
+    3
+   ],
+   "units": {
+    "Njf": 46
+   }
+  },
+  "10": {
+   "n_targets": 62,
+   "n_locations": 22,
+   "k": 2,
+   "min_pair_sep_rmsep_by_k": {
+    "2": 11.073,
+    "3": 2.158,
+    "4": 2.452
+   },
+   "group_sizes": [
+    58,
+    4
+   ],
+   "units": {
+    "Njf": 62
+   }
+  },
+  "20": {
+   "n_targets": 71,
+   "n_locations": 27,
+   "k": 2,
+   "min_pair_sep_rmsep_by_k": {
+    "2": 10.911,
+    "3": 1.945,
+    "4": 2.506
+   },
+   "group_sizes": [
+    67,
+    4
+   ],
+   "units": {
+    "Njf": 71
+   }
+  },
+  "30": {
+   "n_targets": 72,
+   "n_locations": 28,
+   "k": 2,
+   "min_pair_sep_rmsep_by_k": {
+    "2": 10.869,
+    "3": 1.907,
+    "4": 2.506
+   },
+   "group_sizes": [
+    68,
+    4
+   ],
+   "units": {
+    "Njf": 72
+   }
+  }
+ },
+ "samples_v3": [
   {
    "feature": "Rochette",
    "samples": [

@@ -114,7 +114,7 @@ def finish(sc, scene, R, st, T, gm, out, loops, version):
         se &= pr[0] == base_rc and pr[-1] == base_rc
         for c, tt in zip(pr, L["t"]):
             ni &= not bool(imp[c]); nu &= 0 <= int(st["first_t"][c]) <= tt
-    ov = sorted(L["overlap_ratio"] for L in R["loops"] if L["overlap_ratio"] is not None)
+    ov = sorted(L["overlap_ratio"] for L in R["loops"] if L.get("overlap_ratio") is not None)
     acc = {"start_end_at_base": bool(se), "no_impassable": bool(ni), "no_unobserved_reads": bool(nu),
            "max_cost_over_budget": max(L["cost_total"] - L["budget"] for L in R["loops"]) <= 0,
            "median_overlap": ov[(len(ov) - 1) // 2] if ov else None}
