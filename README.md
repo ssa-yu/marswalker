@@ -61,6 +61,8 @@ cd web && python3 -m http.server 8000
 #      http://localhost:8000/recon.html   step 1: rover recon replay
 #      http://localhost:8000/data.html    map data and positioning checks
 ```
+**示範影片頁** `http://localhost:8000/film.html`（錄影用，首頁沒有入口）：自動播放約 28.5 秒（開場 0–8 s、自走車 8–14 s、熱度圖 14–20 s、太空人 20–28.5 s，結尾停格）。空白鍵暫停／繼續、`R` 重播、`F` 全螢幕；`?act=1` 跳過開場、`?t=秒` 從指定時間開始、`?captions=0` 關字幕、`?dpr=1` 降低解析度（卡頓時）。截圖：`python tools/screenshot_film.py` → `qa/film/`。
+
 No build step and no backend: any static file server works (`file://` cannot load the JSON).
 
 ## Rebuild

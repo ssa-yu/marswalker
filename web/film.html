@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<!-- SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
+     Self-playing demo film (~28.5 s) for screen recording. Terrain/route loading follows web/arcadia3d.html.
+     Keys: Space pause/resume, R replay, F fullscreen. URL: ?t=<s> start time, ?act=1 skip the opening, ?captions=0, ?pause=1 -->
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marswalker 示範影片</title>
+<link rel="icon" href="data:,">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/geotiff@2.1.3/dist-browser/geotiff.js"></script>
+<style>
+html,body{margin:0;height:100%;background:#000;overflow:hidden;cursor:none}
+#stage{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(100vw,177.778vh);height:min(100vh,56.25vw);overflow:hidden;
+  background:radial-gradient(ellipse 75% 85% at 50% 42%,#c4561f 0%,#8a2412 42%,#3a0a06 78%,#1c0403 100%);--u:10.8px}
+#c{position:absolute;inset:0;width:100%;height:100%;display:block}
+.ov{position:absolute;inset:0;pointer-events:none;opacity:0}
+#haze{background:radial-gradient(circle at 50% 50%,#fff6e8 0%,#f8c48c 55%,#de8a4e 100%)}
+#black{background:#000}
+#cap{position:absolute;left:0;right:0;bottom:7.5%;text-align:center;font:500 calc(var(--u)*3.3) "Noto Sans TC",system-ui,sans-serif;color:#fff;letter-spacing:.08em;
+  text-shadow:0 0 calc(var(--u)*.8) rgba(0,0,0,.85),0 0 calc(var(--u)*2) rgba(0,0,0,.5);opacity:0;white-space:nowrap}
+#hud{position:absolute;left:3.6%;top:5.5%;display:flex;gap:calc(var(--u)*3.2);opacity:0;color:#fff;text-shadow:0 0 calc(var(--u)*.6) rgba(0,0,0,.9)}
+#hud span{display:block;font:400 calc(var(--u)*1.55) "Noto Sans TC",system-ui,sans-serif;opacity:.8;letter-spacing:.1em}
+#hud b{display:block;font:600 calc(var(--u)*3.6) "Barlow Semi Condensed","Noto Sans TC",sans-serif;font-variant-numeric:tabular-nums;line-height:1.05}
+#hud small{font-size:.55em;font-weight:500;margin-left:.15em;opacity:.85}
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="c"></canvas>
+  <div id="hud"><div><span>距離</span><b id="hd">0.00<small>km</small></b></div><div><span>時間</span><b id="ht">0<small>分</small></b></div><div><span>耗能</span><b id="hk">0<small>kcal</small></b></div><div><span>氧氣</span><b id="ho">0<small>L</small></b></div></div>
+  <div id="cap"></div>
+  <div class="ov" id="haze"></div>
+  <div class="ov" id="black" style="opacity:1"></div>
+</div>
+<script>
+'use strict';
+const $=id=>document.getElementById(id),D2R=Math.PI/180;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t;
+const sstep=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t)};
+const ramp=(a,b,x)=>clamp((x-a)/(b-a),0,1);
+const inOut=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
+
+/* ---------- 時間軸（秒） ---------- */
+const Q=new URLSearchParams(location.search);
+const SHOW_CAP=Q.get('captions')!=='0',ACT1=Q.get('act')==='1';
+const T_START=ACT1?8:0,T_END=28.5,T_SWITCH=8;          // 0–8 開場 · 8–14 自走車 · 14–20 熱度圖 · 20–28.5 太空人
+let T=Q.has('t')?clamp(+Q.get('t')||0,0,T_END):T_START,playing=Q.get('pause')!=='1',ready=false;
+const CAPS=[[2.2,4.2,'大腦有皺摺'],[4.6,7.0,'火星也有'],[9.4,13.7,'Arcadia 平原 · 自走車先探路'],[14.5,19.7,'腦紋地形熱度圖 · 12 個高分區域'],[20.5,27.9,'太空人徒步 5 站']];
+
+/* ---------- renderer / 版面 ---------- */
+const stage=$('stage'),renderer=new THREE.WebGLRenderer({canvas:$('c'),antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(+(Q.get('dpr')||devicePixelRatio),2));
+let SH=1080;
+function resize(){const r=stage.getBoundingClientRect();SH=r.height;stage.style.setProperty('--u',r.height/100+'px');renderer.setSize(r.width,r.height,false);
+  for(const c of [camA,camB]){c.aspect=r.width/r.height;c.updateProjectionMatrix()}}
+const camA=new THREE.PerspectiveCamera(35,16/9,.01,50),camB=new THREE.PerspectiveCamera(40,16/9,1,500000);
+addEventListener('resize',resize);
+
+/* =====================================================================
+   第 0 幕：剪影 → 大腦 → 火星
+   ===================================================================== */
+const sA=new THREE.Scene();
+const bgQuad=new THREE.Mesh(new THREE.PlaneGeometry(2,2),new THREE.ShaderMaterial({depthTest:false,depthWrite:false,uniforms:{uAsp:{value:16/9}},
+  vertexShader:'varying vec2 vP;void main(){vP=position.xy;gl_Position=vec4(position.xy,.999,1.);}',
+  fragmentShader:'uniform float uAsp;varying vec2 vP;void main(){vec2 q=vec2(vP.x*.75,(vP.y-.15)*.85);float r=length(q);vec3 c=mix(vec3(.77,.34,.12),vec3(.54,.14,.07),smoothstep(0.,.55,r));c=mix(c,vec3(.11,.016,.012),smoothstep(.5,1.25,r));gl_FragColor=vec4(c,1.);}'}));
+bgQuad.frustumCulled=false;bgQuad.renderOrder=-10;sA.add(bgQuad);
+const HEAD=V3(0,.766,0),MARS_R=.075,BRAIN_S=.075;
+// 剪影（canvas 畫側面全身＋暖色輪廓光）
+function silhouetteTex(){
+  const W=1024,H=2048,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+  const body=new Path2D();
+  body.ellipse(250,120,50,60,-.12,0,Math.PI*2);                       // 頭
+  body.moveTo(296,128);body.quadraticCurveTo(312,140,304,152);body.lineTo(296,160);body.lineTo(292,170);
+  body.moveTo(232,170);body.lineTo(268,170);body.lineTo(272,205);body.lineTo(232,205);body.closePath();   // 頸
+  body.moveTo(205,205);body.bezierCurveTo(250,190,300,198,305,230);body.lineTo(300,330);body.bezierCurveTo(298,400,292,470,288,520);
+  body.lineTo(206,520);body.bezierCurveTo(198,450,190,360,192,300);body.bezierCurveTo(192,250,195,215,205,205);body.closePath(); // 軀幹
+  body.moveTo(232,222);body.bezierCurveTo(262,215,276,240,272,280);body.lineTo(268,390);body.bezierCurveTo(272,430,276,480,270,520);
+  body.bezierCurveTo(262,540,246,540,244,520);body.bezierCurveTo(242,470,240,430,238,390);body.lineTo(226,280);body.closePath(); // 手臂
+  body.moveTo(208,510);body.lineTo(286,510);body.bezierCurveTo(292,640,286,760,282,900);body.lineTo(286,975);body.lineTo(318,982);
+  body.bezierCurveTo(326,990,320,1002,300,1002);body.lineTo(226,1002);body.lineTo(230,900);body.bezierCurveTo(222,760,206,640,208,510);body.closePath(); // 腿
+  x.scale(2,2);x.shadowColor='rgba(255,150,70,.9)';x.shadowBlur=44;x.fillStyle='#120807';x.fill(body);x.fill(body);x.shadowBlur=0;x.fill(body);
+  const m=document.createElement('canvas');m.width=W;m.height=H;const mx=m.getContext('2d');mx.scale(2,2);mx.fillStyle='#fff';mx.fill(body);
+  // 輪廓光：到外緣的距離（chamfer 距離轉換）
+  const md=mx.getImageData(0,0,W,H).data,img=x.getImageData(0,0,W,H),o=img.data,dist=new Float32Array(W*H),R=7;
+  for(let k=0;k<W*H;k++)dist[k]=md[k*4+3]>128?1e9:0;
+  const S2=Math.SQRT2;
+  for(let j=1;j<H;j++)for(let i=1;i<W-1;i++){const k=j*W+i;if(dist[k])dist[k]=Math.min(dist[k],dist[k-1]+1,dist[k-W]+1,dist[k-W-1]+S2,dist[k-W+1]+S2)}
+  for(let j=H-2;j>=0;j--)for(let i=W-2;i>0;i--){const k=j*W+i;if(dist[k])dist[k]=Math.min(dist[k],dist[k+1]+1,dist[k+W]+1,dist[k+W+1]+S2,dist[k+W-1]+S2)}
+  for(let k=0;k<W*H;k++){const d=dist[k];if(d>0&&d<=R){const w=Math.pow(1-(d-1)/R,1.5);o[k*4]=lerp(o[k*4],255,w);o[k*4+1]=lerp(o[k*4+1],182,w);o[k*4+2]=lerp(o[k*4+2],110,w)}}
+  x.putImageData(img,0,0);
+  const t=new THREE.CanvasTexture(c);t.anisotropy=4;return t;
+}
+const silMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{map:{value:silhouetteTex()},uOp:{value:1},uHole:{value:0},uHead:{value:new THREE.Vector2(250/512,1-120/1024)}},
+  vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+  fragmentShader:`uniform sampler2D map;uniform float uOp,uHole;uniform vec2 uHead;varying vec2 vUv;
+  void main(){vec4 c=texture2D(map,vUv);vec2 d=(vUv-uHead)*vec2(1.,2.);float r=length(d/vec2(1.,1.18));
+  float hole=uHole*(1.-smoothstep(.072,.098,r));c.a*=uOp*(1.-hole*.93);gl_FragColor=c;}`});
+const sil=new THREE.Mesh(new THREE.PlaneGeometry(1,2),silMat);sil.renderOrder=0;sA.add(sil);
+
+// 漂浮塵埃
+const dustN=1400,dg=new THREE.BufferGeometry(),dp=new Float32Array(dustN*3),dv=new Float32Array(dustN*3);
+let sd=11;const rnd=()=>(sd=(sd*16807)%2147483647)/2147483647;
+for(let i=0;i<dustN;i++){dp[i*3]=rnd()*6-3;dp[i*3+1]=rnd()*4-2;dp[i*3+2]=rnd()*5-3.5;dv[i*3]=(rnd()-.4)*.05;dv[i*3+1]=(rnd()-.5)*.03;dv[i*3+2]=(rnd()-.5)*.03}
+dg.setAttribute('position',new THREE.BufferAttribute(dp,3));dg.setAttribute('aV',new THREE.BufferAttribute(dv,3));
+const dustMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,uniforms:{uT:{value:0},uPx:{value:1},uOp:{value:1}},
+  vertexShader:`attribute vec3 aV;uniform float uT,uPx;varying float vA;void main(){vec3 p=position+aV*uT;p.x=mod(p.x+3.,6.)-3.;p.y=mod(p.y+2.,4.)-2.;
+  vec4 mv=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;float s=uPx*.06/max(-mv.z,.05);gl_PointSize=clamp(s,1.,7.);vA=clamp(1.2/max(-mv.z,.2),0.,1.)*(s>7.?.25:1.);}`,
+  fragmentShader:'uniform float uOp;varying float vA;void main(){float r=length(gl_PointCoord-.5);if(r>.5)discard;gl_FragColor=vec4(vec3(1.,.72,.45)*(1.-r*2.)*vA*.55*uOp,1.);}'});
+const dust=new THREE.Points(dg,dustMat);dust.frustumCulled=false;sA.add(dust);
+
+// 暖色放射光暈
+function haloTex(){
+  const c=document.createElement('canvas');c.width=c.height=512;const x=c.getContext('2d');
+  const g=x.createRadialGradient(256,256,0,256,256,256);g.addColorStop(0,'rgba(255,200,140,.5)');g.addColorStop(.25,'rgba(255,150,70,.35)');g.addColorStop(.6,'rgba(200,70,30,.12)');g.addColorStop(1,'rgba(0,0,0,0)');
+  x.fillStyle=g;x.fillRect(0,0,512,512);x.globalCompositeOperation='lighter';x.translate(256,256);
+  for(let i=0;i<48;i++){x.rotate(Math.PI*2/48*(1+((i*7)%5)*.08));x.fillStyle=`rgba(255,190,120,${.03+.04*((i*13)%7)/7})`;x.beginPath();x.moveTo(-3,0);x.lineTo(3,0);x.lineTo(0,250);x.fill()}
+  return new THREE.CanvasTexture(c);
+}
+const halo=new THREE.Sprite(new THREE.SpriteMaterial({map:haloTex(),blending:THREE.AdditiveBlending,depthWrite:false,depthTest:false,transparent:true,opacity:0}));
+halo.position.copy(HEAD).add(V3(0,0,-.08));halo.scale.set(.62,.62,1);halo.renderOrder=-1;sA.add(halo);
+
+// 程序生成大腦：橢球＋皺摺場（零值等高線＝腦溝）＋左右半球中縫
+function brainShape(x,y,z){
+  const wx=x*3.4+.8*Math.sin(y*3.9+1.3),wy=y*3.4+.8*Math.sin(z*4.2+.7),wz=z*3.4+.8*Math.sin(x*3.7+2.1);
+  const g=Math.sin(wx*2.1+Math.sin(wz*1.7)*1.5)+Math.sin(wy*2.4+Math.sin(wx*1.9)*1.3)+Math.sin(wz*2.2+Math.sin(wy*1.6)*1.4);
+  let gy=Math.pow(Math.abs(Math.sin(g*1.05)),.32);
+  const groove=Math.exp(-Math.pow(z/.07,2))*sstep(-.25,.15,y);
+  gy*=1-groove*.9;
+  const r=1+.1*gy-.24*groove-.05*Math.exp(-Math.pow((y+.18-.25*x)/.06,2))*sstep(-.1,.3,Math.abs(z));  // 外側裂
+  let X=x*1.18*r,Y=y*.86*r,Z=z*.98*r*(1-.1*Math.max(0,x));if(Y<0)Y*=.72;
+  return [X,Y,Z,gy];
+}
+const BN=7000,bg=new THREE.BufferGeometry(),bp=[],bm=[],br=[],bgy=[],bc=[];
+for(let n=0;n<BN;){
+  let x=rnd()*2-1,y=rnd()*2-1,z=rnd()*2-1;const l=Math.hypot(x,y,z);if(l>1||l<.05)continue;x/=l;y/=l;z/=l;
+  const s=brainShape(x,y,z);if(rnd()>.12+.88*s[3]*s[3])continue;
+  bp.push(s[0]*1.012,s[1]*1.012,s[2]*1.012);bgy.push(s[3]);br.push(rnd());
+  let u=rnd()*2-1,v=rnd()*2-1,w=rnd()*2-1;const m=Math.hypot(u,v,w)||1;bm.push(u/m,v/m,w/m);
+  const k=.7+rnd()*.5;bc.push(.95*k,.42*k,.18*k);n++;
+}
+bg.setAttribute('position',new THREE.Float32BufferAttribute(bp,3));bg.setAttribute('aMars',new THREE.Float32BufferAttribute(bm,3));
+bg.setAttribute('aRand',new THREE.Float32BufferAttribute(br,1));bg.setAttribute('aRidge',new THREE.Float32BufferAttribute(bgy,1));bg.setAttribute('aMcol',new THREE.Float32BufferAttribute(bc,3));
+const brainMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,depthTest:true,blending:THREE.AdditiveBlending,uniforms:{uT:{value:0},uMorph:{value:0},uOp:{value:0},uPx:{value:1}},
+  vertexShader:`attribute vec3 aMars,aMcol;attribute float aRand,aRidge;uniform float uT,uMorph,uOp,uPx;varying vec3 vC;
+  void main(){float m=uMorph,e=m*m*(3.-2.*m),b=sin(3.14159*m);
+    vec3 p=mix(position,aMars,e);float a=b*(2.2+aRand*3.5),cs=cos(a),sn=sin(a);
+    p=vec3(p.x*cs-p.z*sn,p.y,p.x*sn+p.z*cs)*(1.+b*(.3+1.1*aRand));p.y+=b*(aRand-.5)*.9;
+    vec4 mv=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;
+    float pulse=pow(max(0.,sin(dot(position,vec3(2.1,1.3,1.7))*2.4-uT*3.4+aRidge*5.)),14.)*aRidge;
+    vec3 gold=vec3(1.,.84,.56)*(.12+.8*aRidge*aRidge)+vec3(1.,.95,.82)*pulse*1.4;
+    vC=mix(gold,aMcol*1.2,e)*uOp;
+    gl_PointSize=clamp(uPx*(.55+.6*aRidge+pulse*.8)*.0019/max(-mv.z,.01),1.,9.);}`,
+  fragmentShader:'varying vec3 vC;void main(){float r=length(gl_PointCoord-.5);if(r>.5)discard;gl_FragColor=vec4(vC*(1.-r*1.6),1.);}'});
+const brainPts=new THREE.Points(bg,brainMat);brainPts.renderOrder=4;brainPts.frustumCulled=false;
+const ico=new THREE.IcosahedronGeometry(1,14),ip=ico.attributes.position;
+for(let i=0;i<ip.count;i++){const x=ip.getX(i),y=ip.getY(i),z=ip.getZ(i),l=Math.hypot(x,y,z),s=brainShape(x/l,y/l,z/l);ip.setXYZ(i,s[0]*.985,s[1]*.985,s[2]*.985)}
+const wireMat=new THREE.LineBasicMaterial({color:0xffcf8a,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,depthTest:true});
+const wire=new THREE.LineSegments(new THREE.WireframeGeometry(ico),wireMat);wire.renderOrder=3;
+// 暗色內殼：擋住背面的點，讓腦溝成為暗線
+// 發光腦殼：高細分網格＋解析法線（有限差分），腦迴亮、腦溝暗，光脈衝沿皺摺流動
+const occG=new THREE.IcosahedronGeometry(1,46),op=occG.attributes.position,on=occG.attributes.normal,oR=new Float32Array(op.count);
+for(let i=0;i<op.count;i++){
+  const x=op.getX(i),y=op.getY(i),z=op.getZ(i),l=Math.hypot(x,y,z),d=[x/l,y/l,z/l],s0=brainShape(...d);
+  const ax=Math.abs(d[1])<.9?[0,1,0]:[1,0,0],t1=[d[1]*ax[2]-d[2]*ax[1],d[2]*ax[0]-d[0]*ax[2],d[0]*ax[1]-d[1]*ax[0]],n1=Math.hypot(...t1);t1.forEach((v,k)=>t1[k]=v/n1);
+  const t2=[d[1]*t1[2]-d[2]*t1[1],d[2]*t1[0]-d[0]*t1[2],d[0]*t1[1]-d[1]*t1[0]],e=.004;
+  const sa=brainShape(...d.map((v,k)=>v+t1[k]*e)),sb=brainShape(...d.map((v,k)=>v+t2[k]*e));
+  const u=[sa[0]-s0[0],sa[1]-s0[1],sa[2]-s0[2]],w=[sb[0]-s0[0],sb[1]-s0[1],sb[2]-s0[2]];
+  let nx=u[1]*w[2]-u[2]*w[1],ny=u[2]*w[0]-u[0]*w[2],nz=u[0]*w[1]-u[1]*w[0];const nl=Math.hypot(nx,ny,nz)||1;
+  if(nx*s0[0]+ny*s0[1]+nz*s0[2]<0){nx=-nx;ny=-ny;nz=-nz}
+  op.setXYZ(i,s0[0],s0[1],s0[2]);on.setXYZ(i,nx/nl,ny/nl,nz/nl);oR[i]=s0[3];
+}
+occG.setAttribute('aRidge',new THREE.BufferAttribute(oR,1));
+const occMat=new THREE.ShaderMaterial({transparent:true,depthWrite:true,uniforms:{uOp:{value:0},uT:{value:0}},
+  vertexShader:'attribute float aRidge;varying float vR;varying vec3 vN,vV,vP;void main(){vR=aRidge;vP=position;vec4 mv=modelViewMatrix*vec4(position,1.);vN=normalize(normalMatrix*normal);vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}',
+  fragmentShader:`uniform float uOp,uT;varying float vR;varying vec3 vN,vV,vP;
+  void main(){vec3 N=normalize(vN);float lam=max(dot(N,normalize(vec3(.4,.7,.6))),0.),fr=pow(1.-max(dot(N,vV),0.),2.2);
+    float pulse=pow(max(0.,sin(dot(vP,vec3(2.1,1.3,1.7))*2.4-uT*3.4+vR*5.)),10.)*vR*vR;
+    vec3 c=vec3(1.,.8,.52)*(.06+.62*vR*vR*vR)*(.35+.75*lam)+vec3(1.,.62,.32)*fr*.55+vec3(1.,.93,.75)*pulse*.9;
+    gl_FragColor=vec4(c,uOp);}`});
+const occ=new THREE.Mesh(occG,occMat);occ.renderOrder=2;
+const brain=new THREE.Group();brain.add(occ,wire,brainPts);brain.position.copy(HEAD);brain.scale.setScalar(BRAIN_S);sA.add(brain);
+
+// 火星球（Viking MDIM2.1 全球彩色鑲嵌圖）
+const marsMat=new THREE.MeshPhongMaterial({color:0xffffff,shininess:2,transparent:true,opacity:0});
+const mars=new THREE.Mesh(new THREE.SphereGeometry(MARS_R,96,64),marsMat);mars.position.copy(HEAD);mars.renderOrder=4;sA.add(mars);
+const atmo=new THREE.Mesh(new THREE.SphereGeometry(MARS_R*1.045,64,48),new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,uniforms:{uOp:{value:0}},
+  vertexShader:'varying vec3 vN,vV;void main(){vec4 mv=modelViewMatrix*vec4(position,1.);vN=normalize(normalMatrix*normal);vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}',
+  fragmentShader:'uniform float uOp;varying vec3 vN,vV;void main(){float f=pow(1.-max(dot(vN,vV),0.),2.6);gl_FragColor=vec4(vec3(1.,.55,.28)*f*uOp*1.4,1.);}'}));
+atmo.position.copy(HEAD);atmo.renderOrder=5;sA.add(atmo);
+sA.add(new THREE.AmbientLight(0xffd8c0,.1));
+const sunA=new THREE.DirectionalLight(0xfff2e0,1.35);sunA.position.set(1,.35,.55);sA.add(sunA);
+// 39.17°N 195.61°E 轉到正面（+z，朝鏡頭）
+const TGT_LAT=39.17,TGT_LON=195.61-360;
+const MARS_YAW=(()=>{const ph=(TGT_LON+180)*D2R;return -Math.atan2(-Math.cos(ph),Math.sin(ph))})();
+
+function updateA(T){
+  dustMat.uniforms.uT.value=T;dustMat.uniforms.uOp.value=1-ramp(7.4,8,T);
+  silMat.uniforms.uHole.value=sstep(1.3,2.3,T);silMat.uniforms.uOp.value=1-sstep(2.4,3.3,T);
+  const bo=sstep(1.2,2.3,T)*(1-sstep(5.5,6.3,T));
+  brainMat.uniforms.uOp.value=bo;brainMat.uniforms.uT.value=T;brainMat.uniforms.uMorph.value=sstep(4.2,6.0,T);
+  occMat.uniforms.uOp.value=bo*(1-sstep(4.2,4.8,T));occMat.uniforms.uT.value=T;occ.visible=occMat.uniforms.uOp.value>.01;
+  wireMat.opacity=.13*sstep(1.6,2.6,T)*(1-sstep(4.2,4.9,T));
+  brain.rotation.x=.38*(1-sstep(4.2,5.5,T));brain.rotation.y=-.55+1.05*sstep(1.8,4.6,T)+2.2*sstep(4.2,6.2,T);
+  halo.material.opacity=.9*sstep(1.5,2.8,T)*(1-.55*sstep(5,6.5,T))*(1-sstep(6.6,7.6,T));
+  const mo=sstep(5.3,6.1,T);marsMat.opacity=mo;mars.visible=mo>0;atmo.material.uniforms.uOp.value=mo;atmo.visible=mo>0;
+  mars.rotation.set(TGT_LAT*D2R*sstep(5,8,T),MARS_YAW+1.1*(1-sstep(5,7.6,T)),0,'XYZ');
+  // 鏡頭：全景 → 推向頭部 → 停在大腦/火星前 → 衝向北半球中緯度
+  let z,y,x=0;
+  if(T<.6){z=4.3;y=.04}
+  else if(T<2.7){const e=inOut(ramp(.6,2.7,T));z=lerp(4.3,.62,e);y=lerp(.04,HEAD.y,e);x=.02*e}
+  else if(T<6){z=T<4.2?lerp(.62,.42,inOut(ramp(2.7,4.2,T))):lerp(.42,.6,inOut(ramp(4.2,6,T)));y=HEAD.y}
+  else{const u=ramp(6,8,T),e=u*u*u;z=lerp(.6,MARS_R+.0015,e);y=HEAD.y}
+  camA.position.set(x,y,z);camA.lookAt(x*.5,y,0);
+  camA.fov=35+18*Math.pow(ramp(6.6,8,T),2);camA.near=.0005;camA.updateProjectionMatrix();
+}
+
+/* =====================================================================
+   第 1–3 幕：Arcadia 真實地形（HiRISE DTM＋正射影像，與 arcadia3d.html 同一份資料）
+   ===================================================================== */
+const sB=new THREE.Scene();
+let ARC,GEO,X0,Y0,WD,GN=373,GS,HGRID,EX=1.5,Cw,T1w,RC,ROUTE,TOTD,CUM,hudVals;
+const toXY=([lo,la])=>[(lo-GEO.lon0)*D2R*GEO.R*Math.cos(GEO.lat0*D2R),(la-GEO.lat0)*D2R*GEO.R];
+function gridY(x,y){ // 地形網格高度（世界 y），x 東、y 北（區域公尺）
+  const u=clamp((x-X0)/GS,0,GN-1.001),v=clamp((y-Y0)/GS,0,GN-1.001),i=Math.floor(u),j=Math.floor(v),fu=u-i,fv=v-j,k=j*GN+i,H=HGRID;
+  return (H[k]*(1-fu)+H[k+1]*fu)*(1-fv)+(H[k+GN]*(1-fu)+H[k+GN+1]*fu)*fv;
+}
+const W3=(x,y,lift=0)=>V3(x,gridY(x,y)+lift,-y);
+
+/* 時間與耗能：與 arcadia3d.html 相同（地圖頁卡片的 Pandolf 結果，沿路線每個頂點的累積值） */
+function cumFromLegs(legs,stop,P){
+  const c={d:[0],tA:[0],tD:[0],kA:[0],kD:[0]};let D0=0,T0=0,K0=0,j=0;
+  legs.forEach((L,li)=>{
+    const dw=li<legs.length-1?stop.min:0,dk=dw*stop.kcal_per_min,n=L.path.length-1;let s=0;const len=[];
+    for(let q=0;q<n;q++){len.push(Math.hypot(P[j+q+1].x-P[j+q].x,P[j+q+1].z-P[j+q].z));s+=len[q]}
+    let a=0;for(let q=0;q<n;q++){a+=len[q];const f=s?a/s:1,t=T0+f*(L.min-dw),k=K0+f*(L.kcal-dk);c.d.push(D0+f*L.distance_m);c.tA.push(t);c.tD.push(t);c.kA.push(k);c.kD.push(k)}
+    j+=n;D0+=L.distance_m;T0+=L.min;K0+=L.kcal;c.tD[j]=T0;c.kD[j]=K0;
+  });
+  return c;
+}
+function routeAt(dd){ // 沿路線距離（卡片的 d）→ 頂點索引內插：位置與累積值
+  const C=CUM;dd=clamp(dd,0,TOTD);let i=0;while(i<C.d.length-2&&C.d[i+1]<dd)i++;
+  const f=C.d[i+1]>C.d[i]?clamp((dd-C.d[i])/(C.d[i+1]-C.d[i]),0,1):1,a=ROUTE[i],b=ROUTE[i+1];
+  return{x:lerp(a[0],b[0],f),y:lerp(a[1],b[1],f),d:dd,min:C.tD[i]+(C.tA[i+1]-C.tD[i])*f,kcal:C.kD[i]+(C.kA[i+1]-C.kD[i])*f};
+}
+
+const termVS='varying vec2 vUv;varying vec3 vN;varying float vDist;void main(){vUv=uv;vN=normal;vec4 mv=modelViewMatrix*vec4(position,1.);vDist=length(mv.xyz);gl_Position=projectionMatrix*mv;}';
+const FOG='uniform vec3 uFogC;uniform float uFogD;vec3 fogit(vec3 c,float d){return mix(c,uFogC,1.-exp(-uFogD*d));}';
+const fogU=()=>({uFogC:{value:new THREE.Color(.86,.62,.44)},uFogD:{value:1/70000}});
+let terrMat,ctxMat,roverMat,astroAll,astroTrail,aoiLine,tgtObjs=[],baseGlow,walker,ROVER_T=[];
+
+function ribbonGeo(paths,width,lift){ // paths: [{pts:[[x,y]..], s:[0..1], start, dur}]
+  const pos=[],aS=[],aSt=[],aDu=[],idx=[];let base=0;
+  for(const p of paths){
+    const n=p.pts.length;
+    for(let k=0;k<n;k++){
+      const a=p.pts[Math.max(0,k-1)],b=p.pts[Math.min(n-1,k+1)];let tx=b[0]-a[0],ty=b[1]-a[1];const l=Math.hypot(tx,ty)||1;tx/=l;ty/=l;
+      const nx=-ty*width/2,ny=tx*width/2,[x,y]=p.pts[k];
+      for(const sg of [-1,1]){const xx=x+nx*sg,yy=y+ny*sg;pos.push(xx,Math.max(gridY(xx,yy),gridY(x,y))+lift,-yy);aS.push(p.s[k]);aSt.push(p.start);aDu.push(p.dur)}
+      if(k<n-1){const q=base+k*2;idx.push(q,q+1,q+2,q+1,q+3,q+2)}
+    }
+    base+=n*2;
+  }
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+  g.setAttribute('aS',new THREE.Float32BufferAttribute(aS,1));g.setAttribute('aSt',new THREE.Float32BufferAttribute(aSt,1));g.setAttribute('aDu',new THREE.Float32BufferAttribute(aDu,1));g.setIndex(idx);return g;
+}
+function ribbonMat(col,head){
+  return new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4,
+    uniforms:{uT:{value:0},uOp:{value:0},uC:{value:new THREE.Color(col)},uH:{value:new THREE.Color(head)}},
+    vertexShader:'attribute float aS,aSt,aDu;varying float vS,vSt,vDu;void main(){vS=aS;vSt=aSt;vDu=aDu;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+    fragmentShader:`uniform float uT,uOp;uniform vec3 uC,uH;varying float vS,vSt,vDu;
+    void main(){float p=clamp((uT-vSt)/vDu,0.,1.);if(vS>p||p<=0.)discard;float h=(p<1.)?smoothstep(p-.12,p,vS):0.;gl_FragColor=vec4(mix(uC,uH,h)*(1.+h*.6),uOp);}`});
+}
+function glowTex(r,g,b){const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d'),gr=x.createRadialGradient(64,64,0,64,64,64);
+  gr.addColorStop(0,`rgba(255,255,255,1)`);gr.addColorStop(.18,`rgba(${r},${g},${b},.9)`);gr.addColorStop(.5,`rgba(${r},${g},${b},.25)`);gr.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=gr;x.fillRect(0,0,128,128);return new THREE.CanvasTexture(c)}
+
+async function loadTerrain(){
+  const tl=new THREE.TextureLoader(),tex=u=>new Promise((ok,bad)=>tl.load(u,ok,undefined,bad));
+  ARC=await (await fetch('data/arcadia/arcadia.json')).json();
+  const ctx=await fetch('data/arcadia/context.json').then(r=>r.ok?r.json():null).catch(()=>null);
+  GEO=ARC.geo;[X0,Y0]=[ARC.aoi_local_m[0],ARC.aoi_local_m[1]];WD=ARC.aoi_local_m[2]-X0;GS=WD/(GN-1);
+  const [tif,ortho,heat,seenImg,themis,marsTex]=await Promise.all([
+    fetch('data/arcadia/walk3d_dtm.tif').then(r=>r.arrayBuffer()),tex('data/arcadia/walk3d_ortho.jpg'),tex('data/arcadia/brain_all.png'),
+    new Promise((ok,bad)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=bad;i.src='data/arcadia/seen_loop.png'}),
+    ctx?.trek?tex('data/arcadia/'+ctx.trek.file):Promise.resolve(null),tex('data/film/mars_mdim21_2k.jpg').catch(()=>null)]);
+  if(marsTex){marsTex.anisotropy=4;marsMat.map=marsTex;marsMat.needsUpdate=true}else marsMat.color.set(0xc1592b);
+  // DTM（同 arcadia3d.html：缺值往前補）
+  const im=await(await GeoTIFF.fromArrayBuffer(tif)).getImage(),[minX,,maxX,maxY]=im.getBoundingBox(),nx=im.getWidth(),ny=im.getHeight(),nd=im.getGDALNoData();
+  const raw=await im.readRasters({interleave:true,samples:[0]}),dem=new Float32Array(nx*ny),ok=v=>Number.isFinite(v)&&v!==nd&&v>-1e5;
+  let sum=0,cnt=0;for(let i=0;i<dem.length;i++)if(ok(raw[i])){sum+=raw[i];cnt++}
+  const mean=cnt?sum/cnt:0;let last=mean;for(let i=0;i<dem.length;i++){if(ok(raw[i]))last=raw[i];dem[i]=last}
+  const rx=(maxX-minX)/nx;
+  const demAt=(x,y)=>{const u=clamp((x-minX)/rx-.5,0,nx-1.001),v=clamp((maxY-y)/rx-.5,0,ny-1.001),i=Math.floor(u),j=Math.floor(v),fu=u-i,fv=v-j,k=j*nx+i;
+    return (dem[k]*(1-fu)+dem[k+1]*fu)*(1-fv)+(dem[k+nx]*(1-fu)+dem[k+nx+1]*fu)*fv};
+  HGRID=new Float32Array(GN*GN);
+  const pos=new Float32Array(GN*GN*3),uv=new Float32Array(GN*GN*2),idx=[];
+  for(let j=0;j<GN;j++)for(let i=0;i<GN;i++){
+    const x=X0+i*GS,y=Y0+j*GS,e=Math.min(x-X0,X0+WD-x,y-Y0,Y0+WD-y),w=sstep(0,160,e),h=(demAt(x,y)-mean)*EX*w,k=j*GN+i;
+    HGRID[k]=h;pos.set([x,h,-y],k*3);uv.set([i/(GN-1),j/(GN-1)],k*2);
+    if(i<GN-1&&j<GN-1)idx.push(k,k+1,k+GN,k+1,k+GN+1,k+GN);
+  }
+  const tg=new THREE.BufferGeometry();tg.setAttribute('position',new THREE.BufferAttribute(pos,3));tg.setAttribute('uv',new THREE.BufferAttribute(uv,2));tg.setIndex(idx);tg.computeVertexNormals();
+  // 自走車「第幾趟看到」：R 通道＝趟次（0＝沒看過），用 DataTexture 保持原值
+  const sc=document.createElement('canvas');sc.width=seenImg.width;sc.height=seenImg.height;const sx=sc.getContext('2d',{willReadFrequently:true});sx.drawImage(seenImg,0,0);
+  const seen=new THREE.DataTexture(new Uint8Array(sx.getImageData(0,0,sc.width,sc.height).data.buffer),sc.width,sc.height,THREE.RGBAFormat);
+  seen.magFilter=seen.minFilter=THREE.NearestFilter;seen.needsUpdate=true;
+  ortho.anisotropy=renderer.capabilities.getMaxAnisotropy();heat.magFilter=THREE.NearestFilter;
+  terrMat=new THREE.ShaderMaterial({uniforms:{tO:{value:ortho},tH:{value:heat},tS:{value:seen},uLoop:{value:0},uVeil:{value:1},uHeat:{value:0},uSun:{value:V3(-.55,.62,-.35).normalize()},...fogU()},
+    vertexShader:termVS,fragmentShader:FOG+`uniform sampler2D tO,tH,tS;uniform float uLoop,uVeil,uHeat;uniform vec3 uSun;varying vec2 vUv;varying vec3 vN;varying float vDist;
+    void main(){float g=texture2D(tO,vUv).r;vec3 c=vec3(1.,.72,.52)*(.22+1.05*g);c*=.62+.55*max(dot(normalize(vN),uSun),0.);
+      float k=floor(texture2D(tS,vec2(vUv.x,1.-vUv.y)).r*255.+.5);float seen=(k>.5&&k<=uLoop)?1.:0.;
+      c*=1.-uVeil*(1.-seen)*.6;vec4 h=texture2D(tH,vUv);c=mix(c,h.rgb*1.1,uHeat*.82);gl_FragColor=vec4(fogit(c,vDist),1.);}`});
+  sB.add(new THREE.Mesh(tg,terrMat));
+  // 外圍：Mars Trek THEMIS 日間紅外線鑲嵌圖（同首頁）
+  if(themis&&ctx?.trek){
+    const cs=ctx.trek.coordinates.map(toXY),xa=cs[0][0],xb=cs[1][0],ya=cs[2][1],yb=cs[0][1];
+    const pg=new THREE.PlaneGeometry(xb-xa,yb-ya,1,1);pg.rotateX(-Math.PI/2);
+    ctxMat=new THREE.ShaderMaterial({depthWrite:false,uniforms:{t:{value:themis},...fogU()},vertexShader:termVS,
+      fragmentShader:FOG+'uniform sampler2D t;varying vec2 vUv;varying vec3 vN;varying float vDist;void main(){float g=texture2D(t,vUv).r;gl_FragColor=vec4(fogit(vec3(1.,.7,.5)*(.02+1.05*g),vDist),1.);}'});
+    const m=new THREE.Mesh(pg,ctxMat);m.renderOrder=-1;m.position.set((xa+xb)/2,-1.5,-(ya+yb)/2);sB.add(m);
+  }
+  Cw=W3(X0+WD/2,Y0+WD/2);
+  // 分析區外框
+  const sq=[[X0,Y0],[X0+WD,Y0],[X0+WD,Y0+WD],[X0,Y0+WD],[X0,Y0]];
+  aoiLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints(sq.map(([x,y])=>W3(x,y,6))),new THREE.LineBasicMaterial({color:0xf2b36b,transparent:true,opacity:0}));sB.add(aoiLine);
+  // 自走車 24 趟
+  const loops=ARC.rover.loops;
+  ROVER_T=loops.map((L,i)=>({start:9.0+i*.165,dur:.95,id:L.id}));
+  const rp=loops.map((L,i)=>{const pts=L.path.map(toXY);let a=0;const s=[0];for(let k=1;k<pts.length;k++){a+=Math.hypot(pts[k][0]-pts[k-1][0],pts[k][1]-pts[k-1][1]);s.push(a)}
+    return{pts,s:s.map(v=>v/(a||1)),start:ROVER_T[i].start,dur:ROVER_T[i].dur}});
+  roverMat=ribbonMat(0x4a9cff,0xffc27a);sB.add(new THREE.Mesh(ribbonGeo(rp,15,3),roverMat));
+  const bxy=ARC.base_xy;
+  baseGlow=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex(140,220,255),blending:THREE.AdditiveBlending,depthWrite:false,depthTest:false,transparent:true,opacity:0}));
+  baseGlow.position.copy(W3(bxy[0],bxy[1],20));baseGlow.scale.set(130,130,1);sB.add(baseGlow);
+  // 12 個高分區域：光柱＋圓環（依分數高低依序亮起）
+  const pillarMat=()=>new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,uniforms:{uOp:{value:0}},
+    vertexShader:'varying float vY;void main(){vY=uv.y;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+    fragmentShader:'uniform float uOp;varying float vY;void main(){gl_FragColor=vec4(vec3(1.,.82,.3)*pow(1.-vY,1.6)*uOp,1.);}'});
+  const tg2=[...ARC.targets.after].sort((a,b)=>b.score-a.score);
+  tg2.forEach((t,r)=>{
+    const p=W3(t.xy[0],t.xy[1]);const pm=pillarMat(),pl=new THREE.Mesh(new THREE.CylinderGeometry(16,16,700,20,1,true),pm);pl.position.set(p.x,p.y+350,p.z);
+    const rm=new THREE.MeshBasicMaterial({color:0xffd23f,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide});
+    const ring=new THREE.Mesh(new THREE.RingGeometry(62,78,48),rm);ring.rotation.x=-Math.PI/2;ring.position.set(p.x,p.y+5,p.z);
+    sB.add(pl,ring);tgtObjs.push({t0:14.7+r*.11,pm,rm,id:t.id,onRoute:ARC.route.order.includes(t.id)});
+  });
+  const t1=ARC.targets.after.find(t=>t.id==='T1')||tg2[0];T1w=W3(t1.xy[0],t1.xy[1]);
+  // 太空人路線（arcadia.json 的基地路線：T4→T2→T10→T7→T8，與首頁卡片同一筆）
+  const LL=ARC.route.legs.flatMap((L,i)=>i?L.path.slice(1):L.path);
+  ROUTE=LL.map(toXY);
+  CUM=cumFromLegs(ARC.route.legs,{min:ARC.planner.dwell_min,kcal_per_min:ARC.planner.stand_kcal_per_min},ROUTE.map(([x,y])=>({x,z:-y})));
+  TOTD=CUM.d[CUM.d.length-1];
+  const TOT={...ARC.route.total,o2_l:ARC.route.total.kcal/ARC.planner.kcal_per_l_o2};hudVals={TOT,KPL:ARC.planner.kcal_per_l_o2};
+  const rs=CUM.d.map(v=>v/TOTD);
+  astroAll=ribbonMat(0x2fd8ff,0xffffff);sB.add(new THREE.Mesh(ribbonGeo([{pts:ROUTE,s:rs,start:0,dur:1}],11,4),astroAll));
+  astroTrail=ribbonMat(0xe9fbff,0xffffff);sB.add(new THREE.Mesh(ribbonGeo([{pts:ROUTE,s:rs,start:0,dur:1}],6,5),astroTrail));
+  walker=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex(120,235,255),blending:THREE.AdditiveBlending,depthWrite:false,depthTest:false,transparent:true,opacity:0}));walker.scale.set(36,36,1);sB.add(walker);
+  const xs=ROUTE.map(p=>p[0]),ys=ROUTE.map(p=>p[1]);RC=W3((Math.min(...xs)+Math.max(...xs))/2,(Math.min(...ys)+Math.max(...ys))/2);
+}
+
+/* ---------- 鏡頭：每段一個 shot，交界用「目標線性、距離取對數」平順混合 ---------- */
+const pose=(p,q)=>({p,q});
+function blendPose(A,B,s){
+  const sq=1-Math.pow(1-s,2),q=A.q.clone().lerp(B.q,sq),oa=A.p.clone().sub(A.q),ob=B.p.clone().sub(B.q),la=oa.length(),lb=ob.length();
+  const dir=oa.normalize().lerp(ob.normalize(),s).normalize(),len=Math.exp(lerp(Math.log(la),Math.log(lb),s));
+  return pose(q.clone().add(dir.multiplyScalar(len)),q);
+}
+const orbitAt=(q,a,hz,alt)=>pose(V3(q.x+Math.sin(a)*hz,q.y+alt,q.z+Math.cos(a)*hz),q);
+function shotOrbit(T){const e=1-Math.pow(1-ramp(8,9.9,T),3);return orbitAt(Cw,.05+.05*(T-8),lerp(1200,4000,e),lerp(32000,3900,e))}
+function shotClose(T){return orbitAt(T1w,.5+.035*(T-15),300,280)}
+function shotRoute(T){return orbitAt(RC,.55+.03*(T-19),1500,1450)}
+function followD(T){return TOTD*inOut(ramp(21.8,26.3,T))}
+function shotFollow(T){
+  const d=followD(T);let x=0,y=0;for(const o of [-90,-45,0,45,90]){const r=routeAt(d+o);x+=r.x/5;y+=r.y/5}
+  return orbitAt(W3(x,y),.62+.05*(T-21.8),330,250);
+}
+function shotFinal(T){return orbitAt(RC.clone().lerp(Cw,.2),.3-.04*(T-26),2500,2700)}
+const SHOTS=[shotOrbit,shotClose,shotRoute,shotFollow,shotFinal],SW=[[15.6,18.0],[19.9,21.3],[21.4,22.4],[26.3,27.9]];
+function camAt(T){
+  let i=0;while(i<SW.length&&T>=SW[i][1])i++;
+  if(i<SW.length&&T>SW[i][0])return blendPose(SHOTS[i](T),SHOTS[i+1](T),sstep(SW[i][0],SW[i][1],T));
+  return SHOTS[i](T);
+}
+
+const fmtN=n=>Math.round(n).toLocaleString('en-US');
+function setHud(r){
+  $('hd').innerHTML=(r.d/1000).toFixed(2)+'<small>km</small>';$('ht').innerHTML=Math.round(r.min)+'<small>分</small>';
+  $('hk').innerHTML=fmtN(r.kcal)+'<small>kcal</small>';$('ho').innerHTML=fmtN(r.kcal/hudVals.KPL)+'<small>L</small>';
+}
+function updateB(T){
+  const c=camAt(T);camB.position.copy(c.p);camB.lookAt(c.q);
+  const h=c.p.y-c.q.y;camB.near=clamp(h*.02,1,200);camB.far=400000;camB.updateProjectionMatrix();
+  // 第 1 幕：遮罩隨自走車打開
+  let k=0;for(const r of ROVER_T)if(T>=r.start+r.dur*.55)k=r.id;
+  const U=terrMat.uniforms;U.uLoop.value=k;U.uVeil.value=1-sstep(14,15,T);U.uHeat.value=sstep(14.2,15.3,T)*(1-sstep(18,19.1,T));
+  roverMat.uniforms.uT.value=T;roverMat.uniforms.uOp.value=(T<14?1:lerp(1,.35,sstep(14,15,T)))*(1-sstep(17.5,19,T));
+  aoiLine.material.opacity=.8*(1-sstep(14,15.5,T));
+  baseGlow.material.opacity=sstep(8.6,9.2,T)*(1-sstep(15,16.5,T))+sstep(20.2,21,T)*.8;
+  for(const o of tgtObjs){const v=sstep(o.t0,o.t0+.3,T)*(1-sstep(18,19,T));o.pm.uniforms.uOp.value=v*.9*(1-sstep(16.6,17.6,T));o.rm.opacity=v*.9+(o.onRoute?.75*sstep(20.6,21.2,T):0)}
+  // 第 3 幕：路線畫出 → 低空跟拍 → 拉高
+  astroAll.uniforms.uT.value=ramp(20.4,21.5,T);astroAll.uniforms.uOp.value=.75*sstep(20.3,20.6,T);
+  const d=followD(T),r=routeAt(d);
+  astroTrail.uniforms.uT.value=T>=21.8?d/TOTD+1e-4:0;astroTrail.uniforms.uOp.value=sstep(21.6,21.9,T);
+  walker.position.copy(W3(r.x,r.y,18));walker.material.opacity=sstep(21.4,21.9,T)*(1-sstep(27,28,T)*.6);
+  $('hud').style.opacity=sstep(21.3,21.9,T);
+  if(T>=21.3)setHud(T>=26.3?{d:hudVals.TOT.distance_m,min:hudVals.TOT.min,kcal:hudVals.TOT.kcal}:r);
+}
+
+/* ---------- 每格 ---------- */
+function render(T){
+  const pr=renderer.getPixelRatio();
+  dustMat.uniforms.uPx.value=pr*SH/1080*100;brainMat.uniforms.uPx.value=pr*SH;
+  if(T<T_SWITCH||!terrMat){updateA(T);renderer.setClearColor(0x000000,1);renderer.render(sA,camA)}
+  else{updateB(T);renderer.setClearColor(0x2b1a12,1);renderer.render(sB,camB)}
+  // 橘色大氣霧：火星 → 地形的過場；?act=1 時從黑畫面淡入
+  const hz=T<T_SWITCH?sstep(7.1,8,T):1-sstep(8,8.9,T);$('haze').style.opacity=ACT1?0:hz;
+  const bl=ACT1?1-sstep(8,8.8,T):1-sstep(0,.6,T);$('black').style.opacity=ready?bl:1;
+  let cap='',co=0;if(SHOW_CAP)for(const [a,b,s] of CAPS)if(T>=a&&T<=b){cap=s;co=sstep(a,a+.35,T)*(1-sstep(b-.35,b,T))}
+  const ce=$('cap');if(ce.textContent!==cap)ce.textContent=cap;ce.style.opacity=co;
+}
+let last=performance.now();
+function frame(now){
+  const dt=Math.min(.25,(now-last)/1000);last=now;
+  if(ready&&playing)T=Math.min(T_END,T+dt);
+  if(ready)render(T);
+  requestAnimationFrame(frame);
+}
+addEventListener('keydown',e=>{
+  if(e.code==='Space'){playing=!playing;e.preventDefault()}
+  else if(e.key==='r'||e.key==='R'){T=T_START;playing=true;last=performance.now()}
+  else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen().catch(()=>{})}
+});
+window.film={get T(){return T},seek(t){T=clamp(t,0,T_END);render(T)},pause(){playing=false},play(){playing=true},get ready(){return ready}};
+resize();
+loadTerrain().then(()=>{updateB(12);renderer.render(sB,camB);updateA(3);renderer.render(sA,camA);ready=true;last=performance.now();requestAnimationFrame(frame)}).catch(err=>{console.error('film: data load failed',err)});
+</script>
+</body>
+</html>
