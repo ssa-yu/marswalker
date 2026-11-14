@@ -705,3 +705,18 @@ Exports: `pipeline.export_recon --version v3` → `web/data/jezero/recon_v3/`; `
 
 #### X2 attempt 1 crashed before any number (2026-11-14, `x2_run.log`)
 The second table ("waypoints inside the six windows", leave one window out) cannot be formed: AI4MARS Perseverance NAV labels cover sols 9–288 only, so their waypoints fall in the main window (2,215 labels) and in (0,−1) (51 labels, not one of the six windows). Holding out the main window left 0 training rows and scikit-learn raised; the run stopped before writing or printing anything (the main-table numbers existed only in memory, unseen). Fix: the second table is reported as "not computed: labelled waypoints in fewer than 2 of the six windows"; nothing else changed. Run again once.
+
+#### X2 result — orbital data → ground-photo sand share, the single run (2026-11-14 09:28:32 CST, 126.0 s; settings `5e43818` + guard commit), reported as computed
+`data_work/jezero/ai4mars/x2_result.json`. Main AOI table: 72 waypoints, 6 sand-dominant; units Njf, Nle. Folds (sol segments, 100 m buffer): test 15 / 14 / 15 / 14 / 14 waypoints; training after buffer 45 / 40 / 52 / 50 / 57, of which sand-dominant 6 / 6 / 6 / 2 / **0** (all 6 sand-dominant waypoints are in the last sol segment, so its classifier never saw the class).
+
+| Method (out-of-fold) | MAE (sand share) | Balanced accuracy (sand-dominant) |
+|---|---|---|
+| kNN, HiRISE input | 0.121 | 0.500 |
+| RF, HiRISE input | 0.148 | 0.462 |
+| kNN, CTX input | 0.126 | 0.500 |
+| RF, CTX input | 0.171 | 0.492 |
+| Baseline 1: our HiRISE rule (reference sand share in the 30 m circle) | 0.124 | **0.894** |
+| Baseline 2: SIM 3464 unit mean | **0.115** | 0.500 |
+| Baseline 3: nearest training waypoint | 0.161 | 0.492 |
+
+**No model beats baseline 1 on balanced accuracy, and the unit mean has the lowest MAE**: with 72 waypoints and 6 sand-dominant ones, all in one sol segment, the models learn nothing about sand that the hand-written HiRISE rule does not already give. Second table ("waypoints inside the six windows"): **not computed** — the labels exist only in the main window. B6 map (`pipeline/x2_map.py`, RF on HiRISE input trained on all 72 waypoints): 10 m grid, mean predicted sand share 0.275, tree s.d. mean 0.159; `web/data/jezero/ai4mars/x2_map*.png`, labelled `derived, model estimate`; not a prior, not used by the rover or route A. Labels: answers are crowd labels (engineers' safe route, near field); HiRISE plays two roles (stand-in for the rover's sensing in the route comparison; an orbital input available before departure here).
