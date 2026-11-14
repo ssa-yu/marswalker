@@ -128,6 +128,17 @@ def run():
                     "agreement with crowd labels, not ground truth", "rules": __doc__.split("Rules", 1)[1],
            "computed_at": time.strftime("%Y-%m-%d %H:%M:%S %Z"), "n_labels_nlf": len(labs), "n_not_in_aoi": n_not_aoi,
            "n_no_labelled_pixel": n_empty, "n_images": len(imgs), "groups": {}}
+    out["groups"] = aggregate(imgs)
+    out["images"] = imgs
+    out["seconds"] = round(time.time() - t0, 1)
+    write_json(f, out)
+    figures(out, ref, ext, res)
+    return out
+
+
+def aggregate(imgs):
+    """A3-A5 on a list of per-image records: per-waypoint means, Spearman rho, 2x2 at 0.5."""
+    groups = {}
     for geo in ("sector", "circle"):
         G = [i for i in imgs if i["geometry"] == geo and i["hirise_sand"] is not None]
         byw = {}
@@ -149,11 +160,25 @@ def run():
                                "agreement": float(np.mean(a == b)), "n": len(rows)}
             g["sand_dominant_waypoints"] = {"photo": int(a.sum()), "hirise": int(b.sum())}
             g["power_note"] = ("fewer than 5 sand-dominant waypoints: little power for sand" if min(a.sum(), b.sum()) < 5 else "")
-        out["groups"][geo] = g
-    out["images"] = imgs
-    out["seconds"] = round(time.time() - t0, 1)
+        groups[geo] = g
+    return groups
+
+
+ELEV = (-45.0, -3.0)   # X1-s (manager 16th update, assumed): keep images whose camera elevation is within this range
+
+
+def sensitivity():
+    """X1-s: same images and rules as X1, only images with view.elevation_deg in [-45, -3] (drops frames pointing at
+    the rover deck or the sky; images without a direction have no elevation and drop out). Run once."""
+    f = OUT / "x1s_result.json"
+    if f.exists():
+        raise SystemExit("X1-s already run once")
+    X = read_json(OUT / "x1_result.json")
+    keep = [i for i in X["images"] if i.get("view") and ELEV[0] <= i["view"]["elevation_deg"] <= ELEV[1]]
+    out = {"label": X["label"], "rule": "X1 with view elevation in [-45, -3] deg only (assumed; manager 16th update)",
+           "computed_at": time.strftime("%Y-%m-%d %H:%M:%S %Z"), "n_images_x1": len(X["images"]), "n_images_kept": len(keep),
+           "groups": aggregate(keep)}
     write_json(f, out)
-    figures(out, ref, ext, res)
     return out
 
 
@@ -187,4 +212,5 @@ def figures(out, ref, ext, res):
 
 
 if __name__ == "__main__":
-    run()
+    import sys
+    sensitivity() if "--sensitivity" in sys.argv else run()
