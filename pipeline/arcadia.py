@@ -3,11 +3,15 @@
 
 python -m pipeline.arcadia grid|terrain|rover|select|astro|export|all
 
-  grid     ortho 0.25 m (COG window), DTM 1 m (padded 30 m), prior DTM = HiRISE DTM block-averaged to 20 m
-  terrain  existing rules (pipeline/terrain.py), sand = sandfield v2, but brain score >= 0.5 is never sand;
-           prior = slope classes of the 20 m DTM (same code path as the CTX prior)
-  rover    second-version rover rule (pipeline/rover_sim.simulate), 4 m cells, 10 loops
-  select   60 m blocks: >= 50 % seen by the rover, top 4 by mean brain score, centres >= 150 m apart;
+  Study area v2 (Shan 2026-11-15 evening): largest rectangle with valid DTM and ortho, 3.72 x 11.04 km
+  (config aoi; the earlier 2.4 km square is aoi_v1, its outputs in data_work/arcadia/v1_2p4km/).
+  grid     ortho 0.5 m (RED_A COG overview level 1), DTM 1 m (padded 30 m), prior DTM = HiRISE DTM averaged to 20 m
+  terrain  existing rules (pipeline/terrain.py) on 2 m cells, sand = sandfield v2 (0.5 m features, computed in row
+           chunks), brain score >= 0.5 is never sand; rough threshold = this scene's P85 of the roughness (the
+           rule's definition; 0.059 m is Jezero's P85); prior = slope classes of the 20 m DTM.
+           Products then coarsened to 4 m (class = worst of 2 x 2, slope = mean), the terrain and path grid.
+  rover    second-version rover rule (pipeline/rover_sim.simulate), 4 m cells, larger budget and more loops
+  select   60 m blocks: >= 50 % seen by the rover, top 12 by mean brain score, centres >= 300 m apart;
            stop = highest-score passable cell of the block. Also the "before" version (whole area, no seen rule).
   astro    Shooyunn's Pandolf model (app/eva_energy/mars_eva_energy.py, unchanged) -> kcal and minutes per metre;
            multistop order rule of pipeline/multistop.py; 1,800 kcal, 20 % reserve, 18 min dwell at standing rate
@@ -29,7 +33,8 @@ from .common import APP, Scene, log, read_json, save_local_tif, write_json
 
 SCENE = "arcadia"
 BRAIN_SAND_EXCLUDE = 0.5          # brain score >= 0.5 is never sand (rule set 2026-11-15)
-RES = 2.0
+RES = 2.0                         # terrain feature grid
+GRID_RES = 4.0                    # terrain and path grid (rover, blocks, astronaut)
 
 
 def sc_():
@@ -69,20 +74,20 @@ def run_grid():
     from .grid import grid_meta, to_local
     sc = sc_()
     t0 = time.time()
-    fetch_ortho(sc)
     aoi = sc.extent("aoi")
     pad = 30.0
     aoi_pad = (aoi[0] - pad, aoi[1] - pad, aoi[2] + pad, aoi[3] + pad)
-    meta = {"base": sc.cfg["base"], "aoi": grid_meta(sc, aoi, 0.25), "products": {}}
+    meta = {"base": sc.cfg["base"], "aoi": grid_meta(sc, aoi, 0.5), "products": {}}
 
     def save(name, arr, tr, extent, res):
         save_local_tif(sc.work / f"{name}.tif", arr, tr, nodata=np.nan)
         meta["products"][name] = {**grid_meta(sc, extent, res), "nan_frac": float(np.mean(~np.isfinite(arr)))}
         log(SCENE, "grid", f"{name} {arr.shape} NaN {np.mean(~np.isfinite(arr)):.3%}")
 
-    a, tr = to_local(src_file(sc, "ortho"), sc, aoi, 0.25)
+    a, tr = to_local(src_file(sc, "ortho_05"), sc, aoi, 0.5)
     a[a == 0] = np.nan
-    save("ortho_025", a, tr, aoi, 0.25)
+    save("ortho_05", a, tr, aoi, 0.5)
+    del a
     a, tr = to_local(src_file(sc, "dtm_fine"), sc, aoi_pad, 1.0)
     save("dtm_fine", a, tr, aoi_pad, 1.0)
     # prior: the HiRISE DTM averaged to 20 m (stands in for a CTX 20 m DTM; no separate download)
@@ -94,30 +99,58 @@ def run_grid():
 
 
 # ------------------------------------------------------------------------------------------------- terrain
+ROUGH_PCTL = 85.0                 # rough threshold = this scene's P85 of the 2 m roughness (rule definition)
+CHUNK_PX = 4000                   # 0.5 m rows per sand-feature chunk (2 km)
+CHUNK_PAD_PX = 256                # 128 m overlap on each side (> 3 sigma of the 20 m normalisation)
+
+
+def sand_features_2m(o05):
+    """sandfield v2 features on the 0.5 m image, computed in row chunks with overlap, block-averaged to 2 m."""
+    from .sandfield import features as sand_features, to_grid
+    H = o05.shape[0]; f = int(RES / 0.5)
+    parts = []
+    for r0 in range(0, H, CHUNK_PX):
+        r1 = min(H, r0 + CHUNK_PX)
+        a0 = max(0, r0 - CHUNK_PAD_PX); a1 = min(H, r1 + CHUNK_PAD_PX)
+        F = sand_features(o05[a0:a1])
+        F = {k: v[r0 - a0:r1 - a0] for k, v in F.items()}
+        parts.append(to_grid(F, f))
+        log(SCENE, "terrain", f"sand features rows {r0}-{r1}")
+    return {k: np.concatenate([p[k] for p in parts], 0) for k in parts[0]}
+
+
 def run_terrain():
     from scipy.ndimage import gaussian_filter, map_coordinates, uniform_filter
     from .layers import slope_deg
-    from .sandfield import SAND_V2, classify as sand_classify, features as sand_features, to_grid
-    from .terrain import PARAMS as P, CLASSES, block, classify_ref, read
+    from .sandfield import SAND_V2, classify as sand_classify
+    from .terrain import PARAMS as P0, CLASSES, block, classify_ref, read
     sc = sc_()
+    t0 = time.time()
     gm = read_json(sc.work / "grid.json")
     aoi = sc.extent("aoi")
     W = int((aoi[2] - aoi[0]) / RES); H = int((aoi[3] - aoi[1]) / RES)
     z = read(sc.work / "dtm_fine.tif")
     pad = 30
-    h = int(P["slope_baseline_m"] / 2)
+    h = int(P0["slope_baseline_m"] / 2)
     gx = (np.roll(z, -h, 1) - np.roll(z, h, 1)) / (2 * h)
     gy = (np.roll(z, h, 0) - np.roll(z, -h, 0)) / (2 * h)
     s1 = np.degrees(np.arctan(np.hypot(gx, gy)))[pad:-pad, pad:-pad]
-    hp = z - gaussian_filter(z, P["roughness_sigma_m"])
-    w = int(P["roughness_window_m"])
+    del gx, gy
+    hp = z - gaussian_filter(z, P0["roughness_sigma_m"])
+    w = int(P0["roughness_window_m"])
     m1 = uniform_filter(hp, w); m2 = uniform_filter(hp * hp, w)
     r1 = np.sqrt(np.maximum(m2 - m1 * m1, 0))[pad:-pad, pad:-pad]
+    del hp, m1, m2, z
     slope_ref = block(s1, 2, "max"); rough_ref = block(r1, 2, "max")
     slope_mean = block(s1, 2, "mean")
-    o = read(sc.work / "ortho_025.tif")
-    o = block(o, 2, "mean")
-    G = to_grid(sand_features(o), 4)
+    del s1, r1
+    P = dict(P0)
+    P["roughness_rough_m"] = round(float(np.nanpercentile(rough_ref, ROUGH_PCTL)), 4)
+    P["roughness_rule"] = (f"P{ROUGH_PCTL:.0f} of this scene's 2 m roughness (definition of the rule; "
+                           f"Jezero P85 = {P0['roughness_rough_m']} m)")
+    o = read(sc.work / "ortho_05.tif")
+    G = sand_features_2m(o)
+    del o
     sand_v2, _ = sand_classify(G, slope_ref, RES)
     brain = np.load(sc.work / "brain_score_2m.npy")
     is_brain = np.nan_to_num(brain) >= BRAIN_SAND_EXCLUDE
@@ -132,6 +165,7 @@ def run_terrain():
     xs = aoi[0] + (np.arange(W) + 0.5) * RES; ys = aoi[3] - (np.arange(H) + 0.5) * RES
     X, Y = np.meshgrid(xs, ys)
     slope_prior = map_coordinates(sp20, [(pe[3] - Y) / pres - 0.5, (X - pe[0]) / pres - 0.5], order=1).astype("float32")
+    del X, Y
     class_prior = np.zeros((H, W), np.uint8)
     class_prior[slope_prior >= P["slope_rough_deg"]] = 1
     class_prior[slope_prior >= P["slope_block_astronaut_deg"]] = 3
@@ -139,21 +173,35 @@ def run_terrain():
     np.savez_compressed(sc.work / "terrain_2m.npz", slope_ref=slope_ref, slope_mean=slope_mean, rough_ref=rough_ref,
                         class_ref=class_ref, blocked_rover_ref=blocked_rover_ref, slope_prior=slope_prior,
                         class_prior=class_prior, blocked_rover_prior=blocked_rover_prior, sand_v2_raw=sand_v2)
+    T4 = coarsen_terrain({"class_ref": class_ref, "class_prior": class_prior, "blocked_rover_ref": blocked_rover_ref,
+                          "blocked_rover_prior": blocked_rover_prior}, int(GRID_RES / RES))
+    T4["slope_mean"] = block(slope_mean, int(GRID_RES / RES), "mean").astype("float32")
+    T4["slope_prior"] = block(slope_prior, int(GRID_RES / RES), "mean").astype("float32")
+    np.savez_compressed(sc.work / "terrain_4m.npz", **T4)
     frac = lambda c: {CLASSES[k]: round(float(np.mean(c == k)) * 100, 2) for k in range(4)}
+    rough_old = float(np.mean(rough_ref >= P0["roughness_rough_m"]))
     meta = {"params": P, "sand_v2": SAND_V2, "brain_sand_exclude": BRAIN_SAND_EXCLUDE,
-            "extent_local_m": list(aoi), "shape": [H, W],
+            "extent_local_m": list(aoi), "shape": [H, W], "shape_4m": list(T4["class_ref"].shape),
             "brain_frac": round(float(is_brain.mean()), 4),
             "sand_rule_hit_on_brain_frac": round(sand_hit_brain, 4),
-            "area_percent_ref": frac(class_ref), "area_percent_prior": frac(class_prior)}
+            "rough_cells_at_jezero_threshold_frac": round(rough_old, 4),
+            "area_percent_ref": frac(class_ref), "area_percent_ref_4m": frac(T4["class_ref"]),
+            "area_percent_prior": frac(class_prior), "seconds": round(time.time() - t0, 1)}
     write_json(sc.work / "terrain_2m.json", meta)
-    log(SCENE, "terrain", f"ref {meta['area_percent_ref']} prior {meta['area_percent_prior']} "
-        f"brain {meta['brain_frac']:.1%} sand-on-brain {sand_hit_brain:.1%}")
+    log(SCENE, "terrain", f"rough thr {P['roughness_rough_m']} (0.059 would flag {rough_old:.1%}); "
+        f"ref {meta['area_percent_ref']} 4m {meta['area_percent_ref_4m']} prior {meta['area_percent_prior']} "
+        f"brain {meta['brain_frac']:.1%} sand-on-brain {sand_hit_brain:.1%} in {meta['seconds']} s")
     return meta
 
 
 # --------------------------------------------------------------------------------------------------- rover
-ROVER_RES = 4.0
-ROVER_LOOPS = 10
+ROVER_RES = GRID_RES
+ROVER_PLAN_WINDOW_M = 400.0       # point-to-point plans search start/goal box + 400 m (speed; whole grid if no path)
+ROVER_OVERRIDES = {        # study area v2 (3.72 x 11.04 km): same rule, larger budget / reach
+    "n_loops": 24, "loop_budget": 4000.0 * 7, "sense_radius_m": 30.0,
+    "bands_m": {"near": [500.0, 2000.0], "mid": [2000.0, 3500.0], "far": [3500.0, 1e9]},
+    "goal_lattice_m": 100.0, "goal_gain_radius_m": 300.0, "base_free_radius_m": 60.0,
+}
 
 
 def coarsen_terrain(T, f):
@@ -168,40 +216,49 @@ def coarsen_terrain(T, f):
 
 
 def run_rover():
+    from . import rover_sim
     from .rover_sim import PARAMS, simulate
+    rover_sim.PLAN_WINDOW_CELLS = int(ROVER_PLAN_WINDOW_M / ROVER_RES)
     sc = sc_()
-    T = dict(np.load(sc.work / "terrain_2m.npz"))
+    T4 = dict(np.load(sc.work / "terrain_4m.npz"))
     f = int(ROVER_RES / RES)
-    T4 = coarsen_terrain(T, f)
-    P = dict(PARAMS); P["grid_res_m"] = ROVER_RES; P["n_loops"] = ROVER_LOOPS
+    P = dict(PARAMS); P["grid_res_m"] = ROVER_RES; P.update(ROVER_OVERRIDES)
+    P["plan_window_m"] = ROVER_PLAN_WINDOW_M
     aoi = sc.extent("aoi")
     base_rc = base_rc_at(sc, ROVER_RES)
     t0 = time.time()
     bel, loops = simulate(T4, P, base_rc, log_fn=lambda m: log(SCENE, "rover", m))
     secs = round(time.time() - t0, 1)
-    seen2 = np.repeat(np.repeat(bel.observed, f, 0), f, 1)
-    first2 = np.repeat(np.repeat(bel.first_t, f, 0), f, 1)
-    np.savez_compressed(sc.work / "recon_state.npz", observed=bel.observed, first_t=bel.first_t,
-                        seen_2m=seen2, first_t_2m=first2)
+    np.savez_compressed(sc.work / "recon_state.npz", observed=bel.observed, first_t=bel.first_t)
+    br, bc = base_rc
+    H, W = bel.observed.shape
+    rr, cc = np.nonzero(bel.observed)
+    far = float(np.hypot(rr - br, cc - bc).max() * ROVER_RES) if rr.size else 0.0
     for L in loops:
         L["observed_frac_aoi"] = round(float(((bel.first_t >= 0) & (bel.first_t <= L["t1"])).mean()), 4)
+        pr = np.array(L["path_rc"])
+        L["max_dist_m"] = round(float(np.hypot(pr[:, 0] - br, pr[:, 1] - bc).max() * ROVER_RES), 1)
     out = {"params": P, "base_rc": list(base_rc), "extent_local_m": list(aoi), "seconds": secs,
-           "observed_frac": round(float(bel.observed.mean()), 4), "loops": loops}
+           "observed_frac": round(float(bel.observed.mean()), 4),
+           "max_path_dist_m": max(L["max_dist_m"] for L in loops), "max_seen_dist_m": round(far, 1),
+           "total_length_m": round(sum(L["length_m"] for L in loops), 1), "loops": loops}
     write_json(sc.work / "recon_loops.json", out)
-    log(SCENE, "rover", f"{len(loops)} loops in {secs} s, seen {out['observed_frac']:.1%}")
+    log(SCENE, "rover", f"{len(loops)} loops in {secs} s, seen {out['observed_frac']:.1%}, "
+        f"farthest {out['max_path_dist_m']} m, total {out['total_length_m'] / 1000:.1f} km")
     return out
 
 
 # -------------------------------------------------------------------------------------------------- select
 BLOCK_M = 60.0
 SEEN_MIN = 0.5
-N_PICK = 4
-MIN_SEP_M = 150.0
+N_PICK = 12                       # Shan 2026-11-15 evening: top 12 over the whole area
+MIN_SEP_M = 300.0
 
 
-def pick_blocks(score, passable, seen=None, n=N_PICK, block_m=BLOCK_M, seen_min=SEEN_MIN, min_sep=MIN_SEP_M, res=RES,
+def pick_blocks(score, passable, seen=None, n=N_PICK, block_m=BLOCK_M, seen_min=SEEN_MIN, min_sep=MIN_SEP_M, res=GRID_RES,
                 extent=(-1200.0, -1200.0, 1200.0, 1200.0)):
-    """Rule fixed 2026-11-15. Returns list of dicts (block centre, stop cell, mean score, seen fraction)."""
+    """Rule fixed 2026-11-15 (v2: top 12, >= 300 m apart). Returns list of dicts (block centre, stop cell, mean score,
+    seen fraction)."""
     b = int(round(block_m / res))
     H, W = score.shape
     nb_r, nb_c = H // b, W // b
@@ -241,15 +298,26 @@ def pick_blocks(score, passable, seen=None, n=N_PICK, block_m=BLOCK_M, seen_min=
     return picks
 
 
+def brain_score_grid():
+    """Brain score on the 4 m grid = mean of the 2 x 2 finite 2 m scores."""
+    from .terrain import block
+    s2 = np.load(sc_().work / "brain_score_2m.npy")
+    f = int(GRID_RES / RES)
+    v = block(np.isfinite(s2).astype(np.float32), f, "sum")
+    t = block(np.nan_to_num(s2, nan=0.0), f, "sum")
+    return np.where(v > 0, t / np.maximum(v, 1), np.nan).astype(np.float32)
+
+
 def run_select():
     sc = sc_()
-    T = dict(np.load(sc.work / "terrain_2m.npz"))
-    score = np.load(sc.work / "brain_score_2m.npy")
-    seen = np.load(sc.work / "recon_state.npz")["seen_2m"]
+    T = dict(np.load(sc.work / "terrain_4m.npz"))
+    score = brain_score_grid()
+    seen = np.load(sc.work / "recon_state.npz")["observed"]
     passable = T["class_ref"] < 3
-    after = pick_blocks(score, passable, seen)
-    before = pick_blocks(score, T["class_prior"] < 3, None)
-    out = {"rule": {"block_m": BLOCK_M, "seen_min": SEEN_MIN, "n": N_PICK, "min_sep_m": MIN_SEP_M,
+    ext = tuple(sc.extent("aoi"))
+    after = pick_blocks(score, passable, seen, extent=ext)
+    before = pick_blocks(score, T["class_prior"] < 3, None, extent=ext)
+    out = {"rule": {"block_m": BLOCK_M, "seen_min": SEEN_MIN, "n": N_PICK, "min_sep_m": MIN_SEP_M, "grid_res_m": GRID_RES,
                     "rank": "mean brain score of the block", "stop": "highest-score passable cell"},
            "after_recon": after, "before_recon": before}
     write_json(sc.work / "targets.json", out)
@@ -292,49 +360,88 @@ def energy_grids(cls, slope_deg, P=EVA):
     return kcal_m, min_m, stand
 
 
-def run_astro():
+WALK_WINDOW_M = 2000.0     # candidate stops: chosen areas within +-2 km (square) of the start (same rule as the page)
+
+
+def cost_grid_8m(kcal_m, min_m):
+    """4 m per-metre costs -> 8 m for the in-browser planner: mean of the finite 2 x 2 values; blocked (inf) when
+    3 or 4 of the 4 cells are blocked."""
+    from .terrain import block
+    out = []
+    for g in (kcal_m, min_m):
+        fin = np.isfinite(g)
+        n = block(fin.astype(np.float32), 2, "sum")
+        t = block(np.where(fin, g, 0.0), 2, "sum")
+        out.append(np.where(n >= 2, t / np.maximum(n, 1), np.inf))
+    return out
+
+
+def plan_from(kcal_m, min_m, stand, start_rc, targets, res, window_m=WALK_WINDOW_M):
+    """Multi-stop plan from start_rc to the chosen areas inside the +-window, plus the round-trip kcal (walk both ways
+    + one dwell) of every chosen area from start_rc. Same order rule as pipeline/multistop.py (brute force <= 6)."""
+    from .astro_plan import field
     from .multistop import plan_multistop, walk
+    g = {"o2": kcal_m, "t": min_m}
+    dwell = {"dwell_min": EVA["dwell_min"], "dwell_o2_factor": stand}
+    sr, scl = start_rc
+    cand = [k for k, p in enumerate(targets)
+            if max(abs(p["stop_rc"][0] - sr), abs(p["stop_rc"][1] - scl)) * res <= window_m]
+    _, f0 = field(kcal_m * res, tuple(start_rc))
+    rt = [round(float(2 * f0[tuple(p["stop_rc"])] + EVA["dwell_min"] * stand), 1) for p in targets]
+    if cand:
+        pl = plan_multistop(g, start_rc, [targets[k]["stop_rc"] for k in cand], res, dwell=dwell,
+                            capacity=EVA["budget_kcal"], reserve=EVA["reserve_frac"], brute_max=6)
+        order = [cand[i] for i in pl["order"]]
+        path, stop_idx, usable = pl["path_rc"], pl["stop_idx"], pl["usable_o2"]
+    else:
+        order, path, stop_idx = [], [tuple(start_rc)], []
+        usable = EVA["budget_kcal"] * (1 - EVA["reserve_frac"])
+    wk = walk(path, stop_idx, g, res, dwell=dwell)
+    return {"cand": cand, "order": order, "path": path, "stop_idx": stop_idx, "walk": wk, "usable": usable,
+            "round_trip_kcal": rt}
+
+
+def run_astro():
     sc = sc_()
-    T = dict(np.load(sc.work / "terrain_2m.npz"))
+    T = dict(np.load(sc.work / "terrain_4m.npz"))
     tg = read_json(sc.work / "targets.json")
-    base_rc = base_rc_at(sc, RES)
-    out = {"eva": EVA}
-    for name, cls, slope, targets in (("after_recon", T["class_ref"], T["slope_mean"], tg["after_recon"]),
-                                      ("before_recon", T["class_prior"], T["slope_prior"], tg["before_recon"])):
-        kcal_m, min_m, stand = energy_grids(cls, slope)
-        g = {"o2": kcal_m, "t": min_m}
-        dwell = {"dwell_min": EVA["dwell_min"], "dwell_o2_factor": stand}
-        t0 = time.time()
-        pl = plan_multistop(g, base_rc, [p["stop_rc"] for p in targets], RES, dwell=dwell,
-                            capacity=EVA["budget_kcal"], reserve=EVA["reserve_frac"])
-        wk = walk(pl["path_rc"], pl["stop_idx"], g, RES, dwell=dwell)
-        path = pl["path_rc"]
-        cum_d = [0.0]
-        for a, b in zip(path[:-1], path[1:]):
-            cum_d.append(cum_d[-1] + RES * (math.sqrt(2) if a[0] != b[0] and a[1] != b[1] else 1.0))
-        marks = [0] + pl["stop_idx"] + [len(path) - 1]
-        legs = []
-        for k, (i0, i1) in enumerate(zip(marks[:-1], marks[1:])):
-            dw = EVA["dwell_min"] if k < len(pl["stop_idx"]) else 0.0
-            walk_min = wk["time_min"][i1] - wk["time_min"][i0] - dw
-            walk_kcal = wk["o2"][i1] - wk["o2"][i0] - dw * stand
-            legs.append({"from": "base" if k == 0 else f"T{pl['order'][k - 1] + 1}",
-                         "to": f"T{pl['order'][k] + 1}" if k < len(pl["order"]) else "base",
-                         "i0": i0, "i1": i1, "distance_m": round(cum_d[i1] - cum_d[i0], 1),
-                         "walk_min": round(walk_min, 1), "walk_kcal": round(walk_kcal, 1),
-                         "dwell_min": dw, "dwell_kcal": round(dw * stand, 1)})
-        tot_kcal = wk["total_o2"]
-        r = {"order": [i + 1 for i in pl["order"]], "skipped": [i + 1 for i in pl["skipped"]],
-             "n_stops": len(pl["order"]), "usable_kcal": pl["usable_o2"], "standing_kcal_per_min": round(stand, 3),
-             "total_distance_m": round(cum_d[-1], 1), "total_min": round(wk["total_time_min"], 1),
-             "total_kcal": round(tot_kcal, 1), "o2_l": round(tot_kcal / EVA["kcal_per_l_o2"], 1),
-             "legs": legs, "path_rc": path, "stop_idx": pl["stop_idx"], "seconds": round(time.time() - t0, 1),
-             "kcal_per_m_flat": {c: round(float(v), 4) for c, v in zip(("firm", "rough", "sand"),
-                                 [energy_grids(np.array([[k]]), np.array([[0.0]]))[0][0, 0] for k in range(3)])}}
-        out[name] = r
-        log(SCENE, "astro", f"{name}: stops {r['n_stops']}/{len(targets)} order {r['order']} "
-            f"{r['total_distance_m']:.0f} m {r['total_min']:.0f} min {r['total_kcal']:.0f} kcal {r['o2_l']} L")
+    base_rc = base_rc_at(sc, GRID_RES)
+    targets = tg["after_recon"]
+    t0 = time.time()
+    kcal_m, min_m, stand = energy_grids(T["class_ref"], T["slope_mean"])
+    pr = plan_from(kcal_m, min_m, stand, base_rc, targets, GRID_RES)
+    wk, path = pr["walk"], pr["path"]
+    cum_d = [0.0]
+    for a_, b_ in zip(path[:-1], path[1:]):
+        cum_d.append(cum_d[-1] + GRID_RES * (math.sqrt(2) if a_[0] != b_[0] and a_[1] != b_[1] else 1.0))
+    marks = [0] + pr["stop_idx"] + [len(path) - 1]
+    legs = []
+    for k, (i0, i1) in enumerate(zip(marks[:-1], marks[1:])):
+        dw = EVA["dwell_min"] if k < len(pr["stop_idx"]) else 0.0
+        legs.append({"from": "base" if k == 0 else f"T{pr['order'][k - 1] + 1}",
+                     "to": f"T{pr['order'][k] + 1}" if k < len(pr["order"]) else "base",
+                     "i0": i0, "i1": i1, "distance_m": round(cum_d[i1] - cum_d[i0], 1),
+                     "walk_min": round(wk["time_min"][i1] - wk["time_min"][i0] - dw, 1),
+                     "walk_kcal": round(wk["o2"][i1] - wk["o2"][i0] - dw * stand, 1),
+                     "dwell_min": dw, "dwell_kcal": round(dw * stand, 1)})
+    tot = wk["total_o2"]
+    r = {"order": [i + 1 for i in pr["order"]], "candidates": [i + 1 for i in pr["cand"]],
+         "n_stops": len(pr["order"]), "n_targets": len(targets), "usable_kcal": pr["usable"],
+         "standing_kcal_per_min": round(stand, 3), "window_m": WALK_WINDOW_M,
+         "round_trip_kcal": pr["round_trip_kcal"],
+         "total_distance_m": round(cum_d[-1], 1), "total_min": round(wk["total_time_min"], 1),
+         "total_kcal": round(tot, 1), "o2_l": round(tot / EVA["kcal_per_l_o2"], 1),
+         "legs": legs, "path_rc": [list(map(int, p)) for p in path], "stop_idx": pr["stop_idx"],
+         "seconds": round(time.time() - t0, 1),
+         "kcal_per_m_flat": {c: round(float(v), 4) for c, v in zip(("firm", "rough", "sand"),
+                             [energy_grids(np.array([[k]]), np.array([[0.0]]))[0][0, 0] for k in range(3)])}}
+    k8, m8 = cost_grid_8m(kcal_m, min_m)
+    np.savez_compressed(sc.work / "cost_8m.npz", kcal_m=k8.astype(np.float32), min_m=m8.astype(np.float32))
+    out = {"eva": EVA, "grid_res_m": GRID_RES, "after_recon": r}
     write_json(sc.work / "astro.json", out)
+    log(SCENE, "astro", f"stops {r['n_stops']} of {len(pr['cand'])} candidates in the window ({len(targets)} areas) "
+        f"order {r['order']} {r['total_distance_m']:.0f} m {r['total_min']:.0f} min {r['total_kcal']:.0f} kcal "
+        f"{r['o2_l']} L; round trips {r['round_trip_kcal']} in {r['seconds']} s")
     return out
 
 

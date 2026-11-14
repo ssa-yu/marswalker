@@ -8,11 +8,11 @@
   "note": "Local-grid origin = study-area centre. Chosen by: >= 400 m from the edge, classifier window probability < 0.05 everywhere within 100 m, mean 6 m-baseline slope < 5.5 deg within 30 m; qualifying point closest to the study-area centre."
  },
  "aoi": {
-  "xmin": -1200,
-  "ymin": -1200,
-  "xmax": 1200,
-  "ymax": 1200,
-  "rule": "2.4 km square fully inside valid DTM and ortho; Pearson et al. 2024 classifier scan of the whole strip (128 m windows, 32 m step, RED_C 1 m ortho); squares with brain fraction (window prob >= 0.5) 20-60 %, chosen 40.2 % with brain and non-brain areas side by side.",
+  "xmin": -3060,
+  "ymin": -3060,
+  "xmax": 660,
+  "ymax": 7980,
+  "rule": "Largest axis-aligned rectangle where the HiRISE DTM and the 1 m ortho are both valid (20 m min-resampled masks, x -3140..740, y -3160..8080), shrunk to 60 m multiples with >= 60 m margin: 3.72 x 11.04 km. Habitat kept (>= 400 m from every edge). Previous 2.4 km square kept as aoi_v1.",
   "label": "derived"
  },
  "fetch_margin_m": 40,
@@ -44,6 +44,12 @@
    "url": "https://astrogeo-ard.s3-us-west-2.amazonaws.com/mars/mro/hirise/controlled/dtm/ESP_061075_2195_ESP_061141_2195/ESP_061075_2195_RED_C_01_ORTHO.tif",
    "title": "HiRISE ortho 1 m ESP_061075_2195_RED_C_01 (strip scan only)",
    "mission": "MRO / HiRISE; USGS Astrogeology"
+  },
+  "ortho_05": {
+   "file": "ESP_061075_2195_RED_A_01_ORTHO_ov2_aoi.tif",
+   "url": "https://astrogeo-ard.s3-us-west-2.amazonaws.com/mars/mro/hirise/controlled/dtm/ESP_061075_2195_ESP_061141_2195/ESP_061075_2195_RED_A_01_ORTHO.tif",
+   "title": "HiRISE ortho ESP_061075_2195_RED_A_01, COG overview level 1 (0.53 m source px), study-area window",
+   "mission": "MRO / HiRISE; USGS Astrogeology"
   }
  },
  "status": "active",
@@ -53,5 +59,13 @@
   "y": -57.0,
   "label": "derived",
   "rule": "nearest firm 2 m cell (reference classes) to the grid origin above; brain score 0.013"
+ },
+ "aoi_v1": {
+  "xmin": -1200,
+  "ymin": -1200,
+  "xmax": 1200,
+  "ymax": 1200,
+  "rule": "2.4 km square fully inside valid DTM and ortho; Pearson et al. 2024 classifier scan of the whole strip (128 m windows, 32 m step, RED_C 1 m ortho); squares with brain fraction (window prob >= 0.5) 20-60 %, chosen 40.2 % with brain and non-brain areas side by side.",
+  "label": "derived"
  }
 }

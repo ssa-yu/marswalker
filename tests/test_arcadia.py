@@ -5,7 +5,7 @@ import math
 import numpy as np
 import pytest
 
-from pipeline.arcadia import APP, energy_grids, pick_blocks
+from pipeline.arcadia import APP, cost_grid_8m, energy_grids, pick_blocks
 
 
 def test_pick_blocks_rule():
@@ -16,14 +16,14 @@ def test_pick_blocks_rule():
     score[210:240, 210:240] = 0.6  # seen, far away
     seen = np.zeros_like(score, bool); seen[30:300, :] = True
     passable = np.ones_like(seen)
-    p = pick_blocks(score, passable, seen, extent=(0.0, 0.0, 600.0, 600.0))
+    p = pick_blocks(score, passable, seen, n=4, min_sep=150.0, res=2.0, extent=(0.0, 0.0, 600.0, 600.0))
     assert [round(q["mean_score"], 2) for q in p[:2]] == [0.8, 0.6]
     for a in p:
         for b in p:
             if a is not b:
                 assert math.dist(a["stop_xy"], b["stop_xy"]) >= 150 - 60 * math.sqrt(2)
     assert all(q["seen_frac"] >= 0.5 for q in p)
-    p0 = pick_blocks(score, passable, None, extent=(0.0, 0.0, 600.0, 600.0))
+    p0 = pick_blocks(score, passable, None, n=4, min_sep=150.0, res=2.0, extent=(0.0, 0.0, 600.0, 600.0))
     assert p0[0]["mean_score"] == pytest.approx(0.9)
 
 
@@ -36,3 +36,21 @@ def test_energy_grid_monotone():
     assert k[0, 3] > k[0, 0] and math.isinf(k[0, 4])
     assert m[0, 0] < m[0, 1] < m[0, 2]
     assert 3 < stand < 8
+
+
+def test_pick_blocks_v2_defaults_spacing():
+    rng = np.random.default_rng(0)
+    score = rng.random((300, 300)).astype(np.float32)
+    seen = np.ones_like(score, bool); passable = np.ones_like(seen)
+    p = pick_blocks(score, passable, seen, extent=(0.0, 0.0, 1200.0, 1200.0))
+    assert 1 <= len(p) <= 12
+    for a in p:
+        for b in p:
+            if a is not b:
+                assert math.dist(a["stop_xy"], b["stop_xy"]) >= 300 - 60 * math.sqrt(2)
+
+
+def test_cost_grid_8m():
+    k = np.array([[1.0, 3.0, np.inf, np.inf], [np.inf, 2.0, np.inf, 5.0]])
+    k8, m8 = cost_grid_8m(k, k)
+    assert k8[0, 0] == 2.0 and math.isinf(k8[0, 1])

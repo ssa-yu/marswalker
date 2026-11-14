@@ -169,8 +169,24 @@ def path_cost(cost, path, res):
     return s
 
 
+PLAN_WINDOW_CELLS = None   # None = whole grid (Jezero, unchanged). Arcadia v2 sets a margin (cells) around start/goal.
+
+
 def plan(cost, start, goal):
-    """Min-cost path start->goal on `cost` (cell cost = factor*res). Returns (path list, cost) or (None, inf)."""
+    """Min-cost path start->goal on `cost` (cell cost = factor*res). Returns (path list, cost) or (None, inf).
+    With PLAN_WINDOW_CELLS set, the search is limited to the start/goal bounding box plus that margin (speed only;
+    falls back to the whole grid when no path exists inside the window)."""
+    if PLAN_WINDOW_CELLS is not None:
+        m_ = PLAN_WINDOW_CELLS
+        r0 = max(0, min(start[0], goal[0]) - m_); r1 = min(cost.shape[0], max(start[0], goal[0]) + m_ + 1)
+        c0 = max(0, min(start[1], goal[1]) - m_); c1 = min(cost.shape[1], max(start[1], goal[1]) + m_ + 1)
+        if (r1 - r0) * (c1 - c0) < cost.size:
+            sub = np.ascontiguousarray(cost[r0:r1, c0:c1])
+            s_ = (start[0] - r0, start[1] - c0); g_ = (goal[0] - r0, goal[1] - c0)
+            m = MCP_Geometric(sub, fully_connected=True)
+            cc, _ = m.find_costs([s_], [g_])
+            if np.isfinite(cc[g_]):
+                return [(int(x[0]) + r0, int(x[1]) + c0) for x in m.traceback(g_)], float(cc[g_])
     m = MCP_Geometric(cost, fully_connected=True)
     cc, _ = m.find_costs([start], [goal])
     if not np.isfinite(cc[goal]):

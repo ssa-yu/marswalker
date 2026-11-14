@@ -32,7 +32,20 @@ with sync_playwright() as p:
     pg.evaluate("document.querySelector('#lyrMask').checked = true")
     shot("step1_loop3_mask", "setStep(1); S.loop = 3; document.querySelector('#loop').value = 3; apply()")
     shot("step3_route", "setStep(3); showCard('整條路線', S.d.route.total)")
+    # in-browser plan from the habitat vs the Python plan (same rule, 8 m vs 4 m grid)
+    cmp = pg.evaluate("""() => { const b = toXY(S.d.base); let i = xyToIdx(b[0], b[1]);
+        if (!isFinite(S.cost.K[i])) i = nearestPassable(b[0], b[1]);
+        const p = planFrom(i), t = S.d.route.total;
+        return { js: { ...p.total, visited: p.visited, ms: p.ms }, py: { ...t, visited: S.d.route.order } }; }""")
+    print("js vs python from base:", cmp)
+    shot("step3_moved_start", "setStep(3); setStart(toLL(-600, 2600)); "
+         "S.map.fitBounds([[Math.min(...S.plan.legs.flatMap(L => L.path).map(p => p[0])) - 0.004, Math.min(...S.plan.legs.flatMap(L => L.path).map(p => p[1])) - 0.004], "
+         "[Math.max(...S.plan.legs.flatMap(L => L.path).map(p => p[0])) + 0.004, Math.max(...S.plan.legs.flatMap(L => L.path).map(p => p[1])) + 0.004]], { duration: 0 })")
+    print("moved start plan ms:", pg.evaluate("window.__lastPlanMs"), pg.evaluate("({ n: S.plan.n_stops, v: S.plan.visited, t: S.plan.total })"))
+    far = pg.evaluate("""() => { const t = S.d.targets.after.filter((t) => !(S.plan.rt[t.id] <= S.d.planner.usable_kcal)); return t.length; }""")
+    print("dashed areas from the moved start:", far)
+    pg.evaluate("document.querySelector('#home').click()")
     shot("step1_zoomed_out", "setStep(1); S.map.jumpTo({ center: S.d.centre, zoom: 10.3 })")
     shot("step1_regional", "setStep(1); S.map.jumpTo({ center: S.d.centre, zoom: 7.6 })")
-    print("errors:", errors)
+    print("errors:", len(errors), errors[:5])
     br.close()
