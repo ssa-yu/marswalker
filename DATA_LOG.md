@@ -847,3 +847,10 @@ Role: **consistency with the Mars 2020 Science Team photogeologic map (Stack et 
 - 自走車重跑：同第二版規則，24 趟、每趟預算 20,000（×5）、感測 30 m、距離帶 near 300–1,000／mid 1,000–1,600／far ≥ 1,600 m，其餘照 v2。**248 s，總里程 93.0 km，看過 25.9%，最遠離基地 1.86 km**（基地到四邊 1.62–2.10 km）。
 - 選區照 v2 規則重算（前 12、≥ 300 m、≥ 50% 看過）。太空人從新基地：12 區都在 ±2 km 窗內（> 6 用最近可行貪婪）→ **5 站（T4→T2→T10→T7→T8），3.66 km，196.8 分，1,316 kcal，O₂ 263 L**。網頁 8 m 重算同 5 站同順序，kcal +6.0%。
 - 網頁：HiRISE 圖磚只剩正方形內（342 個，3.9 MB），正方形外直接是 Mars Trek THEMIS 底圖；整條斜條帶影像 `strip.webp` 拿掉。③ 的框：實線＝目前路線有到的區域，其餘都是虛線；點路線外的區域顯示「往返需 X kcal」。
+
+#### 2026-11-15 深夜：③ 3D 徒步（隊友 Shooyunn 的第一人稱頁）
+
+- 合併 `origin/shooyunn`（6 個 commit，無衝突）；補 i18n `dt.homeMap`（他在 data.html 加的按鈕，測試要求）。
+- `web/arcadia3d.html`＝他的 `web/scratch/3d first point view.html` 複本，只改：原點＝Arcadia 局部格原點、正射與分類圖改讀 Arcadia、DTM、localStorage key `marswalker-arcadia-route`、分類名稱對齊圖例；單獨開啟時改用 arcadia.json 的基地路線。
+- 真實資料：HiRISE 正射（正方形，1.5 m、2480 px，`walk3d_ortho.jpg`）、HiRISE DTM（USGS 1 m 平均到 4 m，`walk3d_dtm.tif`，局部公尺座標）、我們的 4 m 地形分類（`classes.png`）、③ 的路線與每段分類（路段中點的 4 m 分類）。程序生成（未改）：岩石、地表細部噪聲（DTM 上加 ±0.07 m）、天空與霧、心率／氧氣 HUD 的數字（他的簡化公式，不是我們的 Pandolf 結果）。
+- three.js r128、geotiff.js 2.1.3 走 CDN，離線載不到。

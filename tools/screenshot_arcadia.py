@@ -47,5 +47,20 @@ with sync_playwright() as p:
     pg.evaluate("document.querySelector('#home').click()")
     shot("step1_zoomed_out", "setStep(1); S.map.jumpTo({ center: S.d.centre, zoom: 10.3 })")
     shot("step1_regional", "setStep(1); S.map.jumpTo({ center: S.d.centre, zoom: 7.6 })")
+    # ③ 3D walk (teammate's page in the overlay iframe), habitat route, a few seconds into playback
+    pg.evaluate("setStep(3); document.querySelector('#walk3d').click()")
+    fr = None
+    for _ in range(100):
+        fr = next((f for f in pg.frames if f.url.split("?")[0].endswith("/arcadia3d.html")), None)
+        if fr:
+            break
+        pg.wait_for_timeout(100)
+    fr.wait_for_function("typeof ORTHO !== 'undefined' && ORTHO === true", timeout=60000)
+    print("3d: route from localStorage", fr.evaluate("!!savedWalk && LL.length"), "DEM", fr.evaluate("!!DEM"),
+          "km", fr.evaluate("(TM / 1000).toFixed(2)"))
+    fr.evaluate("simT = TS * 0.18")
+    pg.wait_for_timeout(2500)
+    pg.screenshot(path=str(out / "step3_walk3d.png")); print("saved step3_walk3d")
+    pg.evaluate("document.querySelector('#w3dClose').click()")
     print("errors:", len(errors), errors[:5])
     br.close()

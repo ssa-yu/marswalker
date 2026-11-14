@@ -86,6 +86,8 @@ function wire() {
   $('#loop').oninput = () => { S.loop = +$('#loop').value; apply(); };
   ['#lyrImg', '#lyrCls', '#lyrHeat', '#lyrMask'].forEach((s) => $(s).onchange = apply);
   $('#home').onclick = () => { S.start = null; showPlan(null); $('#card').hidden = true; apply(); };
+  $('#walk3d').onclick = open3d;
+  $('#w3dClose').onclick = () => { $('#w3d').hidden = true; $('#w3dFrame').src = 'about:blank'; };
 }
 
 function setStep(n) {
@@ -122,7 +124,7 @@ function vis(id, on) { S.map.setLayoutProperty(id, 'visibility', on ? 'visible' 
 function apply() {
   const d = S.d, m = S.map, n = S.step;
   document.querySelectorAll('.steps .btn').forEach((b) => b.classList.toggle('active', +b.dataset.step === n));
-  $('#ctl1').hidden = n !== 1; $('#ctl3').hidden = n !== 3 || !S.start;
+  $('#ctl1').hidden = n !== 1; $('#ctl3').hidden = n !== 3; $('#home').hidden = !S.start;
   const heat = $('#lyrHeat').checked;
   vis('ortho', $('#lyrImg').checked);
   vis('classes', $('#lyrCls').checked);
@@ -381,6 +383,44 @@ function setStart(ll) {
   showPlan(p);
   apply();
   showCard('整條路線', S.plan.total);
+}
+
+// ---------------------------------------------------------------------------------------------- ③ 3D walk
+// Hands the current route (habitat or moved start) to arcadia3d.html (teammate Shooyunn's first-person walk page)
+// in his localStorage format: coords [[lon, lat]...], levels per segment (class at the segment midpoint), waypoints.
+const LEVEL = ['low', 'medium', 'high', 'blocked'];
+async function classGrid() {
+  if (S.cls) return S.cls;
+  const im = new Image(); im.src = D + S.d.files.classes; await im.decode();
+  const c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
+  const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(im, 0, 0);
+  const px = x.getImageData(0, 0, c.width, c.height).data, rgb = S.d.classes.map((k) => [1, 3, 5].map((j) => parseInt(k.color.slice(j, j + 2), 16)));
+  const g = new Uint8Array(c.width * c.height);
+  for (let i = 0; i < g.length; i++) {
+    let b = 0, bd = Infinity;
+    rgb.forEach((v, k) => { const dd = (v[0] - px[4 * i]) ** 2 + (v[1] - px[4 * i + 1]) ** 2 + (v[2] - px[4 * i + 2]) ** 2; if (dd < bd) { bd = dd; b = k; } });
+    g[i] = b;
+  }
+  S.cls = { g, W: c.width, H: c.height };
+  return S.cls;
+}
+function levelAt(ll) {
+  const a = S.d.aoi_local_m, G = S.cls, [x, y] = toXY(ll);
+  const r = Math.min(G.H - 1, Math.max(0, Math.floor((a[3] - y) / (a[3] - a[1]) * G.H))), c = Math.min(G.W - 1, Math.max(0, Math.floor((x - a[0]) / (a[2] - a[0]) * G.W)));
+  return LEVEL[G.g[r * G.W + c]];
+}
+async function open3d() {
+  await classGrid();
+  const coords = [];
+  S.plan.legs.forEach((L) => L.path.forEach((p) => { const q = coords[coords.length - 1]; if (!q || q[0] !== p[0] || q[1] !== p[1]) coords.push(p); }));
+  const levels = coords.slice(0, -1).map((p, i) => levelAt([(p[0] + coords[i + 1][0]) / 2, (p[1] + coords[i + 1][1]) / 2]));
+  const waypoints = S.plan.legs.slice(0, -1).map((L, i) => {
+    const t = S.d.targets.after.find((x) => x.id === L.to);
+    return { n: `第 ${i + 1} 站 ${t.id}`, coords: t.stop, cls: levelAt(t.stop) };
+  });
+  localStorage.setItem('marswalker-arcadia-route', JSON.stringify({ coords, levels, waypoints, created: Date.now() }));
+  $('#w3d').hidden = false;
+  $('#w3dFrame').src = `arcadia3d.html?route=${Date.now()}`;
 }
 
 init();

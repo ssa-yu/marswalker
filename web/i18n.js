@@ -296,6 +296,7 @@ const I18N_RAW = {
   'dt.pPrior': [`低解析（CTX）`, `CTX (coarse)`],
   'dt.pSwipe': [`左右對照`, `Swipe`],
   'dt.swipeLbl': [`HiRISE ◀ ▶ CTX`, `HiRISE ◀ ▶ CTX`],
+  'dt.homeMap': [`回到 Jezero 研究區`, `Back to the Jezero study area`],
   'dt.checksSum': [`定位檢查`, `Positioning checks`],
   'dt.attrib': [`火星資料：NASA/JPL-Caltech/UArizona (HiRISE)、NASA/JPL-Caltech/MSSS (CTX)、USGS Astrogeology、NASA JPL Mars Trek。顯示用 MapLibre Web Mercator；距離以火星球體計算。`, `Mars data: NASA/JPL-Caltech/UArizona (HiRISE), NASA/JPL-Caltech/MSSS (CTX), USGS Astrogeology, NASA JPL Mars Trek. Display uses MapLibre Web Mercator; distances use the Mars sphere.`],
   'dt.review': [`定位與地形判讀：待審`, `Positioning & terrain reading: heuristic, not yet reviewed`],

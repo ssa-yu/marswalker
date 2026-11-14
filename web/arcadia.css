@@ -30,3 +30,6 @@ body.arc #map { position: absolute; inset: 0 0 22px 0; }
 .mk.stop { background: #38e1ff; color: #04161b; border-radius: 50%; width: 22px; height: 22px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; }
 .mk.start { background: #38e1ff; color: #04161b; border-color: #fff; }
 #ctl3 .btn { font-size: 11.5px; padding: 2px 8px; }
+#w3d { position: fixed; inset: 0; z-index: 50; background: #000; }
+#w3d iframe { width: 100%; height: 100%; border: 0; display: block; }
+#w3dClose { position: absolute; top: 12px; right: 12px; z-index: 51; }

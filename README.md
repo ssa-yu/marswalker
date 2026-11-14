@@ -105,7 +105,7 @@ The full list with links, roles and labels (measured / derived / assumed / simul
 
 ## SI (AI) use and branding
 
-- Every source file, JSON output and submission figure carries an SI notice; who decided what and what the AI agents produced is in `docs/AI_USE.md`. Third-party code (`web/lib/`, MapLibre GL JS, BSD-3) is not AI-written and is unmodified.
+- Every source file, JSON output and submission figure carries an SI notice; who decided what and what the AI agents produced is in `docs/AI_USE.md`. Third-party code (`web/lib/`, MapLibre GL JS, BSD-3) is not AI-written and is unmodified. The 3D first-person walk pages (`web/scratch/3d first point view.html` by teammate Shooyunn, and its Arcadia copy `web/arcadia3d.html`) load three.js r128 (MIT, cdnjs) and geotiff.js 2.1.3 (MIT, jsDelivr) from CDNs, so they need a network connection.
 - No NASA branding is used (no logos, flags or mission insignia); text credits such as "NASA/JPL-Caltech/UArizona" are data attributions.
 
 ## Layout
