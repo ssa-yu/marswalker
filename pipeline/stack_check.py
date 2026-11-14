@@ -471,11 +471,11 @@ def stage_figures():
     nh = NC.load_noahh_025()
     words = {"agree": "一致", "partial": "部分一致", "severe": "嚴重不一致", "insufficient": "不足以判定"}
     f2 = lambda v: "—" if v is None or (isinstance(v, float) and math.isnan(v)) else f"{v:.2f}"   # noqa: E731
-    line_n = (f"NOAH-H（AI 模型）：{words[RN['overall']]}。M1 漏判 {RN['M1']:.2f}（n={RN['M1_n']}），M2 誤判 {RN['M2']:.2f}（n={RN['M2_n']}），"
+    line_n = (f"NOAH-H（AI 模型）：{words[RN['overall']]}。外部說是沙的方塊，我們也判沙：{100 * RN['M1']:.0f}%（n={RN['M1_n']}），M2 誤判 {RN['M2']:.2f}（n={RN['M2_n']}），"
               f"它只看得到我們沙地的 X={100 * RN['X_coarse_share']:.0f}%（粗沙紋層）。")
     vd = R["verdicts"]["directions"]
     dname = {"M1s": "M1s", "M2s_coarse": "M2s 粗層", "M2s_fine": "M2s 細層", "M2s_merged": "M2s 兩層合併"}
-    line_s = (f"Stack 2020（63 位專家手畫）：{words[R['stack_overall']]}。M1s 漏判 {f2(R['M1s'])}（n={R['M1s_n']}）；"
+    line_s = (f"Stack 2020（63 位專家手畫）：{words[R['stack_overall']]}。外部說是沙的方塊，我們也判沙：{100 * R['M1s']:.0f}%（n={R['M1s_n']}）；"
               f"M2s 誤判 粗層 {f2(R['M2s_coarse'])}（n={R['M2s_coarse_n']}）、細層 {f2(R['M2s_fine'])}（n={R['M2s_fine_n']}）"
               f"——判定用：{'，'.join(f'{dname[k]} {words[v]}' for k, v in vd.items())}；細層只有 Stack 一個參考。")
     cap = ("NOAH-H＝歐洲太空總署的 AI 模型（在別處訓練）；Stack 2020＝毅力號科學團隊 63 位專家手畫的地圖；"
