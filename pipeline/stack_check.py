@@ -474,14 +474,15 @@ def stage_figures():
     line_n = (f"NOAH-H（AI 模型）：{words[RN['overall']]}。M1 漏判 {RN['M1']:.2f}（n={RN['M1_n']}），M2 誤判 {RN['M2']:.2f}（n={RN['M2_n']}），"
               f"它只看得到我們沙地的 X={100 * RN['X_coarse_share']:.0f}%（粗沙紋層）。")
     vd = R["verdicts"]["directions"]
+    dname = {"M1s": "M1s", "M2s_coarse": "M2s 粗層", "M2s_fine": "M2s 細層", "M2s_merged": "M2s 兩層合併"}
     line_s = (f"Stack 2020（63 位專家手畫）：{words[R['stack_overall']]}。M1s 漏判 {f2(R['M1s'])}（n={R['M1s_n']}）；"
               f"M2s 誤判 粗層 {f2(R['M2s_coarse'])}（n={R['M2s_coarse_n']}）、細層 {f2(R['M2s_fine'])}（n={R['M2s_fine_n']}）"
-              f"——判定用：{', '.join(f'{k} {words[v]}' for k, v in vd.items())}；細層只有 Stack 一個參考。")
+              f"——判定用：{'，'.join(f'{dname[k]} {words[v]}' for k, v in vd.items())}；細層只有 Stack 一個參考。")
     cap = ("NOAH-H＝歐洲太空總署的 AI 模型（在別處訓練）；Stack 2020＝毅力號科學團隊 63 位專家手畫的地圖；"
            "兩者和我們一樣只看軌道照片，不是地面答案。　NOAH-H: Wright et al. 2022; Stack et al. 2020; CC BY 4.0")
     o = rasterio.open(APP / "data_work/jezero/ortho_025.tif").read(1)[::8, ::8]
     fig = plt.figure(figsize=(22, 17))
-    gs = fig.add_gridspec(2, 3, height_ratios=[1, 1])
+    gs = fig.add_gridspec(2, 3, height_ratios=[1, 1], hspace=0.12)
     ax0, ax1, ax2 = fig.add_subplot(gs[0, 0]), fig.add_subplot(gs[0, 1]), fig.add_subplot(gs[0, 2])
     ext = (0, o.shape[1], o.shape[0], 0)
     # ours: coarse / fine / fill
@@ -520,11 +521,11 @@ def stage_figures():
     labels = ["三方都說沙", "三方都說不是", "只有我們說沙（兩個參考都說不是）", "兩個參考都說沙、我們說不是", "兩個參考互相矛盾", "其他（有一方不明）"]
     ax3.legend(handles=[Patch(color=pal6[i] / 255, label=f"{labels[i]}：{tb[THREE_WAY[i]]} 塊") for i in range(6)],
                loc="center left", bbox_to_anchor=(1.0, 0.5), fontsize=11)
-    ax3.set_title("60 m 方塊三方對照（我們／NOAH-H／Stack；兩個參考都有效的方塊）", fontsize=13)
+    ax3.set_title("60 m 方塊三方對照（我們／NOAH-H／Stack；兩個參考都有效的方塊）", fontsize=13, pad=10)
     fig.suptitle(line_n + "\n" + line_s, fontsize=13)
     fig.text(0.5, 0.01, cap, ha="center", fontsize=11)
     QA.mkdir(parents=True, exist_ok=True)
-    fig.tight_layout(rect=(0, 0.03, 1, 0.94)); fig.savefig(QA / "ST1_three_way.png", dpi=75); plt.close(fig)
+    fig.subplots_adjust(left=0.01, right=0.99, top=0.93, bottom=0.04, wspace=0.03); fig.savefig(QA / "ST1_three_way.png", dpi=75); plt.close(fig)
     print("ST9 figure written")
 
 
