@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>火星徒步 3D 第一人稱導航</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/geotiff@2.1.3/dist-browser/geotiff.js"></script>
+<style>
+:root{color-scheme:dark;--hud:#c8ffe2;--warn:#f4b740;--danger:#ff5a4e;--num:"Barlow Semi Condensed","Noto Sans TC",system-ui,sans-serif;--ui:"Noto Sans TC",system-ui,sans-serif;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;height:100%;background:#2a1d17;overflow:hidden;font-family:var(--ui);color:#e4edf3}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#hud{position:fixed;inset:0;pointer-events:none;color:var(--hud);font-family:var(--num);text-shadow:0 0 3px #000,0 0 8px rgba(0,0,0,.85)}
+.compass{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);width:min(520px,88%);height:42px;overflow:hidden;border-bottom:1px solid rgba(200,255,226,.6);
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 18%,#000 82%,transparent);mask-image:linear-gradient(90deg,transparent,#000 18%,#000 82%,transparent)}
+.tape{position:absolute;top:0;left:50%;height:100%;will-change:transform}
+.tick{position:absolute;bottom:0;width:1px;height:6px;background:currentColor}
+.tick.m{height:12px}
+.tick span{position:absolute;bottom:15px;left:50%;transform:translateX(-50%);font-size:13px;font-weight:600}
+.tick.k span{font-size:16px;color:#fff}
+#wpm{position:absolute;bottom:0;margin-left:-6px;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:10px solid #f08bd0}
+.heading{position:absolute;top:calc(60px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);font-size:20px;font-weight:600;padding:0 8px;border:1px solid rgba(200,255,226,.6);border-radius:4px}
+.nav{position:absolute;top:calc(100px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);display:grid;grid-template-columns:48px auto;gap:2px 12px;align-items:center;font-family:var(--ui)}
+.nav svg{grid-row:span 2;width:48px;height:48px;transition:transform .4s ease}
+.turn{font:600 20px var(--num);color:#fff;white-space:nowrap}
+.wp{font-size:13px;white-space:nowrap}.wp b{font:600 15px var(--num)}
+.warn{position:absolute;top:calc(166px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);max-width:min(560px,90%);padding:6px 14px;border:1px solid var(--danger);border-radius:6px;background:rgba(90,20,16,.6);color:#ffd9d5;font:500 14px var(--ui);text-align:center;display:none}
+.warn.caution{border-color:var(--warn);background:rgba(90,60,10,.6);color:#ffe9bf}
+.warn.show{display:block}
+.side{position:absolute;bottom:calc(132px + env(safe-area-inset-bottom,0px));display:grid;gap:6px}
+.side.l{left:16px}.side.r{right:16px;text-align:right}
+.side div{font-size:12px;font-family:var(--ui)}
+.side b{display:block;font:600 22px var(--num);font-variant-numeric:tabular-nums;color:#fff;line-height:1.1}
+.side b.w{color:var(--warn)}.side b.d{color:var(--danger)}
+#labels .lbl{position:fixed;left:0;top:0;font:500 12px var(--ui);white-space:nowrap;padding:2px 7px;border-radius:4px;background:rgba(18,30,44,.7);pointer-events:none}
+#bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom,0px));width:min(600px,calc(100% - 20px));box-sizing:border-box;padding:8px 12px;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;background:rgba(18,30,44,.82);backdrop-filter:blur(6px);border:1px solid rgba(150,195,225,.2);border-radius:12px;font-size:12px}
+#bar button,#bar select{background:transparent;color:#e4edf3;border:1px solid rgba(150,195,225,.35);border-radius:8px;padding:6px 9px;font:500 12px var(--ui);cursor:pointer}
+#bar select{background:#16283a}
+#play{width:38px;height:38px;border-radius:50%!important;padding:0!important;color:#8cc8e8!important;border-color:#8cc8e8!important;font-size:14px!important}
+#bar button[aria-pressed=true]{background:#8cc8e8;color:#16283a;border-color:#8cc8e8}
+.r2{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
+#scrub{width:100%;accent-color:#8cc8e8;min-width:0}
+.groundLegend{position:fixed;left:12px;top:calc(12px + env(safe-area-inset-top,0px));z-index:2;padding:7px 10px;border:1px solid rgba(255,255,255,.18);border-radius:8px;background:rgba(18,24,28,.78);font-size:11px;line-height:1.7;pointer-events:none}
+.groundLegend span{white-space:nowrap;margin-right:9px}.groundLegend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid #8cc8e8;outline-offset:2px}
+@media(max-width:520px){#bar{grid-template-columns:auto 1fr auto}.side b{font-size:18px}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="groundLegend" aria-label="與規劃器相同的地形分類圖例"><b>地形分類</b>　<span><i style="background:#62d6a4"></i>堅實</span><span><i style="background:#f4b740"></i>崎嶇</span><span><i style="background:#ff5a4e"></i>沙地</span><span><i style="background:#5a2a6e"></i>不可通行 ≥ 25°</span></div>
+<div id="labels"></div>
+<div id="hud" aria-live="polite">
+  <div class="compass" id="cmp"><div class="tape" id="tape"></div></div>
+  <div class="heading" id="hd">000°</div>
+  <div class="nav">
+    <svg id="arrow" viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="26" fill="none" stroke="currentColor" stroke-opacity=".4"/><path d="M28 8L40 30H32V46H24V30H16Z" fill="currentColor"/></svg>
+    <div class="turn" id="turn">--</div><div class="wp" id="wp">--</div>
+  </div>
+  <div class="warn" id="warn"></div>
+  <div class="side l"><div>心率<b id="hr">--</b></div><div>氧氣<b id="o2">--</b></div><div>返回餘裕<b id="mg">--</b></div></div>
+  <div class="side r"><div>當地時間<b id="tm">--</b></div><div>地形<b id="tr">--</b></div><div>剩餘距離<b id="left">--</b></div></div>
+</div>
+<div id="bar">
+  <button id="play" aria-label="暫停">❚❚</button>
+  <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="路線進度">
+  <select id="spd" aria-label="播放速度"><option value="1">1×</option><option value="10" selected>10×</option><option value="60">60×</option><option value="300">300×</option></select>
+  <div class="r2"><button id="col" aria-pressed="false">依地形變色</button><button id="gy" aria-pressed="false">陀螺儀</button><button id="rc">歸位視角</button></div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id),R=3396190,D2R=Math.PI/180;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),sstep=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t)};
+const norm180=a=>(((a%360)+540)%360)-180;
+const fmtM=m=>m>=1000?(m/1000).toFixed(2)+' km':Math.round(m)+' m';
+const fmtMin=m=>m>=60?Math.floor(m/60)+' 小時 '+Math.round(m%60)+' 分':Math.round(m)+' 分';
+
+/* ---------- 路線（與地圖版相同的示範資料，轉成以起點為原點的公尺座標） ---------- */
+// Jezero 偵察模擬第 1 圈路線（由資料包 recon.json 簡化取樣）。
+const savedWalk=(()=>{try{return JSON.parse(localStorage.getItem('marswalker-scratch-route')||'null')}catch{return null}})();
+const LL=savedWalk?.coords?.length>1?savedWalk.coords:[[77.4509035,18.4446103],[77.451224,18.447849],[77.451935,18.448997],[77.452362,18.449435],[77.453678,18.450684],[77.454033,18.450819],[77.452006,18.450616],[77.451828,18.450785],[77.451544,18.451089],[77.4509035,18.4516959],[77.4505123,18.4512236],[77.4510458,18.4512236],[77.4511169,18.450043],[77.452433,18.450819],[77.452611,18.449469],[77.4509035,18.4446103]];
+const LVL=savedWalk?.levels?.length===LL.length-1?savedWalk.levels:['low','medium','low','high','medium','high','low','medium','low','low','low','low','high','medium','high'];
+const FAC={low:1,medium:.6,high:.35,blocked:.12},EFF={low:1,medium:1.5,high:2.1,blocked:3};
+const NAME={low:'堅實地面',medium:'崎嶇地面',high:'沙地',blocked:'陡坡（≥ 25°）'},CSS={low:'#62d6a4',medium:'#f4b740',high:'#ff5a4e',blocked:'#5a2a6e'};
+const COL={low:[.25,1,.6],medium:[1,.8,.25],high:[1,.35,.3],blocked:[.35,.16,.43]};
+const BASE_LON=77.45088572,BASE_LAT=18.44462715;
+const P=LL.map(([lo,la])=>({x:(lo-BASE_LON)*D2R*R*Math.cos(BASE_LAT*D2R),z:-(la-BASE_LAT)*D2R*R}));
+const edges=[];let aT=0,aD=0;
+for(let i=0;i<P.length-1;i++){
+  const a=P[i],b=P[i+1],d=Math.hypot(b.x-a.x,b.z-a.z),lvl=LVL[i],sec=d/1000/(2.5*FAC[lvl])*3600;
+  edges.push({a,b,d,lvl,sec,d0:aD,t0:aT,brg:(Math.atan2(b.x-a.x,-(b.z-a.z))/D2R+360)%360});aT+=sec;aD+=d;
+}
+const TS=aT,TM=aD;
+const edgeAt=d=>edges.find(e=>d<=e.d0+e.d)||edges[edges.length-1];
+function posAt(d){d=clamp(d,0,TM);const e=edgeAt(d),f=e.d?(d-e.d0)/e.d:0;return{x:e.a.x+(e.b.x-e.a.x)*f,z:e.a.z+(e.b.z-e.a.z)*f,e}}
+function stateAt(t){t=clamp(t,0,TS);const e=edges.find(e=>t<=e.t0+e.sec)||edges[edges.length-1],f=e.sec?(t-e.t0)/e.sec:0,d=e.d0+e.d*f;return{...posAt(d),d,e,idx:edges.indexOf(e)}}
+const timeAt=d=>{const e=edgeAt(d);return e.t0+e.sec*(e.d?(d-e.d0)/e.d:0)};
+
+/* ---------- 程序式火星地形 ---------- */
+const hash=(i,j)=>{const s=Math.sin(i*127.1+j*311.7)*43758.5453;return s-Math.floor(s)};
+function vnoise(x,z){const i=Math.floor(x),j=Math.floor(z),fx=x-i,fz=z-j,u=fx*fx*(3-2*fx),v=fz*fz*(3-2*fz);
+  return hash(i,j)*(1-u)*(1-v)+hash(i+1,j)*u*(1-v)+hash(i,j+1)*(1-u)*v+hash(i+1,j+1)*u*v}
+const SE=edges[1];
+function segDist(x,z){const ax=SE.a.x,az=SE.a.z,dx=SE.b.x-ax,dz=SE.b.z-az,t=clamp(((x-ax)*dx+(z-az)*dz)/(dx*dx+dz*dz),0,1);return Math.hypot(x-ax-dx*t,z-az-dz*t)}
+const sandW=(x,z)=>1-sstep(15,70,segDist(x,z));
+let DEM=null,ORTHO=false;
+function demSample(x,z){
+  const u=clamp((x-DEM.minX)/DEM.rx,0,DEM.nx-1.001),v=clamp((DEM.maxY+z)/DEM.ry,0,DEM.ny-1.001),i=Math.floor(u),j=Math.floor(v),fu=u-i,fv=v-j,k=j*DEM.nx+i,d=DEM.data;
+  return (d[k]*(1-fu)+d[k+1]*fu)*(1-fv)+(d[k+DEM.nx]*(1-fu)+d[k+DEM.nx+1]*fu)*fv;
+}
+function height(x,z){
+  if(DEM)return demSample(x,z)-DEM.h0+(vnoise(x/3,z/3)-.5)*.14;
+  return (vnoise(x/140,z/140)-.5)*14+(vnoise(x/45+7,z/45)-.5)*3.2+(vnoise(x/9,z/9+3)-.5)*.5
+    +sandW(x,z)*.26*Math.sin((x*.87+z*.5+vnoise(x/30,z/30)*9)*2.2);
+}
+// 以路段材質建立清楚可辨的地表區：赭色風化層、灰黑岩盤、橙紅軟沙。
+// 輕微混入不同尺度的噪聲，避免看起來像平塗色塊。
+function surfaceColor(x,z){
+  let best=1e9,level='low';
+  for(const e of edges){const dx=e.b.x-e.a.x,dz=e.b.z-e.a.z,t=clamp(((x-e.a.x)*dx+(z-e.a.z)*dz)/(e.d*e.d),0,1),d=Math.hypot(x-e.a.x-dx*t,z-e.a.z-dz*t);if(d<best){best=d;level=e.lvl}}
+  const weather=[.66,.36,.19],rock=[.29,.32,.31],sand=[.92,.39,.14],base=level==='high'?sand:level==='medium'?rock:weather;
+  const grain=(vnoise(x/2.1,z/2.1)-.5)*.12+(vnoise(x/11+5,z/11)-.5)*.16;
+  const band=level==='low'?Math.pow(Math.max(0,Math.sin((x*.12+z*.07+vnoise(x/18,z/18)*2)*Math.PI)),18)*.13:0;
+  const ripple=level==='high'?Math.pow(Math.max(0,Math.sin((x*.9+z*.48+vnoise(x/12,z/12)*2)*5)),10)*.18:0;
+  const fade=1-sstep(48,92,best),c=base.map((v,i)=>v+(i===0?band+ripple:band*.48+ripple*.22)+grain);
+  return [0,1,2].map(i=>.20+(c[i]-.20)*fade);
+}
+
+/* ---------- Three.js 場景 ---------- */
+const renderer=new THREE.WebGLRenderer({canvas:$('c'),antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0xd3a47c,.008);
+const cam=new THREE.PerspectiveCamera(70,1,.1,3000);cam.rotation.order='YXZ';
+function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);cam.aspect=w/h;cam.fov=w/h<1?82:64;cam.updateProjectionMatrix()}
+addEventListener('resize',resize);resize();
+scene.add(new THREE.HemisphereLight(0xffe3c4,0x6b4330,.75));
+const sun=new THREE.DirectionalLight(0xfff0dc,1.05);sun.position.set(-60,45,-30);scene.add(sun);
+
+const sky=new THREE.Mesh(new THREE.SphereGeometry(1500,24,12),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,fog:false,
+  vertexShader:'varying vec3 vP;void main(){vP=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+  fragmentShader:'varying vec3 vP;void main(){float h=max(vP.y,0.0);vec3 hor=vec3(.827,.643,.486),top=vec3(.49,.36,.31);vec3 c=mix(hor,top,pow(h,.55));float s=max(dot(vP,normalize(vec3(-.6,.45,-.3))),0.0);c+=vec3(1.,.85,.6)*(pow(s,40.)*.5+pow(s,6.)*.12);gl_FragColor=vec4(c,1.);}'}));
+sky.renderOrder=-1;sky.frustumCulled=false;scene.add(sky);
+
+const SIZE=400,N=160,CS=SIZE/N;
+const tg=new THREE.PlaneGeometry(SIZE,SIZE,N,N);tg.rotateX(-Math.PI/2);
+const tp=tg.attributes.position,V=tp.count,bx=new Float32Array(V),bz=new Float32Array(V);
+for(let k=0;k<V;k++){bx[k]=tp.getX(k);bz[k]=tp.getZ(k)}
+const tc=new THREE.BufferAttribute(new Float32Array(V*3),3);tg.setAttribute('color',tc);
+const terrain=new THREE.Mesh(tg,new THREE.MeshLambertMaterial({vertexColors:true}));terrain.frustumCulled=false;scene.add(terrain);
+let tx=1e9,tz=1e9;
+function updateTerrain(cx,cz){
+  const sx=Math.round(cx/CS)*CS,sz=Math.round(cz/CS)*CS;if(sx===tx&&sz===tz)return;
+  tx=sx;tz=sz;terrain.position.set(sx,0,sz);
+  for(let k=0;k<V;k++){
+    const x=bx[k]+sx,z=bz[k]+sz,sw=sandW(x,z),m=vnoise(x/60+20,z/60),n=vnoise(x/3,z/3)*.12;
+    tp.setY(k,height(x,z));
+    if(ORTHO){tc.setXYZ(k,1,1,1);tg.attributes.uv.setXY(k,(x+1700)/2400,(1000-z)/2400)}
+    else {const c=surfaceColor(x,z);tc.setXYZ(k,c[0]-n*.35,c[1]-n*.25,c[2]-n*.18)}
+  }
+  tp.needsUpdate=tc.needsUpdate=true;tg.attributes.uv.needsUpdate=true;tg.computeVertexNormals();
+}
+function meshY(x,z){
+  const u=(x-tx+SIZE/2)/CS,w=(z-tz+SIZE/2)/CS,i=clamp(Math.floor(u),0,N-1),j=clamp(Math.floor(w),0,N-1),fu=clamp(u-i,0,1),fw=clamp(w-j,0,1),k=j*(N+1)+i,y=n=>tp.getY(n);
+  return (y(k)*(1-fu)+y(k+1)*fu)*(1-fw)+(y(k+N+1)*(1-fu)+y(k+N+2)*fu)*fw;
+}
+
+/* 岩石：沿路線兩側散布，崎嶇路段較密 */
+const RN=1600,rocks=new THREE.InstancedMesh(new THREE.DodecahedronGeometry(1,0),new THREE.MeshLambertMaterial({flatShading:true}),RN);
+let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+const dm=new THREE.Object3D(),RW={low:.5,medium:1,high:.55};
+function placeRocks(){seed=7;for(let n=0;n<RN;){
+  const d=rnd()*TM,p=posAt(d);if(rnd()>RW[p.e.lvl])continue;
+  const side=rnd()<.5?-1:1,off=3+Math.pow(rnd(),2)*90,ang=p.e.brg*D2R,x=p.x+side*off*Math.cos(ang),z=p.z+side*off*Math.sin(ang),s=.12+Math.pow(rnd(),3)*1.7;
+  dm.position.set(x,height(x,z)+s*.15,z);dm.rotation.set(rnd()*3,rnd()*3,rnd()*3);dm.scale.set(s*(1+rnd()*.5),s*.6,s*(1+rnd()*.5));dm.updateMatrix();
+  rocks.setMatrixAt(n,dm.matrix);const c=.75+rnd()*.5;rocks.setColorAt(n,new THREE.Color(.5*c,.3*c,.2*c));n++;
+}
+rocks.instanceMatrix.needsUpdate=true;if(rocks.instanceColor)rocks.instanceColor.needsUpdate=true}
+placeRocks();scene.add(rocks);
+
+/* 航點光柱與避難所圓頂 */
+const POIS=[{n:'避難所 Alpha',a:0,c:0x8cc8e8},{n:'採樣點：火成岩',a:edges[2].d0,c:0xf08bd0},{n:'終點：著陸站',a:TM,c:0xffffff}].map(p=>{const q=posAt(p.a);return{...p,x:q.x,z:q.z,y:height(q.x,q.z)}});
+POIS.forEach(p=>{
+  const m=new THREE.Mesh(new THREE.CylinderGeometry(.4,.4,70,12,1,true),new THREE.MeshBasicMaterial({color:p.c,transparent:true,opacity:.5,blending:THREE.AdditiveBlending,depthWrite:false,fog:false,side:THREE.DoubleSide}));
+  m.position.set(p.x,p.y+35,p.z);scene.add(m);p.m=m;
+  const el=document.createElement('div');el.className='lbl';el.style.color='#'+p.c.toString(16).padStart(6,'0');$('labels').appendChild(el);p.el=el;p.v=new THREE.Vector3();
+});
+const dome=new THREE.Mesh(new THREE.SphereGeometry(4,20,10,0,Math.PI*2,0,Math.PI/2),new THREE.MeshLambertMaterial({color:0xe8e4de}));
+dome.position.set(POIS[0].x+8,height(POIS[0].x+8,POIS[0].z)-.3,POIS[0].z);scene.add(dome);
+
+/* ---------- 綠色導引帶：貼地、漸隱、箭頭往前流動 ---------- */
+const SN=44,LOOK=66,rg=new THREE.BufferGeometry(),rp=new Float32Array(SN*6),rs=new Float32Array(SN*2),ru=new Float32Array(SN*2),rc=new Float32Array(SN*6),ri=[];
+for(let i=0;i<SN;i++){rs[i*2]=rs[i*2+1]=2+i*(LOOK-2)/(SN-1);ru[i*2]=-1;ru[i*2+1]=1;if(i<SN-1){const a=i*2;ri.push(a,a+1,a+2,a+1,a+3,a+2)}}
+rg.setAttribute('position',new THREE.BufferAttribute(rp,3));rg.setAttribute('aS',new THREE.BufferAttribute(rs,1));
+rg.setAttribute('aU',new THREE.BufferAttribute(ru,1));rg.setAttribute('aC',new THREE.BufferAttribute(rc,3));rg.setIndex(ri);
+const rmat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2,
+  uniforms:{uTime:{value:0},uLook:{value:LOOK}},
+  vertexShader:'attribute float aS;attribute float aU;attribute vec3 aC;varying float vS;varying float vU;varying vec3 vC;void main(){vS=aS;vU=aU;vC=aC;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+  fragmentShader:'uniform float uTime;uniform float uLook;varying float vS;varying float vU;varying vec3 vC;void main(){float f=fract((vS-uTime*3.0)/4.0+abs(vU)*0.5);float chev=smoothstep(0.0,0.06,f)*(1.0-smoothstep(0.32,0.42,f));float edge=smoothstep(0.78,1.0,abs(vU));float fade=(1.0-smoothstep(0.35,1.0,vS/uLook))*smoothstep(2.0,6.0,vS);float a=(0.22+0.65*chev+0.55*edge)*fade;gl_FragColor=vec4(vC*(0.85+0.5*chev),a);}'});
+const ribbon=new THREE.Mesh(rg,rmat);ribbon.frustumCulled=false;ribbon.renderOrder=3;scene.add(ribbon);
+let byLevel=false;
+function updateRibbon(d){
+  for(let i=0;i<SN;i++){
+    const s=rs[i*2],dd=Math.min(TM,d+s),p=posAt(dd),p1=posAt(Math.max(0,dd-1.5)),p2=posAt(Math.min(TM,dd+1.5));
+    let ux=p2.x-p1.x,uz=p2.z-p1.z;const l=Math.hypot(ux,uz)||1;ux/=l;uz/=l;
+    const nx=-uz*.65,nz=ux*.65,col=byLevel?COL[p.e.lvl]:COL.low;
+    for(let k=0;k<2;k++){
+      const sg=k?1:-1,x=p.x+nx*sg,z=p.z+nz*sg,o=(i*2+k)*3;
+      rp[o]=x;rp[o+1]=Math.max(height(x,z),meshY(x,z))+.09;rp[o+2]=z;rc[o]=col[0];rc[o+1]=col[1];rc[o+2]=col[2];
+    }
+  }
+  rg.attributes.position.needsUpdate=true;rg.attributes.aC.needsUpdate=true;
+}
+
+/* ---------- 視角拖曳（放開後回正） ---------- */
+let lookY=0,lookP=0,drag=false,px=0,py=0,gyro=false,qDev=null,qRef=null,gSeen=false;
+const qBase=new THREE.Quaternion(),qTmp=new THREE.Quaternion(),eul=new THREE.Euler(),Q1=new THREE.Quaternion(-Math.sqrt(.5),0,0,Math.sqrt(.5)),ZA=new THREE.Vector3(0,0,1);
+/* 陀螺儀：手機姿態 → 相對於「歸位」瞬間的旋轉，再疊加在行進方向上 */
+function onOri(e){
+  if(e.alpha===null&&e.beta===null)return;
+  gSeen=true;
+  const o=(screen.orientation?screen.orientation.angle:(window.orientation||0))*D2R;
+  eul.set(e.beta*D2R,e.alpha*D2R,-e.gamma*D2R,'YXZ');
+  qDev=(qDev||new THREE.Quaternion()).setFromEuler(eul).multiply(Q1).multiply(qTmp.setFromAxisAngle(ZA,-o));
+  if(!qRef)qRef=qDev.clone();
+}
+async function setGyro(on){
+  const b=$('gy');
+  if(!on){gyro=false;removeEventListener('deviceorientation',onOri);b.setAttribute('aria-pressed',false);b.textContent='陀螺儀';return}
+  try{
+    if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){
+      if(await DeviceOrientationEvent.requestPermission()!=='granted'){b.textContent='未授權感測器';return}
+    }
+  }catch(err){b.textContent='無法啟用感測器';return}
+  qDev=qRef=null;gSeen=false;addEventListener('deviceorientation',onOri);
+  gyro=true;lookY=lookP=0;b.setAttribute('aria-pressed',true);b.textContent='陀螺儀：開';
+  setTimeout(()=>{if(gyro&&!gSeen){setGyro(false);b.textContent='沒有感測器資料，請用瀏覽器開啟'}},1500);
+}
+$('gy').onclick=()=>setGyro(!gyro);
+$('rc').onclick=()=>{if(qDev)qRef=qDev.clone();lookY=lookP=0};
+/* 使用專案共用的 Jezero 影像、分類圖與 DEM，不提供另外選檔或搜尋入口。 */
+async function loadSharedTerrain(){
+  try{
+    const root=new URL('.',location.href),get=async p=>{const r=await fetch(new URL(p,root));if(!r.ok)throw new Error(`找不到 ${p}（${r.status}）`);return r};
+    const [of,cf]=await Promise.all([get('web/data/jezero/recon/hirise_1m.jpg'),get('web/data/jezero/recon/class_ref.png')]);
+    let tf=null;try{tf=await get('web/data/jezero/recon/dtm_fine.tif')}catch{}
+    if(tf)try{
+      const im=await(await GeoTIFF.fromArrayBuffer(await tf.arrayBuffer())).getImage(),[minX,minY,maxX,maxY]=im.getBoundingBox(),nx=im.getWidth(),ny=im.getHeight(),nd=im.getGDALNoData();
+      if(maxX-minX>1000&&minX<0&&maxX>0&&minY<0&&maxY>0){
+        const raw=await im.readRasters({interleave:true,samples:[0]}),data=new Float32Array(nx*ny),ok=v=>Number.isFinite(v)&&v!==nd&&v>-1e5;
+        let sum=0,cnt=0;for(let i=0;i<data.length;i++)if(ok(raw[i])){sum+=raw[i];cnt++}
+        let last=cnt?sum/cnt:0;for(let i=0;i<data.length;i++){if(ok(raw[i]))last=raw[i];data[i]=last}
+        DEM={minX,minY,maxX,maxY,nx,ny,rx:(maxX-minX)/nx,ry:(maxY-minY)/ny,data,h0:0};DEM.h0=demSample(0,0);
+      }
+    }catch{}
+    const [ortho,classes]=await Promise.all([createImageBitmap(await of.blob()),createImageBitmap(await cf.blob())]);
+    const w=Math.min(4096,ortho.width),h=Math.round(ortho.height*w/ortho.width),canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+    const ctx=canvas.getContext('2d');ctx.drawImage(ortho,0,0,w,h);
+    const overlay=document.createElement('canvas');overlay.width=w;overlay.height=h;const ox=overlay.getContext('2d');ox.drawImage(classes,0,0,w,h);
+    const pix=ox.getImageData(0,0,w,h);for(let i=3;i<pix.data.length;i+=4)if(pix.data[i])pix.data[i]=225;ox.putImageData(pix,0,0);
+    ctx.globalAlpha=.82;ctx.drawImage(overlay,0,0);ctx.globalAlpha=1;
+    const tex=new THREE.CanvasTexture(canvas);tex.anisotropy=renderer.capabilities.getMaxAnisotropy();tex.wrapS=tex.wrapT=THREE.ClampToEdgeWrapping;
+    if(terrain.material.map)terrain.material.map.dispose();terrain.material.map=tex;terrain.material.needsUpdate=true;ORTHO=true;
+    tx=1e9;updateTerrain(P[0].x,P[0].z);placeRocks();
+    POIS.forEach(p=>{p.y=height(p.x,p.z);p.m.position.y=p.y+35});dome.position.y=height(POIS[0].x+8,POIS[0].z)-.3;camY=null;
+  }catch(err){console.warn('Shared terrain layers could not be loaded',err)}
+}
+if(location.protocol==='http:'||location.protocol==='https:')setTimeout(loadSharedTerrain,300);
+const cv=$('c');
+cv.addEventListener('pointerdown',e=>{if(gyro)return;drag=true;px=e.clientX;py=e.clientY;cv.setPointerCapture(e.pointerId)});
+cv.addEventListener('pointermove',e=>{if(!drag)return;lookY=clamp(lookY+(e.clientX-px)*.005,-1.4,1.4);lookP=clamp(lookP+(e.clientY-py)*.004,-.5,.5);px=e.clientX;py=e.clientY});
+['pointerup','pointercancel'].forEach(ev=>cv.addEventListener(ev,()=>drag=false));
+
+/* ---------- 羅盤刻度 ---------- */
+const PX=4;
+(function(){const card={0:'N',45:'NE',90:'E',135:'SE',180:'S',225:'SW',270:'W',315:'NW'};let h='';
+  for(let d=-360;d<=720;d+=5){const n=((d%360)+360)%360,lb=card[n]??(n%30===0?String(n):'');
+    h+=`<div class="tick${n%15===0?' m':''}${card[n]?' k':''}" style="left:${d*PX}px">${lb?`<span>${lb}</span>`:''}</div>`}
+  $('tape').innerHTML=h+'<div id="wpm"></div>'})();
+
+/* ---------- 模擬狀態、生理數值與 HUD ---------- */
+const O2P=100/(8*3600);
+let simT=0,playing=!matchMedia('(prefers-reduced-motion: reduce)').matches,speed=10,bioE=null,lastT=0,hdg=null,camY=null,last=performance.now(),time=0;
+function o2Used(t){let u=0;for(const e of edges){u+=clamp(t-e.t0,0,e.sec)*EFF[e.lvl]*O2P;if(t<=e.t0+e.sec)break}return u}
+function setPlaying(v){playing=v;if(v&&simT>=TS)simT=0;$('play').textContent=v?'❚❚':'▶';$('play').setAttribute('aria-label',v?'暫停':'播放')}
+$('play').onclick=()=>setPlaying(!playing);setPlaying(playing);
+$('scrub').oninput=e=>{simT=e.target.value/1000*TS};
+$('spd').onchange=e=>{speed=+e.target.value};
+$('col').onclick=e=>{byLevel=!byLevel;e.target.setAttribute('aria-pressed',byLevel)};
+const lv=(v,w,d,dir)=>(dir>0?(v>=d?'d':v>=w?'w':''):(v<=d?'d':v<=w?'w':''));
+const setV=(id,t,c='')=>{const el=$(id);el.textContent=t;el.className=c};
+
+function update(dt){
+  const st=stateAt(simT),e=st.e;
+  updateTerrain(st.x,st.z);
+  const ah=posAt(st.d+30),tgt=Math.hypot(ah.x-st.x,ah.z-st.z)>1?Math.atan2(ah.x-st.x,-(ah.z-st.z))/D2R:e.brg;
+  hdg=hdg===null?tgt:(hdg+norm180(tgt-hdg)*(1-Math.exp(-dt/.35))+360)%360;
+  const gy=meshY(st.x,st.z)+1.7;camY=camY===null?gy:camY+(gy-camY)*(1-Math.exp(-dt/.12));
+  if(!drag){const k=Math.exp(-dt*2.5);lookY*=k;lookP*=k}
+  cam.position.set(st.x,camY,st.z);
+  if(gyro&&qDev&&qRef){
+    qBase.setFromEuler(eul.set(-.16,-hdg*D2R,0,'YXZ'));
+    qTmp.copy(qRef).invert().multiply(qDev);
+    qBase.multiply(qTmp);
+    cam.quaternion.slerp(qBase,1-Math.exp(-dt/.04));
+  }else cam.rotation.set(-.16+lookP,-hdg*D2R+lookY,0);
+  sky.position.copy(cam.position);
+  rmat.uniforms.uTime.value=time;updateRibbon(st.d);
+
+  const tE=simT>=TS?.5:EFF[e.lvl],ds=simT-lastT;
+  if(bioE===null||ds<0||ds>600)bioE=tE;else bioE+=(tE-bioE)*(1-Math.exp(-ds/120));lastT=simT;
+  const hr=Math.round(60+30*bioE+Math.sin(simT/37)*2),o2=Math.max(0,100-o2Used(simT)),o2Min=o2/(O2P*EFF[e.lvl])/60,mg=o2Min-simT/60;
+
+  $('hd').textContent=String(Math.round(hdg)%360).padStart(3,'0')+'°';
+  $('tape').style.transform=`translateX(${-hdg*PX}px)`;
+  const next=edges[st.idx+1],toV=e.d0+e.d-st.d,arr=st.d>=TM-.5;let txt,rot=0;
+  if(arr)txt='已抵達';
+  else if(!next)txt=`${fmtM(toV)} 後抵達`;
+  else{const tn=norm180(next.brg-e.brg);rot=Math.abs(tn)<10?0:tn;txt=Math.abs(tn)<10?`直行 ${fmtM(toV)}`:`${fmtM(toV)} 後${tn>0?'右':'左'}轉 ${Math.abs(Math.round(tn))}°`}
+  $('turn').textContent=txt;$('arrow').style.transform=`rotate(${rot}deg)`;
+  const wp=POIS.find(p=>p.a>st.d+1),mk=$('wpm');
+  if(wp){
+    $('wp').innerHTML=`下一航點：${wp.n}　<b>${fmtM(wp.a-st.d)}</b>　約 <b>${Math.ceil(Math.max(0,(timeAt(wp.a)-simT)/60))}</b> 分鐘`;
+    const rel=norm180(Math.atan2(wp.x-st.x,-(wp.z-st.z))/D2R-hdg),lim=$('cmp').clientWidth/2/PX-3;
+    mk.style.display='';mk.style.left=(hdg+clamp(rel,-lim,lim))*PX+'px';
+  }else{$('wp').textContent='路線完成';mk.style.display='none'}
+
+  const w=[];let sev=0;
+  const ch=edges.slice(st.idx+1).find(x=>x.lvl!==e.lvl);
+  if(ch&&ch.lvl!=='low'&&ch.d0-st.d<250)w.push(`前方 ${fmtM(ch.d0-st.d)} 進入${NAME[ch.lvl]}路段，速度降至 ${Math.round(FAC[ch.lvl]*100)}%`);
+  if(e.lvl==='high'){w.push('沙地路段：縮小步幅，保持前進');sev=1}
+  if(e.lvl==='blocked'){w.push('路線碰到不可通行坡面，請回規劃器檢查');sev=1}
+  if(mg<60){w.push('返回餘裕偏低');if(mg<30)sev=1}
+  if(hr>=120){w.push('心率偏高');if(hr>=150)sev=1}
+  const wn=$('warn');wn.textContent=w.join('　／　');wn.classList.toggle('show',w.length>0);wn.classList.toggle('caution',!sev);
+
+  setV('hr',hr+' bpm',lv(hr,120,150,1));setV('o2',o2.toFixed(0)+' %',lv(o2,30,15,-1));setV('mg',fmtMin(Math.max(0,mg)),lv(mg,60,30,-1));
+  const h=9.5+simT/3600;setV('tm',String(Math.floor(h)%24).padStart(2,'0')+':'+String(Math.floor((h%1)*60)).padStart(2,'0'));
+  setV('tr',NAME[e.lvl]);$('tr').style.color=CSS[e.lvl];setV('left',fmtM(TM-st.d));
+  $('scrub').value=Math.round(simT/TS*1000);
+
+  POIS.forEach(p=>{
+    p.v.set(p.x,p.y+8,p.z).project(cam);const vis=p.v.z<1&&Math.abs(p.v.x)<1.1;p.el.style.display=vis?'':'none';
+    if(vis){p.el.textContent=`${p.n} · ${fmtM(Math.hypot(p.x-st.x,p.z-st.z))}`;
+      p.el.style.transform=`translate(${(p.v.x*.5+.5)*innerWidth}px,${(-p.v.y*.5+.5)*innerHeight}px) translate(-50%,-100%)`}
+  });
+}
+function frame(now){
+  const dt=Math.min(.1,(now-last)/1000);last=now;time+=dt;
+  if(playing){simT+=dt*speed;if(simT>=TS){simT=TS;setPlaying(false)}}
+  update(dt);renderer.render(scene,cam);requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
