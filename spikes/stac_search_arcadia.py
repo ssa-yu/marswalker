@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Search USGS Astrogeology STAC for HiRISE/CTX DTMs over Arcadia Planitia.
 Usage: python stac_search_arcadia.py [out.json]
 bbox in planetocentric lon -180..180."""

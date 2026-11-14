@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Export T6 (multi-window) and T7 (rover sensitivity) results for the web full-table dialog. Reformat only.
 
 python -m pipeline.export_robustness  -> web/data/jezero/compare/robustness.json

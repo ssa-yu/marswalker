@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """S3 align: registration shifts and the locked X3 positioning check.
 
 python -m pipeline.align --scene jezero

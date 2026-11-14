@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Rover goal rule version 3 (R7 tests) on SYNTHETIC maps only."""
 import math
 from pathlib import Path

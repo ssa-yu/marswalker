@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """T1 report (evaluation only, NOT used by the planner): the first v2 run (budget defect) next to the single
 rerun with the fixed hard energy rule. Same statistics as spikes/s3_report.py plus budget checks.
 python -m spikes.t1_report  -> qa/jezero/T1_rover_v2_rerun_report.json + T1_coverage_run1_rerun.png

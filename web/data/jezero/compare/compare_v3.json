@@ -1,4 +1,5 @@
 {
+ "si": "computed by AI-written code (Anthropic Claude via Claude Code, under the team's direction); inputs are NASA data; see docs/AI_USE.md",
  "label": "derived (simulated recon v3 + assumed parameters); heuristic, not yet reviewed",
  "disclosure": "version 3 designed after seeing version 2's coverage, repeat coverage and loop 24; round 6 is the pre-registered main comparison",
  "computed_at": "2026-11-14 09:20:24 CST",

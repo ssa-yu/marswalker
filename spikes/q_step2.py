@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """R4 step-2 verification (Q1, Q2, Q4, Q5, Q9, Q10) - facts and check images only; nothing here is a product.
 
 python -I spikes/q_step2.py      (from app/) -> qa/jezero/step2/q_results.json + figures

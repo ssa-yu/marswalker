@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Compare HiRISE ortho position with the Trek/Esri global CTX mosaic tiles (z11, geographic tile matrix).
 Usage: python register_vs_trek_ctx.py HIRISE_ORTHO OUTDIR"""
 import io, os, sys, math, urllib.request, numpy as np, rasterio

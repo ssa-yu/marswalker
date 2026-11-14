@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Step 2 option A rules on SYNTHETIC data only (no SuperCam number is looked at here)."""
 import json
 
@@ -58,7 +59,8 @@ def test_switch_off_writes_only_disabled_flag(tmp_path, monkeypatch):
     out = S.run({"enabled": False, "link_rule": "i", "unlock_radius_m": 15.0})
     assert out == {"enabled": False}
     assert [p.name for p in tmp_path.iterdir()] == ["step2.json"]
-    assert json.loads((tmp_path / "step2.json").read_text()) == {"enabled": False}
+    d = json.loads((tmp_path / "step2.json").read_text())
+    assert d["enabled"] is False and set(d) == {"si", "enabled"}
 
 
 def test_config_switches_present():

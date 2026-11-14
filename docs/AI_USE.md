@@ -1,3 +1,5 @@
+_SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md_
+
 # AI use
 
 This project was built with AI coding agents (Anthropic Claude, via Claude Code) working under the team's direction. One agent acted as the technical lead (code, data checks, documents); another reviewed proposals and made the rule decisions that the team had not yet made, marked as such and open to the team's veto.

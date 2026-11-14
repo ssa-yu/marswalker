@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Step-2 / round-7 screenshots on the astronaut page (server on --port must be running).
 python tools/screenshot_step2.py -> qa/screenshots/W1_*.png"""
 import argparse

@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """How much hazard does the 1 m reference show that the ~20 m prior misses? (Map B premise check)
 Slope on a 2 m grid from HiRISE (avg-aggregated) vs CTX (bilinear-upsampled); thresholds from MVP_PLAN §5.4.
 Usage: python hazard_contrast.py HIRISE_DTM CTX_DTM [--qa out.png]"""

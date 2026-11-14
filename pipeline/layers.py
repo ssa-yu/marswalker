@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """S4 layers: hillshade / slope for the reference (HiRISE) and prior (CTX) terrain + web image products.
 
 python -m pipeline.layers --scene jezero

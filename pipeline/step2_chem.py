@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Step 2, option A (simplest version): SuperCam LIBS chemistry groups -> candidate stops (switchable).
 
 python -m pipeline.step2_chem            # reads config/step2.json; run once (refuses a second run)

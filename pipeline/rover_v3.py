@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Step 1, rover goal rule VERSION 3 (literature methods; manager 2026-11-14, direction.md "第三版定案" R1-R8).
 
 python -m pipeline.rover_v3      # main AOI, 30 loops, run ONCE -> data_work/jezero/v3/recon_loops.json, recon_state.npz

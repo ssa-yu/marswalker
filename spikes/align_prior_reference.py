@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """X3 check: does the coarse prior DTM (CTX ~20 m) line up with the HiRISE reference DTM (~1 m)?
 Steps: aggregate HiRISE to CTX grid (average) -> vertical stats; sub-pixel horizontal shift by phase
 correlation of detrended elevation on a common 5 m grid; optional MOLA DEM comparison.

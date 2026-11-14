@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """SWIM values: AOI pixel and 30 km neighbourhood mean for Arcadia 060706 vs Jezero AOI.
 Usage: python swim_compare_sites.py SWIM_DIR"""
 import glob, os, sys, numpy as np, rasterio

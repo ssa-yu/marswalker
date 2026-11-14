@@ -1,3 +1,5 @@
+_SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md_
+
 # Marswalk Recon
 
 **A layered map and walking route for astronauts on Mars, made better by a scout rover that goes first.**

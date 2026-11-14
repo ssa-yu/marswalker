@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """T7 rover sensitivity (round 6): three settings written in direction.md 嚴謹度 4 / decisions 2026-11-14,
 added AFTER the coverage of the locked run (11.3 %) was known and BEFORE any route A vs B number existed.
 Each setting is run once; results are listed next to the locked main result and never replace it.

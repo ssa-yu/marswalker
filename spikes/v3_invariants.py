@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Invariant check of a rover run, on its own (manager 15th update: check before any downstream step).
 python -m spikes.v3_invariants [dir]  (default data_work/jezero/v3) -> prints PASS/FAIL per invariant, exit 1 on FAIL"""
 import json

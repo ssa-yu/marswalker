@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """S5 (Jezero only): Perseverance waypoints, traverse and raw images located on the map.
 
 python -m pipeline.rover_m20 --scene jezero

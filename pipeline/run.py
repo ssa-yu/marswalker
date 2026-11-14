@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Run the checkpoint-1 pipeline for one scene: fetch -> trek -> align -> grid -> rover -> layers -> qa -> export -> heading.
 
 python -m pipeline.run --scene jezero [--from layers]

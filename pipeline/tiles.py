@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Web output helpers for MapLibre.
 
 MapLibre draws Mars lon/lat with its (Earth) Web Mercator maths. We only borrow that projection for

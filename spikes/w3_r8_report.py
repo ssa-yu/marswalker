@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """W3 step 7 (R8): version 2 (T1 rerun) and version 3 side by side. Evaluation only; reads saved runs.
 python -m spikes.w3_r8_report -> data_work/jezero/v3/r8_report.json (+ printed table)"""
 import json

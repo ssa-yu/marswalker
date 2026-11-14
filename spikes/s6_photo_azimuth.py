@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """S6-2 (J5): independent check of the Raw Images pointing metadata with a DTM horizon.
 
 python -I spikes/s6_photo_azimuth.py  (from app/) -> qa/jezero/S6_photo_azimuth.{png,json}

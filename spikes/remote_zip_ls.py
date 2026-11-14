@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """List (and optionally extract) members of a remote ZIP using HTTP range requests (no full download).
 Usage: python remote_zip_ls.py URL [--grep PATTERN] [--extract REGEX OUTDIR]"""
 import io, re, sys, urllib.request, zipfile, os

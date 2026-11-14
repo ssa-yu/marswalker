@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Localization check: Perseverance waypoint elev_geoid vs HiRISE DTM (D1 window) sampled at waypoint lon/lat.
 Usage: python waypoint_elev_check.py M20_waypoints.json DTM.tif"""
 import json, math, sys, numpy as np, rasterio

@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """CTX DTM vs MOLA 463 m inside the HiRISE footprint only (bias + spread), before/after the HiRISE-derived offset.
 Usage: python ctx_vs_mola_footprint.py HIRISE_DTM CTX_DTM MOLA_WINDOW"""
 import sys, numpy as np, rasterio

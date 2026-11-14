@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """U2 (round 7): per-test-point distribution summary of the FROZEN T2 numbers (evaluation only).
 
 python -m spikes.u2_pointwise

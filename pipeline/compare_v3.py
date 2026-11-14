@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """W3 step 3: route B_v3@k on the main AOI (k = 1, 5, 10, 20, 30), run ONCE after the version-3 recon.
 
 python -m pipeline.compare_v3   -> data_work/jezero/v3/compare_bv3.json

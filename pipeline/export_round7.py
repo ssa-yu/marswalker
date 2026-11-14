@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Export round 7 (multi-stop walks to the step-2 stops) for the astronaut page. Reformat only, nothing recomputed.
 
 python -m pipeline.export_round7  -> web/data/jezero/compare/round7.json   (removed when step2.enabled = false)

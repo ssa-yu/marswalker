@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """X2 B6: 10 m sand-share map over the main AOI from the HiRISE-input random forest (trained once on all 72 main-AOI
 waypoints, same features and settings as x2_predict), with uncertainty = standard deviation across the 200 trees.
 Label: derived, model estimate. Never a prior, never in the rover rules, never used to recompute route A.

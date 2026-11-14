@@ -1,3 +1,4 @@
+/* SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md */
 :root { --s-out: #3987e5; --s-ret: #d95926; --s-forced: #199e70; }
 h2.title { font-size: 16px; margin: 4px 0 6px; display: flex; gap: 8px; align-items: center; }
 p.lead { color: var(--muted); margin: 0 0 6px; }

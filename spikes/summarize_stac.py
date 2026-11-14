@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Summarize stac_arcadia.json: HiRISE DTMs with rationale + overlapping CTX DTMs.
 Usage: python summarize_stac.py stac_arcadia.json"""
 import json, math, re, sys

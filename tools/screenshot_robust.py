@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Round 7: full-table dialog, robustness section (T6, T7). -> qa/screenshots/T6T7_robustness.png"""
 from pathlib import Path
 from playwright.sync_api import sync_playwright

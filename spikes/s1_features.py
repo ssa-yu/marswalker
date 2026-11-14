@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """S1 dev: compute sand-field v2 features on the AOI and cache them (2 m grid + 0.5 m ortho)."""
 import time, numpy as np, rasterio
 from pipeline.sandfield import features, to_grid, block_mean

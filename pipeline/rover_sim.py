@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Step 1: autonomous scout-rover reconnaissance simulation (the "scratch-off" map).
 
 python -m pipeline.rover_sim --scene jezero

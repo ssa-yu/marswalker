@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """T5 screenshot: Navcam viewing-direction wedges on the map-data page.
 python tools/screenshot_views.py [--url http://127.0.0.1:8765] -> qa/screenshots/T5_navcam_*.png"""
 import argparse

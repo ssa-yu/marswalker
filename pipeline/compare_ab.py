@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """T2: route A vs route B on the reference terrain (the "before / after recon" comparison skeleton).
 
 python -m pipeline.compare_ab --scene jezero

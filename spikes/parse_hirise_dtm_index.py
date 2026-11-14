@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Parse HiRISE PDS DTMCUMINDEX.TAB (fixed-width CSV) and list DTMs in a lat/lon box.
 Usage: python parse_hirise_dtm_index.py DTMCUMINDEX.TAB latmin latmax lonmin_E lonmax_E [keyword]"""
 import csv, sys

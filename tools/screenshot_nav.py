@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Top-bar screenshots of every page at several widths (W0 menu check).
 python tools/screenshot_nav.py --tag before|after [--port 8765]  -> qa/screenshots/nav_<tag>_<page>_<width>.png
 Uses an already-running static server on the port."""

@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Fetch lander sites from SIM 3292 feature service layer 0 and compute great-circle distance to Arcadia AOI.
 Usage: python nearest_landers.py"""
 import json, math, urllib.parse, urllib.request

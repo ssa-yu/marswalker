@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Step 3 skeleton tests on SYNTHETIC terrain only (no real data, no route comparison)."""
 import math
 

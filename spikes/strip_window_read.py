@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Window read for big *uncompressed, striped* GeoTIFFs (Mars 2020 TRN mosaics, MOLA 463 m): get strip offsets via
 GDAL, then fetch only the needed byte span of each row with parallel HTTP range requests.
 Usage: python strip_window_read.py URL OUT.tif --center-lonlat LON LAT --size-m 2400 [--conns 24]"""

@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Time a windowed /vsicurl read of a remote GeoTIFF; save window as local GeoTIFF.
 Usage: python cog_window_read.py URL OUT.tif --center-lonlat LON LAT --size-m 2400 [--threads]
        python cog_window_read.py URL --info"""

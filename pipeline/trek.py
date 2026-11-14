@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Regional context basemaps from NASA JPL Mars Trek (equirectangular WMTS tiles), stored locally.
 
 python -m pipeline.trek --scene jezero

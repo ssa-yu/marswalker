@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """T6 / T7 plumbing on SYNTHETIC grids only (no real-terrain numbers). Real-terrain guard: window (0,0) through
 pipeline/multiwindow_ab.build_terrain reproduces the main terrain_2m.npz cell for cell (selftest, see DATA_LOG)."""
 import json

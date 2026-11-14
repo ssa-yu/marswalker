@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Read SIM 3464 GeoUnits_v1 straight out of the remote zip (GDAL /vsizip//vsicurl) and count units in the Jezero AOI.
 Usage: python sim3464_units.py OUT.gpkg"""
 import os, sys, time

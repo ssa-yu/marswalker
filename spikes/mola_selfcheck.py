@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """R1(a) MOLA self-check: is the X3-3/4 misfit at Jezero caused by OUR sampling, or by the MOLA 463 m mosaic?
 
 python -I spikes/mola_selfcheck.py            (run from app/; writes qa/jezero/R1_mola_selfcheck.json + .png)

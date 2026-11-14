@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Export route B_v3@k (W3 chain) for the astronaut page. Reformat only: paths and numbers come from
 data_work/jezero/v3/compare_bv3*.json; per-vertex values are the same accumulations as export_compare.
 

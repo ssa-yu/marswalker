@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """S3 report (evaluation only, NOT used by the planner): coverage by direction/band, unlocked SuperCam
 sites (15 m), their SIM 3464 unit, and how many of the AOI sites a single loop could reach at all.
 python -m spikes.s3_report  -> qa/jezero/S3_rover_v2_report.json + S3_coverage_v1_v2.png

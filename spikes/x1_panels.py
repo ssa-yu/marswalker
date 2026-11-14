@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """X1 figures (no new numbers): (1) panels with the image that has the SAME name as the label: 12 images drawn with a
 fixed seed + one image at each HiRISE-only sand waypoint (4_1062, 4_1422, 4_922); (2) a sign-off sheet for Shan:
 the 3 HiRISE-only waypoints, HiRISE 0.5 m image with our sand class outlined, the 30 m view sector, and the photo.

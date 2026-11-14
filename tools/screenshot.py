@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Headless screenshots of the viewer (uses the installed Google Chrome through Playwright).
 python tools/screenshot.py [--port 8765]   -> qa/screenshots/*.png, prints load timing per scene."""
 import argparse, json, subprocess, sys, time

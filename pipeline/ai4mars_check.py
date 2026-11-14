@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """X1 (a): AI4MARS Perseverance Navcam crowd labels vs our HiRISE terrain classes (independent check). Run ONCE.
 
 python -m pipeline.ai4mars_check   -> data_work/jezero/ai4mars/x1_result.json, qa/jezero/ai4mars/*.png

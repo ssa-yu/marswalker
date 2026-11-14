@@ -1,3 +1,5 @@
+_SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md_
+
 # Project page text (draft for the team; edit freely)
 
 Numbers below are copied from `DATA_LOG.md` round 6 (route A vs B, frozen commit `e17452a`) and rounds 7–8 (other windows, step 2, round 7). If any rule or class changes, the numbers must be recomputed and both versions kept.

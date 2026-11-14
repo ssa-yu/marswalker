@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Export the step-1 recon simulation for the web viewer (web/data/<scene>/recon/).
 
 python -m pipeline.export_recon --scene jezero

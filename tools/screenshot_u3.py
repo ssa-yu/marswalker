@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Round 7 U1-U3 screenshots: first view with the shortcut buttons, the three shortcut walks, the per-point table.
 python tools/screenshot_u3.py [--url http://127.0.0.1:8765] -> qa/screenshots/U3_*.png"""
 import argparse

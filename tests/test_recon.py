@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Step-1 recon acceptance (MVP_PLAN P6) on the exported simulation + belief isolation on a synthetic map."""
 import json
 from pathlib import Path

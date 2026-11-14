@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """R4 Q3: CRISM MTRDR summary parameters over the Jezero AOI (check images + facts only).
 
 python -I spikes/q3_crism.py   (from app/) -> qa/jezero/step2/Q3_*.png, q3_results.json

@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """S1 dev viewer: image crops with feature maps (dev only, not the check figure)."""
 import sys, numpy as np, matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
 from pipeline.common import APP

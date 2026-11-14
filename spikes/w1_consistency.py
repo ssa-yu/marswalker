@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Agreement of the unlocked-data groups with the all-data groups, from the SAVED cross-tables only (step 2 is not
 re-run). Metrics specified by manager 2026-11-14 AFTER the cross-tables were seen (the cross-tables are the record):
 ARI (Hubert & Arabie 1985, adjusted Rand index) and the majority-match share (each unlocked group mapped to the

@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """S6-6 (Q6): sun position at Jezero from JPL Horizons (saved locally) and cast-shadow fraction of the AOI.
 
 python -I spikes/s6_horizons_shadow.py  (from app/) -> qa/jezero/S6_shadow.{png,json}

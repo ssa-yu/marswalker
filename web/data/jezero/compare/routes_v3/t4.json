@@ -1,4 +1,5 @@
 {
+ "si": "computed by AI-written code (Anthropic Claude via Claude Code, under the team's direction); inputs are NASA data; see docs/AI_USE.md",
  "target": 4,
  "states": {
   "B_v3@1": {

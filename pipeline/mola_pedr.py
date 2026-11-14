@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """R1(b) MOLA PEDR supplementary check (spec locked by manager 2026-11-14 in direction.md, before results).
 
 python -m pipeline.mola_pedr --scene jezero

@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Extract SIM 3464 geologic units / contacts for the Jezero region from the remote USGS zip
 (GDAL /vsizip//vsicurl; no full download) into data_raw/jezero/step2/sim3464/<layer>.geojson in lon/lat
 (Mars sphere R = 3396190 m, east-positive).

@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """S1 dev loop: classify with current SAND_V2 and draw DEV sheets (seed 777, NOT the check seed)."""
 import sys, json, numpy as np, rasterio
 from pipeline.common import APP

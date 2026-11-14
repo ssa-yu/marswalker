@@ -1,3 +1,4 @@
+// SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 /* Marswalk Recon — step 2 (option A: SuperCam chemistry groups -> candidate stops) and round 7 (multi-stop walks to
    those stops) on the astronaut page. Switchable: when data/jezero/step2/step2.json says enabled: false (or is
    missing) nothing of step 2 or round 7 is shown. Data: pipeline/step2_chem.py, round7.py, export_round7.py.

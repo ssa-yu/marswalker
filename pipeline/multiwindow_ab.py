@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """T6 multi-window route A vs B (round 6). Same pipeline and parameters as the main AOI, one run per window.
 
 python -m pipeline.multiwindow_ab terrain  --windows "-1,0;-1,1"   # classes on each window (2 m)

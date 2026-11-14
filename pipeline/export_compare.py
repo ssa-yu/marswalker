@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Export the T2 route A vs B comparison for the web (web/data/<scene>/compare/).
 
 python -m pipeline.export_compare --scene jezero

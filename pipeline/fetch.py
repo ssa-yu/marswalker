@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """S1 fetch: download / window-read every source listed in the scene config into data_raw/<scene>/.
 
 python -m pipeline.fetch --scene jezero [--only ortho,dtm_fine]

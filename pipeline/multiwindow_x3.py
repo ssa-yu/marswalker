@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """S4 multi-window positioning check (X3 items 1-2; items 3-4 reported, not used to drop a window).
 
 python -m pipeline.multiwindow_x3 [--windows "-1,0;-1,1"] [--fetch-only]

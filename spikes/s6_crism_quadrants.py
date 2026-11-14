@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """S6-4: CRISM four-quadrant check (same rule as X3 item 2: after ONE global shift, each quadrant's own
 registration must be within 20 m of it). Products: the two MTRDR cubes covering ~100 % of the main AOI.
 

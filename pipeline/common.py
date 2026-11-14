@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Shared helpers: scene config, base-centred local metric grid, raster I/O.
 
 Local grid ("local"): metres east (x) / north (y) of the habitat (base), on the Mars 2015 sphere
@@ -121,7 +122,14 @@ class Scene:
         return self.raw / f"{sid}{ext}"
 
 
+SI_DATA = "computed by AI-written code (Anthropic Claude via Claude Code, under the team's direction); inputs are NASA data; see docs/AI_USE.md"
+
+
 def write_json(path: Path, obj) -> None:
+    """Writes JSON; a top-level object gets the SI notice as its first key (official SI rules: code and data must
+    acknowledge SI in descriptive text and metadata). Computed values are untouched."""
+    if isinstance(obj, dict) and "si" not in obj:
+        obj = {"si": SI_DATA, **obj}
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = str(path) + ".tmp"
     with open(tmp, "w") as f:

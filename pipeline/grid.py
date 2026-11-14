@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """S2 grid: resample source rasters onto base-centred local metre grids.
 
 python -m pipeline.grid --scene jezero

@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """S7 export: web/data/<scene>/scene.json (+ traverse/waypoints/photos for Jezero) and web/data/scenes.json.
 
 python -m pipeline.export --scene jezero

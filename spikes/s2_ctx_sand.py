@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """S2: can the sand-field indicator see sand on the CTX 6 m image? (rule written before running)
 
 Indicator on CTX: same structure as the HiRISE coarse band (DoG + structure-tensor coherence + RMS

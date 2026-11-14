@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """X3 horizontal check by imagery: HiRISE ortho (1 m) averaged onto the CTX ortho grid (~22 m),
 sub-pixel phase correlation on the overlap (both from the same MRO orbits -> same illumination).
 Also a 5 m-grid check against a Trek/Esri CTX mosaic tile is possible later.

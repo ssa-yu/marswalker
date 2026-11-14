@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """S6-1: how far are the SIM 3464 contacts from the matching boundaries in the HiRISE reference?
 
 python -I spikes/s6_sim3464_offset.py   (from app/) -> qa/jezero/S6_sim3464_offset.{png,json}

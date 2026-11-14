@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """U7 (round 7): exploratory B* — rule written by manager (TECH_LEAD_BRIEF 第七次更新), not tuned.
 Label: `exploratory, designed after seeing the first comparison`. Listed next to round 6, never in a headline.
 

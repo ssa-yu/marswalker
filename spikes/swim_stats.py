@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Read SWIM4MIM GeoTIFFs + RZ shapefile; print metadata and value distribution over Arcadia and at candidate sites.
 Usage: python swim_stats.py SWIM_DIR"""
 import glob, os, sys

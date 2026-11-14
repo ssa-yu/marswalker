@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Query USGS SIM 3292 (Tanaka 2014) Global_Geology feature service for units at given sites,
 and units within a lon/lat box (counts). Usage: python sim3292_query.py"""
 import json, urllib.parse, urllib.request

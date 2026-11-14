@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Headless screenshots of the step-1 recon page (installed Google Chrome through Playwright).
 python tools/screenshot_recon.py [--url http://127.0.0.1:8765]  -> qa/screenshots/recon_*.png"""
 import argparse

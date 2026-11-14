@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Round 7: multi-stop walks to the step-2 candidate stops, A vs A+ vs B@k vs REF, on the reference. Run ONCE.
 
 python -m pipeline.round7

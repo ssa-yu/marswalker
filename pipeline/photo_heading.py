@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """T5: true viewing direction of the Navcam photos (derived), for the map's photo layer.
 
 python -m pipeline.photo_heading --scene jezero

@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Key checks: coordinate round trip, local<->source affine, exported JSON parses and carries source labels."""
 import json
 import math

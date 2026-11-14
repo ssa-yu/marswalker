@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Sand-field check figures (version 2 spec, direction.md 沙地的修正與放行 point 2).
 
 For a person who is not a specialist: every crop is 60 m wide at full HiRISE resolution (0.25 m), shown

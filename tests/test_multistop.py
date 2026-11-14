@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """U4 multi-stop walk with dwell: SYNTHETIC grids only (no real-terrain number is computed in round 7 yet)."""
 import numpy as np
 

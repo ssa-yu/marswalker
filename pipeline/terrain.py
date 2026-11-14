@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """R3 terrain classes on the 2 m planning grid (status: PROPOSED, review: pending).
 
 python -m pipeline.terrain --scene jezero

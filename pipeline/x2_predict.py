@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """X2 (b): orbital data -> ground-photo terrain label (AI4MARS crowd labels), HiRISE input vs CTX input. Run ONCE.
 
 python -m pipeline.x2_predict   -> data_work/jezero/ai4mars/x2_result.json, web/data/jezero/ai4mars/x2_map.png
