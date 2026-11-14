@@ -133,3 +133,20 @@ def test_flat_map_first_loop_keeps_seeing_new_ground():
     assert len(set(tg)) == len(tg)                                       # never the same target twice
     sel = [e for e in L["events"] if e["type"] == "select" and "gain_m2" in e]
     assert all(e["gain_m2"] > 0 for e in sel)
+
+
+def test_hard_rule_keeps_budget_when_home_lies_behind_sand():
+    """Run-2 bug (find_costs returns (costs, traceback); the traceback had been used as the home cost): the hard
+    energy rule must hold when the way home is long and the rover sits in sand far out. Tight budget, sand belt."""
+    H = W = 260
+    prior = np.zeros((H, W), np.uint8); ref = prior.copy(); ref[:, 140:250] = 2
+    T = {"class_prior": prior, "class_ref": ref, "blocked_rover_prior": np.zeros((H, W), bool), "blocked_rover_ref": np.zeros((H, W), bool)}
+    P = small(n_loops=4, loop_budget=1500.0)
+    _, loops = simulate(T, P, (130, 100), log_fn=lambda m: None)
+    assert all(L["cost_total"] <= P["loop_budget"] for L in loops), [L["cost_total"] for L in loops]
+
+
+def test_refresh_known_uses_costs_not_traceback():
+    import inspect
+    src = inspect.getsource(V.simulate)
+    assert "known_home, _ = MCP_Geometric" in src and "_, known_home = MCP_Geometric" not in src

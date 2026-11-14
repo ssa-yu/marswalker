@@ -263,7 +263,7 @@ def simulate(T, P, base_rc, log_fn=print):
 
         def refresh_known():
             nonlocal known_home
-            _, known_home = MCP_Geometric(bel.known_cost(), fully_connected=True).find_costs([base_rc])
+            known_home, _ = MCP_Geometric(bel.known_cost(), fully_connected=True).find_costs([base_rc])  # costs, not traceback (run-2 bug)
 
         def safe_home_cost():
             v = known_home[cur] if known_home is not None and np.isfinite(known_home[cur]) else math.inf
