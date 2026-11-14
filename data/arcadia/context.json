@@ -1,34 +1,6 @@
 {
  "si": "computed by AI-written code (Anthropic Claude via Claude Code, under the team's direction); inputs are NASA data; see docs/AI_USE.md",
  "note": "display-only context basemaps; no computed result uses them",
- "strip": {
-  "file": "strip.webp",
-  "coordinates": [
-   [
-    -164.4597098,
-    39.2794343
-   ],
-   [
-    -164.3180112,
-    39.2794343
-   ],
-   [
-    -164.3180112,
-    39.0753705
-   ],
-   [
-    -164.4597098,
-    39.0753705
-   ]
-  ],
-  "res_m": 3.0,
-  "size_km": [
-   8.4,
-   12.1
-  ],
-  "source": "HiRISE ortho 1 m ESP_061075_2195_RED_C_01 (strip scan only)",
-  "url": "https://astrogeo-ard.s3-us-west-2.amazonaws.com/mars/mro/hirise/controlled/dtm/ESP_061075_2195_ESP_061141_2195/ESP_061075_2195_RED_C_01_ORTHO.tif"
- },
  "trek": {
   "file": "trek_themis_day.jpg",
   "coordinates": [
