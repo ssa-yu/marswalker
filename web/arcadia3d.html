@@ -5,6 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>火星徒步 3D 第一人稱導航</title>
+<link rel="icon" href="data:,">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/geotiff@2.1.3/dist-browser/geotiff.js"></script>
@@ -35,7 +36,7 @@ body{margin:0;height:100%;background:#2a1d17;overflow:hidden;font-family:var(--u
 .side.l{left:16px}.side.r{right:16px;text-align:right}
 .side div{font-size:12px;font-family:var(--ui)}
 .side b{display:block;font:600 22px var(--num);font-variant-numeric:tabular-nums;color:#fff;line-height:1.1}
-.side b.w{color:var(--warn)}.side b.d{color:var(--danger)}
+.side span{display:block;font-size:11px;opacity:.8}
 #labels .lbl{position:fixed;left:0;top:0;font:500 12px var(--ui);white-space:nowrap;padding:2px 7px;border-radius:4px;background:rgba(18,30,44,.7);pointer-events:none}
 #bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom,0px));width:min(600px,calc(100% - 20px));box-sizing:border-box;padding:8px 12px;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;background:rgba(18,30,44,.82);backdrop-filter:blur(6px);border:1px solid rgba(150,195,225,.2);border-radius:12px;font-size:12px}
 #bar button,#bar select{background:transparent;color:#e4edf3;border:1px solid rgba(150,195,225,.35);border-radius:8px;padding:6px 9px;font:500 12px var(--ui);cursor:pointer}
@@ -62,8 +63,8 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
     <div class="turn" id="turn">--</div><div class="wp" id="wp">--</div>
   </div>
   <div class="warn" id="warn"></div>
-  <div class="side l"><div>心率<b id="hr">--</b></div><div>氧氣<b id="o2">--</b></div><div>返回餘裕<b id="mg">--</b></div></div>
-  <div class="side r"><div>當地時間<b id="tm">--</b></div><div>地形<b id="tr">--</b></div><div>剩餘距離<b id="left">--</b></div></div>
+  <div class="side l"><div>已走距離<b id="dn">--</b><span id="dnL"></span></div><div>已用時間<b id="tn">--</b><span id="tnL"></span></div></div>
+  <div class="side r"><div>已耗能量<b id="kn">--</b><span id="knL"></span></div><div>已用氧氣<b id="on">--</b><span id="onL"></span></div><div>地形<b id="tr">--</b></div></div>
 </div>
 <div id="bar">
   <button id="play" aria-label="暫停">❚❚</button>
@@ -80,26 +81,46 @@ const fmtM=m=>m>=1000?(m/1000).toFixed(2)+' km':Math.round(m)+' m';
 const fmtMin=m=>m>=60?Math.floor(m/60)+' 小時 '+Math.round(m%60)+' 分':Math.round(m)+' 分';
 
 /* ---------- 路線（與地圖版相同的示範資料，轉成以起點為原點的公尺座標） ---------- */
-// Arcadia：路線由 arcadia.html 第 ③ 步寫入 localStorage（marswalker-arcadia-route）；單獨開啟時改用 arcadia.json 的基地路線。
+// Arcadia：路線由 index.html（Arcadia）第 ③ 步寫入 localStorage（marswalker-arcadia-route）；單獨開啟時改用 arcadia.json 的基地路線。
 const ARC=(()=>{const r=new XMLHttpRequest();r.open('GET','data/arcadia/arcadia.json',false);r.send();return JSON.parse(r.responseText)})();
-const savedWalk=(()=>{try{return JSON.parse(localStorage.getItem('marswalker-arcadia-route')||'null')}catch{return null}})();
+const savedWalk=(()=>{try{const w=JSON.parse(localStorage.getItem('marswalker-arcadia-route')||'null');return w?.cum?.tA?.length===w?.coords?.length&&w.coords.length>1?w:null}catch{return null}})();  // 舊格式（沒有 cum）不用
 const FALLBACK=ARC.route.legs.flatMap((L,i)=>i?L.path.slice(1):L.path);
 const LL=savedWalk?.coords?.length>1?savedWalk.coords:FALLBACK;
 const LVL=savedWalk?.levels?.length===LL.length-1?savedWalk.levels:LL.slice(1).map(()=>'low');
-const FAC={low:1,medium:.6,high:.35,blocked:.12},EFF={low:1,medium:1.5,high:2.1,blocked:3};
 const NAME={low:'硬地',medium:'崎嶇',high:'沙地',blocked:'不可通行'},CSS={low:'#62d6a4',medium:'#f4b740',high:'#ff5a4e',blocked:'#5a2a6e'};
 const COL={low:[.25,1,.6],medium:[1,.8,.25],high:[1,.35,.3],blocked:[.35,.16,.43]};
 const BASE_LON=ARC.geo.lon0,BASE_LAT=ARC.geo.lat0,AOI=ARC.aoi_local_m;   // Arcadia local-grid origin and study square (local m)
 const P=LL.map(([lo,la])=>({x:(lo-BASE_LON)*D2R*R*Math.cos(BASE_LAT*D2R),z:-(la-BASE_LAT)*D2R*R}));
-const edges=[];let aT=0,aD=0;
-for(let i=0;i<P.length-1;i++){
-  const a=P[i],b=P[i+1],d=Math.hypot(b.x-a.x,b.z-a.z),lvl=LVL[i],sec=d/1000/(2.5*FAC[lvl])*3600;
-  edges.push({a,b,d,lvl,sec,d0:aD,t0:aT,brg:(Math.atan2(b.x-a.x,-(b.z-a.z))/D2R+360)%360});aT+=sec;aD+=d;
+/* 時間與耗能：地圖頁右上角卡片的 Pandolf 結果（火星重力、坡度、每站停留 18 分鐘），沿路線每個頂點的累積值。
+   d 公尺、t 分鐘、k kcal；A＝抵達、D＝離開（停留站兩者不同）。單獨開啟時由 arcadia.json 的基地路線各段依距離分配。 */
+function cumFromLegs(legs,stop,P){
+  const c={d:[0],tA:[0],tD:[0],kA:[0],kD:[0]};let D0=0,T0=0,K0=0,j=0;
+  legs.forEach((L,li)=>{
+    const dw=li<legs.length-1?stop.min:0,dk=dw*stop.kcal_per_min,n=L.path.length-1;let s=0;const len=[];
+    for(let q=0;q<n;q++){len.push(Math.hypot(P[j+q+1].x-P[j+q].x,P[j+q+1].z-P[j+q].z));s+=len[q]}
+    let a=0;for(let q=0;q<n;q++){a+=len[q];const f=s?a/s:1,t=T0+f*(L.min-dw),k=K0+f*(L.kcal-dk);c.d.push(D0+f*L.distance_m);c.tA.push(t);c.tD.push(t);c.kA.push(k);c.kD.push(k)}
+    j+=n;D0+=L.distance_m;T0+=L.min;K0+=L.kcal;c.tD[j]=T0;c.kD[j]=K0;
+  });
+  return c;
 }
-const TS=aT,TM=aD;
+const CUM=savedWalk?savedWalk.cum:cumFromLegs(ARC.route.legs,{min:ARC.planner.dwell_min,kcal_per_min:ARC.planner.stand_kcal_per_min},P);
+const TOT=savedWalk?savedWalk.total:{...ARC.route.total,o2_l:ARC.route.total.kcal/ARC.planner.kcal_per_l_o2};
+const KPL=savedWalk?.kcal_per_l_o2||ARC.planner.kcal_per_l_o2;
+const edges=[];let aD=0;
+for(let i=0;i<P.length-1;i++){
+  const a=P[i],b=P[i+1],d=Math.hypot(b.x-a.x,b.z-a.z),lvl=LVL[i],t0=CUM.tD[i]*60,sec=Math.max(0,CUM.tA[i+1]*60-t0);
+  edges.push({a,b,d,lvl,sec,d0:aD,t0,brg:(Math.atan2(b.x-a.x,-(b.z-a.z))/D2R+360)%360});aD+=d;
+}
+const TS=CUM.tA[P.length-1]*60,TM=aD;
 const edgeAt=d=>edges.find(e=>d<=e.d0+e.d)||edges[edges.length-1];
 function posAt(d){d=clamp(d,0,TM);const e=edgeAt(d),f=e.d?(d-e.d0)/e.d:0;return{x:e.a.x+(e.b.x-e.a.x)*f,z:e.a.z+(e.b.z-e.a.z)*f,e}}
-function stateAt(t){t=clamp(t,0,TS);const e=edges.find(e=>t<=e.t0+e.sec)||edges[edges.length-1],f=e.sec?(t-e.t0)/e.sec:0,d=e.d0+e.d*f;return{...posAt(d),d,e,idx:edges.indexOf(e)}}
+function stateAt(t){t=clamp(t,0,TS);const e=edges.find(e=>t<=e.t0+e.sec)||edges[edges.length-1],f=e.sec?clamp((t-e.t0)/e.sec,0,1):(t>=e.t0?1:0),d=e.d0+e.d*f;return{...posAt(d),d,e,f,idx:edges.indexOf(e)}}
+/* 累積值（與卡片同一套）：走在第 i 段上依時間內插；在站點停留時距離不變、時間與 kcal 照停留累加 */
+function cumAt(t,st){
+  const i=st.idx,C=CUM;
+  if(t<C.tD[i]*60){const g=C.tD[i]>C.tA[i]?clamp((t/60-C.tA[i])/(C.tD[i]-C.tA[i]),0,1):1;return{d:C.d[i],min:t/60,kcal:C.kA[i]+(C.kD[i]-C.kA[i])*g}}
+  const f=st.f;return{d:C.d[i]+(C.d[i+1]-C.d[i])*f,min:t/60,kcal:C.kD[i]+(C.kA[i+1]-C.kD[i])*f};
+}
 const timeAt=d=>{const e=edgeAt(d);return e.t0+e.sec*(e.d?(d-e.d0)/e.d:0)};
 
 /* ---------- 程序式火星地形 ---------- */
@@ -288,16 +309,13 @@ const PX=4;
     h+=`<div class="tick${n%15===0?' m':''}${card[n]?' k':''}" style="left:${d*PX}px">${lb?`<span>${lb}</span>`:''}</div>`}
   $('tape').innerHTML=h+'<div id="wpm"></div>'})();
 
-/* ---------- 模擬狀態、生理數值與 HUD ---------- */
-const O2P=100/(8*3600);
-let simT=0,playing=!matchMedia('(prefers-reduced-motion: reduce)').matches,speed=10,bioE=null,lastT=0,hdg=null,camY=null,last=performance.now(),time=0;
-function o2Used(t){let u=0;for(const e of edges){u+=clamp(t-e.t0,0,e.sec)*EFF[e.lvl]*O2P;if(t<=e.t0+e.sec)break}return u}
+/* ---------- 模擬狀態與 HUD（數字＝地圖頁卡片的 Pandolf 結果） ---------- */
+let simT=0,playing=!matchMedia('(prefers-reduced-motion: reduce)').matches,speed=10,hdg=null,camY=null,last=performance.now(),time=0;
 function setPlaying(v){playing=v;if(v&&simT>=TS)simT=0;$('play').textContent=v?'❚❚':'▶';$('play').setAttribute('aria-label',v?'暫停':'播放')}
 $('play').onclick=()=>setPlaying(!playing);setPlaying(playing);
 $('scrub').oninput=e=>{simT=e.target.value/1000*TS};
 $('spd').onchange=e=>{speed=+e.target.value};
 $('col').onclick=e=>{byLevel=!byLevel;e.target.setAttribute('aria-pressed',byLevel)};
-const lv=(v,w,d,dir)=>(dir>0?(v>=d?'d':v>=w?'w':''):(v<=d?'d':v<=w?'w':''));
 const setV=(id,t,c='')=>{const el=$(id);el.textContent=t;el.className=c};
 
 function update(dt){
@@ -317,9 +335,7 @@ function update(dt){
   sky.position.copy(cam.position);
   rmat.uniforms.uTime.value=time;updateRibbon(st.d);
 
-  const tE=simT>=TS?.5:EFF[e.lvl],ds=simT-lastT;
-  if(bioE===null||ds<0||ds>600)bioE=tE;else bioE+=(tE-bioE)*(1-Math.exp(-ds/120));lastT=simT;
-  const hr=Math.round(60+30*bioE+Math.sin(simT/37)*2),o2=Math.max(0,100-o2Used(simT)),o2Min=o2/(O2P*EFF[e.lvl])/60,mg=o2Min-simT/60;
+  const cu=simT>=TS?{d:TOT.distance_m,min:TOT.min,kcal:TOT.kcal}:cumAt(simT,st),o2=cu.kcal/KPL;
 
   $('hd').textContent=String(Math.round(hdg)%360).padStart(3,'0')+'°';
   $('tape').style.transform=`translateX(${-hdg*PX}px)`;
@@ -337,16 +353,17 @@ function update(dt){
 
   const w=[];let sev=0;
   const ch=edges.slice(st.idx+1).find(x=>x.lvl!==e.lvl);
-  if(ch&&ch.lvl!=='low'&&ch.d0-st.d<250)w.push(`前方 ${fmtM(ch.d0-st.d)} 進入${NAME[ch.lvl]}路段，速度降至 ${Math.round(FAC[ch.lvl]*100)}%`);
+  if(ch&&ch.lvl!=='low'&&ch.d0-st.d<250)w.push(`前方 ${fmtM(ch.d0-st.d)} 進入${NAME[ch.lvl]}路段`);
   if(e.lvl==='high'){w.push('軟沙路段：縮小步幅，保持前進');sev=1}
   if(e.lvl==='blocked'){w.push('路線碰到不可通行坡面，請回規劃器檢查');sev=1}
-  if(mg<60){w.push('返回餘裕偏低');if(mg<30)sev=1}
-  if(hr>=120){w.push('心率偏高');if(hr>=150)sev=1}
   const wn=$('warn');wn.textContent=w.join('　／　');wn.classList.toggle('show',w.length>0);wn.classList.toggle('caution',!sev);
 
-  setV('hr',hr+' bpm',lv(hr,120,150,1));setV('o2',o2.toFixed(0)+' %',lv(o2,30,15,-1));setV('mg',fmtMin(Math.max(0,mg)),lv(mg,60,30,-1));
-  const h=9.5+simT/3600;setV('tm',String(Math.floor(h)%24).padStart(2,'0')+':'+String(Math.floor((h%1)*60)).padStart(2,'0'));
-  setV('tr',NAME[e.lvl]);$('tr').style.color=CSS[e.lvl];setV('left',fmtM(TM-st.d));
+  const km=m=>(m/1000).toFixed(2)+' km';
+  setV('dn',km(cu.d));setV('dnL','剩 '+km(Math.max(0,TOT.distance_m-cu.d)));
+  setV('tn',fmtMin(cu.min));setV('tnL','剩 '+fmtMin(Math.max(0,TOT.min-cu.min)));
+  setV('kn',Math.round(cu.kcal)+' kcal');setV('knL','剩 '+Math.round(Math.max(0,TOT.kcal-cu.kcal))+' kcal');
+  setV('on',Math.round(o2)+' L');setV('onL','剩 '+Math.round(Math.max(0,TOT.o2_l-o2))+' L');
+  setV('tr',NAME[e.lvl]);$('tr').style.color=CSS[e.lvl];
   $('scrub').value=Math.round(simT/TS*1000);
 
   POIS.forEach(p=>{

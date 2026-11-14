@@ -1,5 +1,5 @@
 # SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
-"""Headless screenshots of web/arcadia.html steps 1-3 (+ zoomed-out context views) -> qa/arcadia/step*.png
+"""Headless screenshots of web/index.html (Arcadia) steps 1-3 (+ zoomed-out context views) -> qa/arcadia/step*.png
 python tools/screenshot_arcadia.py [--url http://127.0.0.1:8765]"""
 import argparse
 from pathlib import Path
@@ -16,7 +16,7 @@ with sync_playwright() as p:
     pg.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
     pg.on("pageerror", lambda e: errors.append(str(e)))
     pg.on("response", lambda r: errors.append(f"HTTP {r.status} {r.url}") if r.status >= 400 else None)
-    pg.goto(a.url + "/arcadia.html")
+    pg.goto(a.url + "/")
     pg.wait_for_function("window.__mapIdle === true", timeout=120000)
 
     def shot(name, js):
@@ -58,6 +58,11 @@ with sync_playwright() as p:
     fr.wait_for_function("typeof ORTHO !== 'undefined' && ORTHO === true", timeout=60000)
     print("3d: route from localStorage", fr.evaluate("!!savedWalk && LL.length"), "DEM", fr.evaluate("!!DEM"),
           "km", fr.evaluate("(TM / 1000).toFixed(2)"))
+    # HUD = the card's Pandolf numbers: at the end the cumulative values equal S.plan.total
+    fr.evaluate("playing = false; simT = TS")
+    pg.wait_for_timeout(300)
+    print("3d HUD at end:", fr.evaluate("['dn','tn','kn','on'].map(id => document.getElementById(id).textContent)"),
+          "card:", pg.evaluate("S.plan.total"))
     fr.evaluate("simT = TS * 0.18")
     pg.wait_for_timeout(2500)
     pg.screenshot(path=str(out / "step3_walk3d.png")); print("saved step3_walk3d")

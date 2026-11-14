@@ -1,5 +1,5 @@
 # SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
-"""Headless screenshots of the astronaut map (index.html: route A vs B on reference terrain).
+"""Headless screenshots of the astronaut map (jezero.html: route A vs B on reference terrain).
 python tools/screenshot_astronaut.py [--url http://127.0.0.1:8765]  -> qa/screenshots/T3_walk_*.png"""
 import argparse
 import time
@@ -18,7 +18,7 @@ with sync_playwright() as p:
     pg.on("pageerror", lambda e: errors.append(str(e)))
     pg.on("response", lambda r: errors.append(f"HTTP {r.status} {r.url}") if r.status >= 400 else None)
     t0 = time.time()
-    pg.goto(a.url + "/index.html")
+    pg.goto(a.url + "/jezero.html")
     pg.wait_for_function("window.__mapIdle === true && S.routes", timeout=120000)
     print("loaded in", round(time.time() - t0, 2), "s")
 

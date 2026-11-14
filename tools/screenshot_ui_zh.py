@@ -41,7 +41,7 @@ def about(pg, name):
 
 with sync_playwright() as p:
     br = p.chromium.launch(channel="chrome", headless=True)
-    pg = open_page(br, "index.html", "window.__mapIdle === true && document.querySelector('#cmp table') !== null")
+    pg = open_page(br, "jezero.html", "window.__mapIdle === true && document.querySelector('#cmp table') !== null")
     pg.wait_for_timeout(1500)
     shot(pg, "index"); about(pg, "index_about")
     pg.click("#tableBtn"); pg.wait_for_timeout(1200); shot(pg, "index_table")

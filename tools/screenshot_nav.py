@@ -8,7 +8,7 @@ from playwright.sync_api import sync_playwright
 
 APP = Path(__file__).resolve().parents[1]
 ap = argparse.ArgumentParser(); ap.add_argument("--port", type=int, default=8765); ap.add_argument("--tag", required=True)
-ap.add_argument("--pages", default="index.html,recon.html,data.html")
+ap.add_argument("--pages", default="jezero.html,recon.html,data.html")
 a = ap.parse_args()
 out = APP / "qa" / "screenshots"; out.mkdir(parents=True, exist_ok=True)
 with sync_playwright() as p:

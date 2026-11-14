@@ -409,16 +409,54 @@ function levelAt(ll) {
   const r = Math.min(G.H - 1, Math.max(0, Math.floor((a[3] - y) / (a[3] - a[1]) * G.H))), c = Math.min(G.W - 1, Math.max(0, Math.floor((x - a[0]) / (a[2] - a[0]) * G.W)));
   return LEVEL[G.g[r * G.W + c]];
 }
+// Route vertices plus the card's Pandolf numbers accumulated along them (same plan, same legs, same total):
+// each leg's walking minutes / kcal are spread over its steps by the 8 m grid's per-metre minutes / kcal, the 18 min
+// dwell is added at the stop (arrival value tA/kA vs departure value tD/kD), then everything is scaled so the last
+// vertex equals S.plan.total exactly. d in m, t in min, k in kcal.
+function routeCum() {
+  const P = S.d.planner, C = S.cost, legs = S.plan.legs, coords = [];
+  if (!legs.length) return { coords, cum: null, total: S.plan.total, kcal_per_l_o2: P.kcal_per_l_o2 };
+  const c = { d: [], tA: [], tD: [], kA: [], kD: [] };
+  const per = (ll) => { const [x, y] = toXY(ll), i = xyToIdx(x, y); return i < 0 ? [NaN, NaN] : [C.K[i], C.T[i]]; };
+  const push = (p, d, t, k) => { coords.push(p); c.d.push(d); c.tA.push(t); c.tD.push(t); c.kA.push(k); c.kD.push(k); };
+  let D0 = 0, T0 = 0, K0 = 0;
+  legs.forEach((L, li) => {
+    const dwm = li < legs.length - 1 ? P.dwell_min : 0, dwk = dwm * P.stand_kcal_per_min;
+    const steps = L.path.slice(1).map((b, q) => {
+      const a = L.path[q], [ax, ay] = toXY(a), [bx, by] = toXY(b), len = Math.hypot(bx - ax, by - ay), pa = per(a), pb = per(b);
+      const wk = 0.5 * (pa[0] + pb[0]) * len, wt = 0.5 * (pa[1] + pb[1]) * len;
+      return { len, wk: isFinite(wk) ? wk : len, wt: isFinite(wt) ? wt : len };
+    });
+    const sum = (f) => steps.reduce((s, x) => s + x[f], 0) || 1;
+    const sl = sum('len'), sk = sum('wk'), st = sum('wt');
+    const wMin = L.min - dwm, wKc = L.kcal - dwk;
+    if (!coords.length) push(L.path[0], 0, 0, 0);
+    let d = 0, t = 0, k = 0;
+    steps.forEach((s, q) => {
+      d += s.len / sl * L.distance_m; t += s.wt / st * wMin; k += s.wk / sk * wKc;
+      const p = L.path[q + 1], last = coords[coords.length - 1];
+      if (last[0] === p[0] && last[1] === p[1]) { const j = coords.length - 1; c.d[j] = D0 + d; c.tA[j] = c.tD[j] = T0 + t; c.kA[j] = c.kD[j] = K0 + k; }
+      else push(p, D0 + d, T0 + t, K0 + k);
+    });
+    D0 += L.distance_m; T0 += L.min; K0 += L.kcal;
+    const j = coords.length - 1; c.tD[j] = T0; c.kD[j] = K0;
+  });
+  const n = coords.length - 1, tot = S.plan.total;
+  const sc = (arr, v) => { const f = arr[n] ? v / arr[n] : 1; return arr.map((x) => x * f); };
+  const ft = c.tA[n] ? tot.min / c.tA[n] : 1, fk = c.kA[n] ? tot.kcal / c.kA[n] : 1, mul = (arr, f) => arr.map((x) => x * f);
+  const cum = { d: sc(c.d, tot.distance_m), tA: mul(c.tA, ft), tD: mul(c.tD, ft), kA: mul(c.kA, fk), kD: mul(c.kD, fk) };
+  return { coords, cum, total: { distance_m: tot.distance_m, min: tot.min, kcal: tot.kcal, o2_l: tot.kcal / P.kcal_per_l_o2 }, kcal_per_l_o2: P.kcal_per_l_o2 };
+}
+
 async function open3d() {
   await classGrid();
-  const coords = [];
-  S.plan.legs.forEach((L) => L.path.forEach((p) => { const q = coords[coords.length - 1]; if (!q || q[0] !== p[0] || q[1] !== p[1]) coords.push(p); }));
+  const { coords, cum, total, kcal_per_l_o2 } = routeCum();
   const levels = coords.slice(0, -1).map((p, i) => levelAt([(p[0] + coords[i + 1][0]) / 2, (p[1] + coords[i + 1][1]) / 2]));
   const waypoints = S.plan.legs.slice(0, -1).map((L, i) => {
     const t = S.d.targets.after.find((x) => x.id === L.to);
     return { n: `第 ${i + 1} 站 ${t.id}`, coords: t.stop, cls: levelAt(t.stop) };
   });
-  localStorage.setItem('marswalker-arcadia-route', JSON.stringify({ coords, levels, waypoints, created: Date.now() }));
+  localStorage.setItem('marswalker-arcadia-route', JSON.stringify({ coords, levels, waypoints, cum, total, kcal_per_l_o2, created: Date.now() }));
   $('#w3d').hidden = false;
   $('#w3dFrame').src = `arcadia3d.html?route=${Date.now()}`;
 }

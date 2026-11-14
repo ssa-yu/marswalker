@@ -40,7 +40,7 @@ def test_entries_have_zh_and_en():
 
 
 def test_pages_load_i18n_first():
-    for page in ["index.html", "recon.html", "data.html", "scratch/index.html"]:
+    for page in ["jezero.html", "recon.html", "data.html", "scratch/index.html"]:
         s = (WEB / page).read_text()
         i = s.index("i18n.js")
         assert all(i < s.index(x) for x in re.findall(r'<script src="([^"]+)"', s) if "i18n" not in x), page

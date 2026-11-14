@@ -3,6 +3,15 @@ _SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the 
 # Marswalk Recon
 
 **A layered map and walking route for astronauts on Mars, made better by a scout rover that goes first.**
+
+## 怎麼看網頁
+
+`cd web && python3 -m http.server 8000`，打開 http://localhost:8000/ 就是主場景：**Arcadia 平原的 Starship 候選降落點**，主題是**腦紋地形**（brain terrain）。三個步驟：① 自走車從基地出發偵察、刮開沒看過的地面；② 腦紋熱度圖與偵察後選出的區域；③ 太空人多站路線（Pandolf 耗能，可點地圖換出發點），再按「3D 徒步」用第一人稱走一遍。`arcadia.html` 會轉到首頁。
+
+## Early version: Jezero Crater
+
+The Jezero pages are kept but no longer linked from the main page: http://localhost:8000/jezero.html (also `recon.html`, `data.html`, `scratch/`). Everything from here to "Rebuild" describes that early version.
+
 Scene: Jezero Crater, built from real NASA orbital terrain and imagery and Perseverance ground data.
 Challenge: NASA Space Apps 2026, *Interplanetary Survival Guide: Martian Map*.
 
@@ -47,7 +56,8 @@ Designed after seeing the 63-point comparison, which stays the pre-registered ma
 
 ```
 cd web && python3 -m http.server 8000
-# open http://localhost:8000/          astronaut map (route A vs B), the first page
+# open http://localhost:8000/             Arcadia (main page; arcadia.html forwards here, arcadia3d.html is the 3D walk)
+#      http://localhost:8000/jezero.html  early version: Jezero astronaut map (route A vs B)
 #      http://localhost:8000/recon.html   step 1: rover recon replay
 #      http://localhost:8000/data.html    map data and positioning checks
 ```

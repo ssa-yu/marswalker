@@ -48,7 +48,7 @@ const I18N_RAW = {
   'common.mars': [`（火星）`, `(Mars)`],
   'common.xy': [`居住艙以東 {x} m、以北 {y} m`, `x {x} m E, y {y} m N of the habitat`],
 
-  /* ---------- astronaut map (index.html, astronaut.js) ---------- */
+  /* ---------- astronaut map (jezero.html, astronaut.js) ---------- */
   'idx.question': [`自走車先去偵察，太空人走同一趟會更省氧氣、更少踩進危險區嗎？`, `Does a rover recon first make the astronaut's walk cheaper in oxygen and safer?`],
   'idx.tableBtn': [`完整數據表`, `Full table`],
   'idx.lead': [`在地圖上點一個測試點。<b class="cA">路線 A</b>：只用軌道資料規劃；<b class="cB">路線 B</b>：自走車偵察後再規劃。兩條都放到高解析地形（HiRISE）上實際走一次。`,
@@ -296,7 +296,6 @@ const I18N_RAW = {
   'dt.pPrior': [`低解析（CTX）`, `CTX (coarse)`],
   'dt.pSwipe': [`左右對照`, `Swipe`],
   'dt.swipeLbl': [`HiRISE ◀ ▶ CTX`, `HiRISE ◀ ▶ CTX`],
-  'dt.homeMap': [`回到 Jezero 研究區`, `Back to the Jezero study area`],
   'dt.checksSum': [`定位檢查`, `Positioning checks`],
   'dt.attrib': [`火星資料：NASA/JPL-Caltech/UArizona (HiRISE)、NASA/JPL-Caltech/MSSS (CTX)、USGS Astrogeology、NASA JPL Mars Trek。顯示用 MapLibre Web Mercator；距離以火星球體計算。`, `Mars data: NASA/JPL-Caltech/UArizona (HiRISE), NASA/JPL-Caltech/MSSS (CTX), USGS Astrogeology, NASA JPL Mars Trek. Display uses MapLibre Web Mercator; distances use the Mars sphere.`],
   'dt.review': [`定位與地形判讀：待審`, `Positioning & terrain reading: heuristic, not yet reviewed`],

@@ -12,7 +12,7 @@ with sync_playwright() as p:
     pg = br.new_page(viewport={"width": 1600, "height": 1000})
     errs = []
     pg.on("pageerror", lambda e: errs.append(str(e))); pg.on("console", lambda m: errs.append(m.text) if m.type == "error" else None)
-    pg.goto(f"http://127.0.0.1:{a.port}/index.html"); pg.wait_for_timeout(5000)
+    pg.goto(f"http://127.0.0.1:{a.port}/jezero.html"); pg.wait_for_timeout(5000)
     pg.evaluate("document.querySelector('#step2').scrollIntoView()")
     pg.evaluate("document.querySelector('#s2Stops button') && document.querySelector('#s2Stops button').click()"); pg.wait_for_timeout(2500)
     pg.screenshot(path=str(out / "W1_01_step2_unlocked_card.png")); print("saved 1")

@@ -4,8 +4,8 @@ import re
 from pathlib import Path
 
 WEB = Path(__file__).resolve().parents[1] / "web"
-PAGES = ["index.html", "recon.html", "data.html"]
-ORDER = ["index.html", "recon.html", "data.html", "scratch/"]
+PAGES = ["jezero.html", "recon.html", "data.html"]
+ORDER = ["jezero.html", "recon.html", "data.html", "scratch/"]
 
 
 def _header(page):
