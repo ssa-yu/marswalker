@@ -682,3 +682,20 @@ B_v3@30 by band (n; vs A O2 / hazard m; share O2 / hazard m): 300–600 m (8) �
 True return margin negative anywhere: none.
 
 Observation (no change follows): the v3 stops all lie within 156 m of the habitat, inside the ground the rover saw in every loop, so B_v3@k from loop 5 on, Bv3prior@k and REF plan the same 446 m tour (82.7 actual, 0 hazard m); A walks 49 m of hazard terrain (88.1). Round 7 (i) therefore says little in the v3 chain.
+
+#### W3 step 7 — R8 quantities, version 2 (T1 rerun) and version 3 (rerun) side by side (`spikes/w3_r8_report.py` → `data_work/jezero/v3/r8_report.json`)
+
+| | Version 2 (pre-registered record) | Version 3 (literature methods; designed after seeing version 2) |
+|---|---|---|
+| Seen after loops 1 / 5 / 10 / 20 / 30 | 0.5 / 3.2 / 5.4 / 8.9 / 11.3 % | 0.8 / 3.9 / 6.7 / 11.5 / 15.2 % |
+| Repeat coverage (seen cells seen in ≥ 2 loops) | 29.5 % | 30.7 % |
+| Total km; new area per km (all loops) | 46.5; 13,932 m²/km | 61.8; 14,201 m²/km |
+| Seen 0–600 / 600–1200 / > 1200 m | 49.8 / 3.3 / 0.0 % | 62.2 / 6.9 / 0.0 % |
+| Within 1200 m by direction N NE E SE S SW W NW | 11.7 23.2 27.1 22.2 27.9 16.8 13.9 10.7 | 13.2 48.5 78.1 35.6 28.1 16.6 9.6 8.3 |
+| Safety returns / soft turn-backs / replans | 14 / 17 / 6,232 | 7 / 30 / 551 |
+| Loops without reaching a target | 18 (one goal per loop) | 0 (frontier targets, many per loop — not comparable) |
+| Unlocked places after loops 1 / 5 / 10 / 20 / 30; units | 3 / 12 / 15 / 22 / 25; all Njf | 3 / 14 / 22 / 27 / 28; all Njf |
+| Loops over budget | 0 | 0 (rerun; run 2 had 3, program bug) |
+| p_firm / p_rough per loop | — | 0.13–0.27 / 0.20 (never saw prior-rough ground) |
+
+Repeat coverage is computed the same way for both (cells within 15 m of each loop's driven cells; the union equals the recorded seen mask in both runs). Observations (no change follows): version 3 drives 33 % farther in the same budget and sees 15.2 % instead of 11.3 %, but its repeat coverage is about the same and it leans hard to the east (78 % of the east sector within 1200 m) — gain per cost favours the cheap firm ground east of the habitat; still nothing beyond 1,200 m. Geometric bounds of the literature report (recomputed above): 24.2 % with no overlap at 46.5 km; at version 3's 61.8 km the same arithmetic gives 32.2 %.
