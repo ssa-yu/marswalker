@@ -5,7 +5,7 @@ body.arc #map { position: absolute; inset: 0 0 22px 0; }
 #box { left: 12px; top: 12px; max-width: min(430px, calc(100vw - 24px)); }
 #box .ttl { font-weight: 650; font-size: 14px; margin-bottom: 6px; }
 #box .ttl .home { color: var(--accent); text-decoration: none; }
-.steps, .seg, .layers { display: flex; flex-wrap: wrap; gap: 5px; }
+.steps, .layers { display: flex; flex-wrap: wrap; gap: 5px; }
 .layers { margin-top: 8px; gap: 4px 12px; font-size: 12px; }
 .ctl { margin-top: 8px; font-size: 12px; }
 .ctl input[type=range] { width: 100%; accent-color: var(--accent); }
@@ -27,5 +27,4 @@ body.arc #map { position: absolute; inset: 0 0 22px 0; }
 .mk { font: 600 11px/1 var(--font); padding: 3px 6px; border-radius: 10px; border: 1px solid #000; white-space: nowrap; box-shadow: 0 1px 3px #000a; }
 .mk.base { background: #fff; color: #111; }
 .mk.tgt { background: #ffd23f; color: #1a1205; }
-.mk.tgt.before { background: #c6a6ff; }
 .mk.stop { background: #38e1ff; color: #04161b; border-radius: 50%; width: 22px; height: 22px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; }
