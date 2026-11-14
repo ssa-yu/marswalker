@@ -78,7 +78,9 @@ for k, w in enumerate(HONLY):
     for th in (i["view"]["edge_left_deg"], i["view"]["edge_right_deg"]):
         a.plot([px, px + 60 * math.sin(math.radians(th))], [px, px - 60 * math.cos(math.radians(th))], color="cyan", lw=1.5)
     a.add_patch(plt.Circle((px, px), 60, fill=False, color="cyan", lw=0.8, ls="--"))
-    a.set_title(f"our sand class (red), view sector of the photo (cyan, 30 m): HiRISE sand {[r for r in X['groups']['sector']['rows'] if r['wp'] == w][0]['hirise_sand']:.2f}", fontsize=9); a.axis("off")
+    row = [r for r in X['groups']['sector']['rows'] if r['wp'] == w][0]
+    a.set_title(f"our sand class (red); this photo's 30 m view sector (cyan): sand {i['hirise_sand']:.2f}\n"
+                f"waypoint value used in X1 = mean over its {row['n_images']} photos (many directions): {row['hirise_sand']:.2f}", fontsize=9); a.axis("off")
     a = ax[k, 2]; a.imshow(Image.open(img_path(i["stem"]))); a.axis("off")
     a.set_title(f"Perseverance Navcam {i['stem'][:24]}… (NASA/JPL-Caltech); crowd-labelled sand {i['photo_sand']:.2f}", fontsize=9)
 fig.suptitle("For sign-off: the 3 waypoints where our HiRISE class says 'mostly sand' but the photo labels do not (X1). "
