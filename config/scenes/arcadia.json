@@ -1,0 +1,57 @@
+{
+ "scene": "arcadia",
+ "title": "Arcadia Planitia (SpaceX Starship candidate site)",
+ "base": {
+  "lon": -164.36293886,
+  "lat": 39.1353043,
+  "label": "derived",
+  "note": "Local-grid origin = study-area centre. Chosen by: >= 400 m from the edge, classifier window probability < 0.05 everywhere within 100 m, mean 6 m-baseline slope < 5.5 deg within 30 m; qualifying point closest to the study-area centre."
+ },
+ "aoi": {
+  "xmin": -1200,
+  "ymin": -1200,
+  "xmax": 1200,
+  "ymax": 1200,
+  "rule": "2.4 km square fully inside valid DTM and ortho; Pearson et al. 2024 classifier scan of the whole strip (128 m windows, 32 m step, RED_C 1 m ortho); squares with brain fraction (window prob >= 0.5) 20-60 %, chosen 40.2 % with brain and non-brain areas side by side.",
+  "label": "derived"
+ },
+ "fetch_margin_m": 40,
+ "grid": {
+  "ortho_res_m": 0.25,
+  "dtm_res_m": 1.0,
+  "prior_res_m": 20.0
+ },
+ "stac": {
+  "api": "https://stac.astrogeology.usgs.gov/api",
+  "collection": "mro_hirise_socet_dtms",
+  "item": "DTEEC_061075_2195_061141_2195_A01"
+ },
+ "sources": {
+  "dtm_fine": {
+   "file": "DTEEC_061075_2195_061141_2195_A01.tif",
+   "url": "https://astrogeo-ard.s3-us-west-2.amazonaws.com/mars/mro/hirise/controlled/dtm/ESP_061075_2195_ESP_061141_2195/DTEEC_061075_2195_061141_2195_A01.tif",
+   "title": "HiRISE DTM 1 m DTEEC_061075_2195_061141_2195_A01 (USGS STAC mro_hirise_socet_dtms)",
+   "mission": "MRO / HiRISE; USGS Astrogeology"
+  },
+  "ortho": {
+   "file": "ESP_061075_2195_RED_A_01_ORTHO_window.tif",
+   "url": "https://astrogeo-ard.s3-us-west-2.amazonaws.com/mars/mro/hirise/controlled/dtm/ESP_061075_2195_ESP_061141_2195/ESP_061075_2195_RED_A_01_ORTHO.tif",
+   "title": "HiRISE ortho 0.25 m ESP_061075_2195_RED_A_01 (study-area window of the COG)",
+   "mission": "MRO / HiRISE; USGS Astrogeology"
+  },
+  "ortho_1m": {
+   "file": "ESP_061075_2195_RED_C_01_ORTHO.tif",
+   "url": "https://astrogeo-ard.s3-us-west-2.amazonaws.com/mars/mro/hirise/controlled/dtm/ESP_061075_2195_ESP_061141_2195/ESP_061075_2195_RED_C_01_ORTHO.tif",
+   "title": "HiRISE ortho 1 m ESP_061075_2195_RED_C_01 (strip scan only)",
+   "mission": "MRO / HiRISE; USGS Astrogeology"
+  }
+ },
+ "status": "active",
+ "order": 2,
+ "habitat": {
+  "x": 21.0,
+  "y": -57.0,
+  "label": "derived",
+  "rule": "nearest firm 2 m cell (reference classes) to the grid origin above; brain score 0.013"
+ }
+}

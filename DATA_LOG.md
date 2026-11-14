@@ -807,3 +807,22 @@ Role: **consistency with the Mars 2020 Science Team photogeologic map (Stack et 
 - ST9 figure: `qa/jezero/stack2020/ST1_three_way.png` (internal QA). Only the figure layout was adjusted after the first render (title overlap, Chinese direction names); no number changed.
 - manager 驗收 N1、ST1；Us 解讀追認（decisions 2026-11-14）
 - ST9 figure wording (2026-11-14, manager): top lines "M1 漏判 0.89" / "M1s 漏判 0.79" read as "89 % / 79 % missed"; changed to "外部說是沙的方塊，我們也判沙：89%／79%". Text only, re-rendered from stored results; no number changed.
+
+### 2026-11-15 Arcadia 腦紋地形場景（Shan 決定換場景與主題，decisions 2026-11-15）
+
+| 資料 | 來源 | 用途 |
+|---|---|---|
+| HiRISE DTM 1 m `DTEEC_061075_2195_061141_2195_A01` | USGS STAC `mro_hirise_socet_dtms`（astrogeo-ard S3，CC0） | 坡度、粗糙度；降到 20 m 當出發前地圖 |
+| HiRISE 正射 0.25 m `ESP_061075_2195_RED_A_01_ORTHO` | 同上（COG，只讀研究區視窗） | 底圖、沙地、腦紋模型輸入 |
+| HiRISE 正射 1 m `ESP_061075_2195_RED_C_01_ORTHO` | 同上 | 全條帶粗掃選研究區 |
+| 腦紋模型 Pearson et al. 2024（PSJ, doi:10.3847/PSJ/ad5673） | github.com/pearsonkyle/Mars-Brain-Coral-Network（Caltech 保留權利，權重不進 git） | 熱度圖（U-Net 主圖；分類器只用於粗掃） |
+| 耗能 Pandolf 1977（隊友 Shooyunn 的 `mars_eva_energy.py`，原檔未改、未進 git） | Discord 附件 | 太空人每公尺 kcal、站立代謝 |
+
+- 研究區：2.4 km 方塊，中心 39.1353°N、195.6371°E（局部原點）；條帶粗掃（分類器 128 m 窗、步距 32 m）中腦紋 20–60% 的方塊取最接近 40%。U-Net 腦紋 ≥ 0.5 佔 44.1%。
+- 基地：局部 (21, −57) m＝離中心最近的硬地格（中心本身：100 m 內分類器機率 < 0.05、30 m 內平均坡度 < 5.5°）。
+- U-Net：512 px 圖塊、步距 128 px、邊緣 64 px 遮掉、重疊處 tent 加權平均；2 m 格＝0.25 m 結果 8×8 平均。
+- 地形：沿用 terrain.py 規則與 sandfield v2；**腦紋分數 ≥ 0.5 不判沙地**。沙地規則原本命中腦紋格 63.3%。真實地形：硬地 0.67%、崎嶇 63.1%、沙地 36.1%、不可通行 0.11%（粗糙度 ≥ 0.059 m 命中 96% 的格子）。出發前（DTM 20 m）：硬地 98.2%、崎嶇 1.8%。
+- 自走車：rover_sim 第二版規則，4 m 格（2×2 取最差類別），10 趟，13 s，看過研究區 2.7%。
+- 選區規則：60 m 方塊、≥ 50% 被看過、依平均分數取前 4、中心相距 ≥ 150 m、停靠點＝方塊內分數最高的可通行格。偵察後平均分數 0.938／0.715／0.551／0.505；出發前（全區）0.957／0.955／0.955／0.954。
+- 太空人：Pandolf split（μ = 0.375）、75 kg＋104 kg、η 1.1／1.5／2.1、2.5 km/h ×1／0.6／0.35、G＝該格 |坡度| %；1,800 kcal 留 20%；每站 18 分鐘（站立 5.32 kcal/min）；順序規則同 multistop.py。偵察後地圖：4/4 站，1.07 km，119 分，731 kcal，O₂ 146 L。（只用出發前地圖去出發前選的 4 區：4/4 站，4.48 km，179 分，1,087 kcal。）
+- 網頁 `web/arcadia.html`；截圖 `qa/arcadia/`；程式 `pipeline/arcadia.py`、`pipeline/arcadia_export.py`；腦紋推論 `spikes/brain_proto/{scan_strip,unet_arcadia}.py`（與原型同資料夾，未進 git）。

@@ -1,0 +1,31 @@
+/* SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md */
+body.arc { display: block; position: relative; overflow: hidden; }
+body.arc #map { position: absolute; inset: 0 0 22px 0; }
+.float { position: absolute; z-index: 5; background: rgba(20, 17, 15, .88); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+#box { left: 12px; top: 12px; max-width: min(430px, calc(100vw - 24px)); }
+#box .ttl { font-weight: 650; font-size: 14px; margin-bottom: 6px; }
+#box .ttl .home { color: var(--accent); text-decoration: none; }
+.steps, .seg, .layers { display: flex; flex-wrap: wrap; gap: 5px; }
+.layers { margin-top: 8px; gap: 4px 12px; font-size: 12px; }
+.ctl { margin-top: 8px; font-size: 12px; }
+.ctl input[type=range] { width: 100%; accent-color: var(--accent); }
+#legend { left: 12px; bottom: 34px; font-size: 11.5px; max-width: 300px; }
+#legend .it { display: flex; align-items: center; gap: 6px; margin: 2px 0; }
+#legend i { display: inline-block; width: 14px; height: 10px; border-radius: 2px; flex: none; }
+#legend i.ln { height: 3px; width: 18px; }
+#legend i.pt { width: 10px; height: 10px; border-radius: 50%; border: 1px solid #000; }
+#legend .ramp { height: 10px; width: 160px; border-radius: 3px; background: linear-gradient(90deg, #000004, #3b0f70, #8c2981, #de4968, #fe9f6d, #fcfdbf); }
+#legend .rl { display: flex; justify-content: space-between; width: 160px; color: var(--muted); font-size: 10.5px; }
+#card { right: 12px; top: 12px; min-width: 190px; font-size: 12.5px; }
+#card h4 { margin: 0 0 6px; font-size: 13px; display: flex; justify-content: space-between; gap: 10px; }
+#card h4 button { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 14px; }
+#card .kv { display: grid; grid-template-columns: max-content max-content; gap: 2px 14px; }
+#card .kv span:nth-child(odd) { color: var(--muted); }
+#card .kv span:nth-child(even) { text-align: right; font-variant-numeric: tabular-nums; }
+#foot { position: absolute; left: 0; right: 0; bottom: 0; height: 22px; line-height: 22px; padding: 0 10px; font-size: 10.5px; color: var(--muted); background: var(--panel); border-top: 1px solid var(--line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 760px) { #foot { white-space: normal; height: auto; line-height: 1.3; padding: 3px 8px; } body.arc #map { bottom: 44px; } #legend { bottom: 54px; } #card { top: auto; bottom: 54px; right: 8px; } }
+.mk { font: 600 11px/1 var(--font); padding: 3px 6px; border-radius: 10px; border: 1px solid #000; white-space: nowrap; box-shadow: 0 1px 3px #000a; }
+.mk.base { background: #fff; color: #111; }
+.mk.tgt { background: #ffd23f; color: #1a1205; }
+.mk.tgt.before { background: #c6a6ff; }
+.mk.stop { background: #38e1ff; color: #04161b; border-radius: 50%; width: 22px; height: 22px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; }
