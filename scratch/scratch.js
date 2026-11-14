@@ -5,7 +5,8 @@
    3 Walk: least-oxygen round trip from the habitat through the targets on the user's knowledge map
      (revealed = HiRISE classes, unrevealed = orbital prior classes), replayed on the HiRISE reference classes.
    Oxygen model = pipeline/astro_plan.py PARAMS (assumed). Planning grid 4 m (2 x 2 blocks of the 2 m classes).
-   Data: data/terrain.bin, data/supercam.json, data/views.json (built by build_data.py) + ../data/jezero/*. */
+   Data: data/terrain.bin, data/supercam.json, data/views.json (built by build_data.py) + ../data/jezero/*.
+   Interface text: ../i18n.js (tr). Fixed defaults (no longer sliders): brush radius, targets wanted, reserve, stay, replay speed. */
 'use strict';
 const R_MARS = 3396190, DEG = Math.PI / 180;
 const D = '../data/jezero/', SD = 'data/';
@@ -20,12 +21,14 @@ const TM = [0, 1, 2].map((i) => 1 / (VMIN * PAR.speed[i])); // min per metre
 const OM = TM.map((t, i) => t * PAR.o2[i]);                  // O2 nominal-min per metre
 const STAY_RATE = 1.0;                                        // demo assumption
 const WARN_FRAC = 0.15;                                       // astro_plan UI threshold (interface only)
+const BRUSH_M = 60, N_TARGETS = 3, RESERVE_PCT = 20, STAY_MIN = 10, SPEED_MIN_PER_S = 8;   // fixed demo defaults
 
 const $ = (s) => document.querySelector(s);
 const abs = (u) => new URL(u, location.href).href;
 const f0 = (v) => (v == null || !isFinite(v) ? '–' : Math.round(v).toLocaleString('en-US'));
 const f1 = (v) => (v == null || !isFinite(v) ? '–' : (Math.round(v * 10) / 10).toFixed(1));
-const fmtMin = (m) => { if (!isFinite(m)) return '–'; const h = Math.floor(m / 60), r = Math.round(m - 60 * h); return h ? `${h} h ${String(r).padStart(2, '0')} min` : `${r} min`; };
+const fmtMin = (m) => { if (!isFinite(m)) return '–'; const h = Math.floor(m / 60), r = Math.round(m - 60 * h); return h ? tr('fmt.hm', { h, m: String(r).padStart(2, '0') }) : tr('fmt.m', { m: r }); };
+const clsName = (c) => tr('cls.' + c);
 const fmtKm = (m) => (m >= 1000 ? `${(m / 1000).toFixed(2)} km` : `${Math.round(m)} m`);
 const S = { rev: new Uint8Array(N * N), nRev: 0, mode: 'scratch', step: 1, targets: [], stale: false, plan: null, t: 0, playing: false, viewKey: '' };
 
@@ -54,7 +57,7 @@ async function init() {
   paintCover();
   buildMap();
   bindUI();
-  setView({ cls: 'firm', where: 'At the habitat (start)', idx: 0 });
+  setView({ cls: 'firm', where: tr('sc.atStart'), idx: 0 });
   renderRevStats();
 }
 
@@ -89,7 +92,7 @@ function coverUpdate(final) {
 }
 
 function scratchAt(x, y) {
-  const rm = +$('#brush').value, rp = rm / RES;
+  const rm = BRUSH_M, rp = rm / RES;
   const [r0, c0] = [(Y1 - y) / RES, (x - X0) / RES];
   const g = $('#coverCanvas').getContext('2d');
   g.globalCompositeOperation = 'destination-out'; g.beginPath(); g.arc(c0, r0, rp, 0, 2 * Math.PI); g.fill();
@@ -107,7 +110,7 @@ function scratchAt(x, y) {
 }
 
 function stroke(a, b) {
-  const step = Math.max(2, +$('#brush').value / 3), d = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.ceil(d / step));
+  const step = Math.max(2, BRUSH_M / 3), d = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.ceil(d / step));
   for (let i = 1; i <= n; i++) scratchAt(a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n);
 }
 
@@ -126,10 +129,10 @@ function renderRevStats() {
   for (let i = 0; i < N * N; i++) if (S.rev[i]) { cr[S.ref[i]]++; cp[S.pri[i]]++; }
   const n = S.nRev, km2 = n * RES * RES / 1e6;
   const nSC = S.SC.sites.filter((s) => S.rev[s.cell]).length;
-  if (!n) { $('#revStats').innerHTML = '<p class="hint">Nothing revealed yet. The whole study area is 2.4 × 2.4 km (5.76 km²).</p>'; return; }
-  $('#revStats').innerHTML = `<table class="stats"><thead><tr><th>In the revealed ${km2.toFixed(2)} km²</th><th>Orbit said</th><th>HiRISE shows</th></tr></thead><tbody>${
-    CLS.map((c, i) => `<tr><td><span class="sw" style="background:${CCOL[i]}"></span>${c}</td><td>${(100 * cp[i] / n).toFixed(0)} %</td><td>${(100 * cr[i] / n).toFixed(0)} %</td></tr>`).join('')
-  }</tbody></table><p class="hint">SuperCam chemistry sites uncovered: <b>${nSC}</b> of ${S.SC.sites.length} in the study area. Orbit = CTX-based prior classes; HiRISE = reference classes from the HiRISE DTM (sand: heuristic).</p>`;
+  if (!n) { $('#revStats').innerHTML = `<p class="hint">${tr('sc.none')}</p>`; return; }
+  $('#revStats').innerHTML = `<table class="stats"><thead><tr><th>${tr('sc.inRev', { a: km2.toFixed(2) })}</th><th>${tr('sc.orbit')}</th><th>${tr('sc.hirise')}</th></tr></thead><tbody>${
+    CLS.map((c, i) => `<tr><td><span class="sw" style="background:${CCOL[i]}"></span>${clsName(c)}</td><td>${(100 * cp[i] / n).toFixed(0)} %</td><td>${(100 * cr[i] / n).toFixed(0)} %</td></tr>`).join('')
+  }</tbody></table><p class="hint">${tr('sc.scFound', { n: nSC, t: S.SC.sites.length })}</p>`;
 }
 
 // ---------- map
@@ -143,7 +146,7 @@ function buildMap() {
   S.map = map;
   map.touchZoomRotate.disableRotation();
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
-  map.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution: 'CTX: NASA/JPL/MSSS · HiRISE: NASA/JPL/UArizona (USGS Mars 2020 TRN) · Perseverance: NASA/JPL-Caltech' }));
+  map.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution: tr('sc.attrib') }));
   map.on('load', () => {
     const L = (id) => sc.layers.find((l) => l.id === id), ctx = L('ctx_ortho'), ho = L('hirise_ortho');
     map.addSource('ctx', { type: 'image', url: abs(D + ctx.url), coordinates: ctx.coordinates });
@@ -163,12 +166,12 @@ function buildMap() {
     map.addLayer({ id: 'route', type: 'line', source: 'route', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '#ffffff', 'line-width': 2.5, 'line-dasharray': [2, 1.5] } });
     map.addSource('walked', { type: 'geojson', data: fc([]) });
     map.addLayer({ id: 'walked', type: 'line', source: 'walked', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '#43b0f1', 'line-width': 4 } });
-    new maplibregl.Marker({ element: Object.assign(document.createElement('div'), { className: 'hab-marker', title: 'Habitat (assumed: Octavia E. Butler Landing)' }) }).setLngLat([LON0, LAT0]).addTo(map);
-    S.astro = new maplibregl.Marker({ element: Object.assign(document.createElement('div'), { className: 'astro-marker', title: 'Astronaut' }) }).setLngLat([LON0, LAT0]).addTo(map);
+    new maplibregl.Marker({ element: Object.assign(document.createElement('div'), { className: 'hab-marker', title: tr('sc.habTitle') }) }).setLngLat([LON0, LAT0]).addTo(map);
+    S.astro = new maplibregl.Marker({ element: Object.assign(document.createElement('div'), { className: 'astro-marker', title: tr('common.astronaut') }) }).setLngLat([LON0, LAT0]).addTo(map);
     const pop = new maplibregl.Popup({ closeButton: false, offset: 8 });
     map.on('mousemove', 'sc', (e) => {
       if (S.mode === 'scratch' && S.down) return;
-      const p = e.features[0].properties; pop.setLngLat(e.lngLat).setHTML(`SuperCam site · sol ${p.sols}<br>${p.targets}<br>SiO₂ ${p.si} %, FeO<sub>T</sub> ${p.fe} %, MgO ${p.mg} % (mean of ${p.n} LIBS shots)`).addTo(map);
+      const p = e.features[0].properties; pop.setLngLat(e.lngLat).setHTML(tr('sc.scPop', { sols: p.sols, t: p.targets, si: p.si, fe: p.fe, mg: p.mg, n: p.n })).addTo(map);
     });
     map.on('mouseleave', 'sc', () => pop.remove());
     map.once('idle', () => { window.__ready = true; });
@@ -193,7 +196,7 @@ function buildMap() {
 const fc = (f) => ({ type: 'FeatureCollection', features: f });
 function updateSC() {
   if (!S.map || !S.map.getSource('sc')) return;
-  const on = $('#showSc').checked;
+  const on = true;   // SuperCam sites always shown where revealed
   S.map.getSource('sc').setData(fc(on ? S.SC.sites.filter((s) => S.rev[s.cell]).map((s) => ({ type: 'Feature', properties: {
     sols: s.sols.join(', '), targets: s.targets.slice(0, 4).join(', ') + (s.targets.length > 4 ? ' …' : ''), n: s.n_shots,
     si: f1(s.mean_wt_pct.SiO2), fe: f1(s.mean_wt_pct.FeOT), mg: f1(s.mean_wt_pct.MgO) }, geometry: { type: 'Point', coordinates: [s.lon, s.lat] } })) : []));
@@ -260,10 +263,10 @@ function dijkstra(cost, src, stops) {
 }
 function pathTo(prev, src, dst) { const p = [dst]; let u = dst; while (u !== src) { u = prev[u]; if (u < 0) return null; p.push(u); } return p.reverse(); }
 
-function usable() { return +$('#cap').value * (1 - +$('#res').value / 100); }
+function usable() { return +$('#cap').value * (1 - RESERVE_PCT / 100); }
 
 function analyse() {
-  const want = +$('#nTg').value, U = usable(), stay = +$('#stay').value * STAY_RATE;
+  const want = N_TARGETS, U = usable(), stay = STAY_MIN * STAY_RATE;
   const G = knowledgeGrids(); S.G = G;
   S.F0 = dijkstra(G.kO, S.baseK, null);
   const cands = [];
@@ -310,22 +313,22 @@ function range(a, b) { const o = []; for (let i = a; i <= b; i++) o.push(i); ret
 
 function drawTargets() {
   (S.tgMarkers || []).forEach((m) => m.remove());
-  S.tgMarkers = S.targets.map((t) => new maplibregl.Marker({ element: Object.assign(document.createElement('div'), { className: 'tg-marker', textContent: t.n, title: `Target ${t.n}` }) }).setLngLat(xyToLL(t.x, t.y)).addTo(S.map));
+  S.tgMarkers = S.targets.map((t) => new maplibregl.Marker({ element: Object.assign(document.createElement('div'), { className: 'tg-marker', textContent: t.n, title: tr('sc.target', { n: t.n }) }) }).setLngLat(xyToLL(t.x, t.y)).addTo(S.map));
 }
 
 function renderTargets() {
   const A = S.analysis, el = $('#tgList');
-  if (!A) { el.innerHTML = '<p class="hint">Scratch part of the map in step 1, then press Analyse.</p>'; return; }
-  let h = S.stale ? '<div class="msg">You scratched more since this analysis. Press Analyse again to use the new area.</div>' : '';
-  h += `<p class="hint">Lattice points with enough revealed ground: <b>${A.nRevealedLattice}</b> · firm/rough and ≥ 20 m from sand: <b>${A.nPass}</b> · reachable and back: <b>${A.nReach}</b>.</p>`;
-  if (!S.targets.length) h += `<div class="msg">No target found. ${S.nRev < 20000 ? 'Scratch a larger area first.' : 'Try revealing firm or rough ground away from sand.'}</div>`;
+  if (!A) { el.innerHTML = `<p class="hint">${tr('sc.tgFirst')}</p>`; return; }
+  let h = S.stale ? `<div class="msg">${tr('sc.stale')}</div>` : '';
+  h += `<p class="hint">${tr('sc.funnel', { a: A.nRevealedLattice, b: A.nPass, c: A.nReach })}</p>`;
+  if (!S.targets.length) h += `<div class="msg">${tr('sc.noTg')} ${S.nRev < 20000 ? tr('sc.noTgMore') : tr('sc.noTgFirm')}</div>`;
   h += S.targets.map((t) => {
-    const sh = t.shares.map((v, i) => (v >= 0.01 ? `${CLS[i]} ${Math.round(100 * v)} %` : null)).filter(Boolean).join(', ');
-    const sc = t.sites.length ? `${t.sites.length} SuperCam site${t.sites.length > 1 ? 's' : ''} within 30 m (e.g. ${t.sites[0].targets.slice(0, 2).join(', ')}, sol ${t.sites[0].sols[0]}: SiO₂ ${f1(t.sites[0].mean_wt_pct.SiO2)} %, FeO<sub>T</sub> ${f1(t.sites[0].mean_wt_pct.FeOT)} %)` : 'no SuperCam site in the revealed area nearby';
-    return `<div class="tg"><div class="h"><span class="n">${t.n}</span><b>Score ${t.score.toFixed(2)}</b><span class="muted">${CLS[t.cls]} spot · x ${f0(t.x)} m, y ${f0(t.y)} m</span></div>
-      <div class="why">Variety ${t.H.toFixed(2)} (${sh}) · ${sc} · nearest revealed sand ${isFinite(t.dSand) ? f0(t.dSand) + ' m' : '> 100 m'} · round trip alone ${f0(t.rt)} O₂ min.</div></div>`;
+    const sh = t.shares.map((v, i) => (v >= 0.01 ? `${clsName(CLS[i])} ${Math.round(100 * v)} %` : null)).filter(Boolean).join(', ');
+    const sc = t.sites.length ? tr('sc.tgSc', { n: t.sites.length, t: t.sites[0].targets.slice(0, 2).join(', '), sol: t.sites[0].sols[0], si: f1(t.sites[0].mean_wt_pct.SiO2), fe: f1(t.sites[0].mean_wt_pct.FeOT) }) : tr('sc.tgNoSc');
+    return `<div class="tg"><div class="h"><span class="n">${t.n}</span><b>${tr('sc.score', { s: t.score.toFixed(2) })}</b><span class="muted">${clsName(CLS[t.cls])} · x ${f0(t.x)} m, y ${f0(t.y)} m</span></div>
+      <div class="why">${tr('sc.tgWhy', { h: t.H.toFixed(2), sh, sc, sand: isFinite(t.dSand) ? f0(t.dSand) + ' m' : '> 100 m', rt: f0(t.rt) })}</div></div>`;
   }).join('');
-  if (S.targets.length) h += '<div class="row"><button class="btn sm" id="goWalk">Go to step 3 · Walk &rarr;</button></div>';
+  if (S.targets.length) h += `<div class="row"><button class="btn sm" id="goWalk">${tr('sc.goWalk')}</button></div>`;
   el.innerHTML = h;
   const gw = $('#goWalk'); if (gw) gw.onclick = () => { setStep(3); planTour(); };
 }
@@ -334,7 +337,7 @@ function renderTargets() {
 function planTour() {
   stop();
   if (!S.targets.length) { S.plan = null; renderPlanOut(); return; }
-  const U = usable(), stay = +$('#stay').value * STAY_RATE, G = S.G, T = S.targets, n = T.length;
+  const U = usable(), stay = STAY_MIN * STAY_RATE, G = S.G, T = S.targets, n = T.length;
   const nodes = [S.baseK, ...T.map((t) => t.k4)];
   const F = [S.F0, ...T.map((t) => dijkstra(G.kO, t.k4, nodes))];
   const C = nodes.map((_, a) => nodes.map((b) => F[a].dist[b]));
@@ -388,50 +391,52 @@ function planTour() {
 function clearRoute() {
   if (!S.map || !S.map.getSource('route')) return;
   S.map.getSource('route').setData(fc([])); S.map.getSource('walked').setData(fc([]));
-  $('#play').disabled = true; $('#scrub').disabled = true; $('#scrub').value = 0; $('#tLbl').textContent = '0 min';
+  $('#play').disabled = true; $('#scrub').disabled = true; $('#scrub').value = 0; $('#tLbl').textContent = fmtMin(0);
   S.astro && S.astro.setLngLat([LON0, LAT0]);
   setHud(null);
-  setView({ cls: 'firm', where: 'At the habitat (start)', idx: 0 });
+  setView({ cls: 'firm', where: tr('sc.atStart'), idx: 0 });
 }
 
 function renderPlanOut() {
   const el = $('#planOut'), P = S.plan;
-  if (!S.targets.length) { el.innerHTML = '<div class="msg">No targets yet. Run step 2 · Analyse first.</div>'; return; }
-  if (!P) { el.innerHTML = `<p class="hint">${S.targets.length} target${S.targets.length > 1 ? 's' : ''} ready. Press Plan round trip.</p>`; return; }
-  if (P.fail) { el.innerHTML = '<div class="msg">No target fits in the usable oxygen. Raise the suit oxygen or lower the reserve.</div>'; return; }
+  if (!S.targets.length) { el.innerHTML = `<div class="msg">${tr('sc.noTgYet')}</div>`; return; }
+  if (!P) { el.innerHTML = `<p class="hint">${tr('sc.ready', { n: S.targets.length })}</p>`; return; }
+  if (P.fail) { el.innerHTML = `<div class="msg">${tr('sc.fail')}</div>`; return; }
   const ord = P.order.map((i) => `<b>${i}</b>`).join(' → ');
   const diff = P.o2Act - P.o2Plan, rel = Math.abs(diff) / Math.max(1, P.o2Plan);
-  el.innerHTML = `${S.stale ? '<div class="msg">The map changed since this plan. Analyse and plan again.</div>' : ''}
-    <p class="lead">Habitat → ${ord} → habitat${P.skipped.length ? ` · <span class="bad">skipped ${P.skipped.join(', ')} (does not fit)</span>` : ''}</p>
-    <table class="stats"><thead><tr><th>Leg</th><th>Distance</th><th>Time</th><th>O₂ (nominal min)</th></tr></thead><tbody>${
-      P.legs.map((L) => `<tr><td>${L.from ? 'T' + L.from : 'Habitat'} → ${L.to ? 'T' + L.to : 'habitat'}</td><td>${fmtKm(L.d)}</td><td>${fmtMin(L.t)}</td><td>${f0(L.oa)}</td></tr>`).join('')
-    }${P.stay ? `<tr><td>Stays (${P.order.length} × ${P.stay} min)</td><td></td><td>${fmtMin(P.order.length * P.stay)}</td><td>${f0(P.order.length * P.stay)}</td></tr>` : ''}</tbody></table>
+  const hab = tr('common.habitat');
+  el.innerHTML = `${S.stale ? `<div class="msg">${tr('sc.planStale')}</div>` : ''}
+    <p class="lead">${hab} → ${ord} → ${hab}${P.skipped.length ? ` · <span class="bad">${tr('sc.skipped', { s: P.skipped.join(', ') })}</span>` : ''}</p>
+    <table class="stats"><thead><tr><th>${tr('sc.leg')}</th><th>${tr('sc.dist')}</th><th>${tr('sc.time')}</th><th>${tr('sc.o2')}</th></tr></thead><tbody>${
+      P.legs.map((L) => `<tr><td>${L.from ? 'T' + L.from : hab} → ${L.to ? 'T' + L.to : hab}</td><td>${fmtKm(L.d)}</td><td>${fmtMin(L.t)}</td><td>${f0(L.oa)}</td></tr>`).join('')
+    }${P.stay ? `<tr><td>${tr('sc.stays', { n: P.order.length, m: P.stay })}</td><td></td><td>${fmtMin(P.order.length * P.stay)}</td><td>${f0(P.order.length * P.stay)}</td></tr>` : ''}</tbody></table>
     <div class="kv">
-      <span>Total walked · time</span><b>${fmtKm(P.dist)} · ${fmtMin(P.tAct)}</b>
-      <span>O₂ used, walked on HiRISE terrain</span><b>${f0(P.o2Act)} of ${f0(P.U)} usable</b>
-      <span>O₂ the plan expected (your map)</span><b>${f0(P.o2Plan)}</b>
-      <span>O₂ left at return (above reserve)</span><b class="${P.U - P.o2Act < 0 ? 'bad' : 'ok'}">${f0(P.U - P.o2Act)}</b>
-      <span>Smallest return margin on the way</span><b class="${P.minMarginAct < 0 ? 'bad' : P.minMarginAct < WARN_FRAC * P.U ? 'warnc' : 'ok'}">${f0(P.minMarginAct)}</b>
+      <span>${tr('sc.kTotal')}</span><b>${fmtKm(P.dist)} · ${fmtMin(P.tAct)}</b>
+      <span>${tr('sc.kUsed')}</span><b>${tr('sc.kUsedV', { a: f0(P.o2Act), u: f0(P.U) })}</b>
+      <span>${tr('sc.kPlan')}</span><b>${f0(P.o2Plan)}</b>
+      <span>${tr('sc.kLeft')}</span><b class="${P.U - P.o2Act < 0 ? 'bad' : 'ok'}">${f0(P.U - P.o2Act)}</b>
+      <span>${tr('sc.kMin')}</span><b class="${P.minMarginAct < 0 ? 'bad' : P.minMarginAct < WARN_FRAC * P.U ? 'warnc' : 'ok'}">${f0(P.minMarginAct)}</b>
     </div>
-    <p class="hint">${rel > 0.05 ? `Plan and walk differ by ${diff > 0 ? '+' : '−'}${f0(Math.abs(diff))} O₂ min: the route crosses ground you did not scratch, where the plan used the orbital prior. ` : 'Plan and walk agree: the route stays on ground you revealed. '}${P.nBlk ? `<span class="bad">The route crosses ${P.nBlk} cells of ≥ 25° slope the plan did not know about.</span> ` : ''}Return margin = O₂ left above the reserve minus O₂ needed to walk home on your map.</p>`;
+    <p class="hint">${rel > 0.05 ? tr('sc.differ', { d: (diff > 0 ? '+' : '−') + f0(Math.abs(diff)) }) : tr('sc.agree')}${P.nBlk ? ` <span class="bad">${tr('sc.steep', { n: P.nBlk })}</span>` : ''}</p>`;
 }
 
 function setHud(i) {
   const P = S.plan;
   if (i == null || !P || P.fail) { $('#o2Val').textContent = '–'; $('#mgVal').textContent = '–'; $('#tdVal').textContent = '–'; $('#o2Bar .fill').style.width = '100%'; $('#mgBar .fill').style.width = '100%'; $('#warn').hidden = true; return; }
-  const cap = +$('#cap').value, resF = +$('#res').value / 100, tl = P.tl;
+  const cap = +$('#cap').value, resF = RESERVE_PCT / 100, tl = P.tl;
   const oa = tl._oa, left = cap - oa, mg = P.U - oa - tl._home;
-  $('#o2Val').textContent = `${f0(left)} / ${f0(cap)} nominal min`;
+  $('#o2Val').textContent = tr('sc.o2of', { l: f0(left), c: f0(cap) });
   const ob = $('#o2Bar'); ob.querySelector('.fill').style.width = `${Math.max(0, 100 * left / cap)}%`; ob.querySelector('.res').style.width = `${100 * resF}%`;
   ob.classList.toggle('low', left < cap * (resF + WARN_FRAC)); ob.classList.toggle('crit', left < cap * resF);
-  $('#mgVal').textContent = `${f0(mg)} nominal min`;
+  $('#mgVal').textContent = tr('sc.nomMin', { v: f0(mg) });
   const mb = $('#mgBar'); mb.querySelector('.fill').style.width = `${Math.max(0, Math.min(100, 100 * mg / P.U))}%`;
   mb.classList.toggle('low', mg < WARN_FRAC * P.U); mb.classList.toggle('crit', mg < 0);
-  $('#tdVal').textContent = `${fmtKm(tl._d)} · ${tl._hd}`;
-  const w = $('#warn'); w.hidden = mg >= 0; w.textContent = mg < 0 ? 'Return margin below zero: the walk eats into the reserve.' : '';
+  $('#tdVal').textContent = `${fmtKm(tl._d)} · ${compName(tl._hd)}`;
+  const w = $('#warn'); w.hidden = mg >= 0; w.textContent = mg < 0 ? tr('sc.warnNeg') : '';
 }
 
 const COMP = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+const compName = (c) => (c === '–' ? c : tr('dir.' + c));
 function setT(t) {
   const P = S.plan; if (!P || P.fail) return;
   const tl = P.tl, T = tl.t, end = T[T.length - 1];
@@ -447,17 +452,17 @@ function setT(t) {
   S.astro.setLngLat(xyToLL(x, y));
   const walked = tl.x.slice(0, i + 1).map((xx, q) => xyToLL(xx, tl.y[q])); walked.push(xyToLL(x, y));
   S.map.getSource('walked').setData(fc(walked.length > 1 ? [{ type: 'Feature', geometry: { type: 'LineString', coordinates: walked } }] : []));
-  $('#tLbl').textContent = `${fmtMin(t)} of ${fmtMin(end)}`;
+  $('#tLbl').textContent = tr('sc.tOf', { t: fmtMin(t), e: fmtMin(end) });
   if (!S.scrubbing) $('#scrub').value = Math.round(1000 * t / end);
   setHud(i);
   // where am I: stay at a target, at the habitat, or walking
   const atStay = tl.stay[j] && T[j] > T[i] && tl.x[i] === tl.x[j] && tl.y[i] === tl.y[j] ? tl.stay[j] : 0;
   const nearHab = Math.hypot(x, y) < 12;
   const cls = classAt(x, y);
-  const where = atStay ? `At target ${atStay} · stay` : nearHab && (t === 0 || t === end) ? (t === 0 ? 'At the habitat (start)' : 'Back at the habitat') : `Walking to ${nextLegTarget(tl, j)} · heading ${tl._hd}`;
+  const where = atStay ? tr('sc.atTarget', { n: atStay }) : nearHab && (t === 0 || t === end) ? (t === 0 ? tr('sc.atStart') : tr('sc.back')) : tr('sc.walking', { to: nextLegTarget(tl, j), h: compName(tl._hd) });
   setView({ cls: CLS[cls], where, idx: Math.floor(tl._d / 150) });
 }
-function nextLegTarget(tl, j) { const L = S.plan.legs[tl.leg[j]]; return L ? (L.to ? `T${L.to}` : 'habitat') : 'habitat'; }
+function nextLegTarget(tl, j) { const L = S.plan.legs[tl.leg[j]]; return L ? (L.to ? `T${L.to}` : tr('common.habitat')) : tr('common.habitat'); }
 function classAt(x, y) {
   const [r, c] = rc2(x, y), cnt = [0, 0, 0, 0];
   for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++) { const rr = r + dr, cc = c + dc; if (rr >= 0 && cc >= 0 && rr < N && cc < N) cnt[S.ref[rr * N + cc]]++; }
@@ -467,19 +472,19 @@ function classAt(x, y) {
 // ---------- right pane: front view
 function setView({ cls, where, idx }) {
   $('#viewWhere').textContent = where;
-  const c = $('#viewCls'); c.textContent = cls === 'blocked' ? 'Steep (≥ 25°)' : `${cls[0].toUpperCase()}${cls.slice(1)} ground`; c.className = cls;
+  const c = $('#viewCls'); c.textContent = tr('sc.ground.' + cls); c.className = cls;
   const list = S.VW.views[cls];
   if (!list || !list.length) {
     const key = 'schem:' + cls; if (S.viewKey === key) return; S.viewKey = key;
     $('#imgA').classList.remove('on'); $('#imgB').classList.remove('on');
-    const sv = $('#viewSchem'); sv.hidden = false; sv.textContent = `Schematic placeholder: no Perseverance image classified as "${cls}" in this set.`;
-    $('#viewNote').textContent = 'Schematic only (no real image for this terrain class).'; $('#viewCredit').textContent = '';
+    const sv = $('#viewSchem'); sv.hidden = false; sv.textContent = tr('sc.schem', { c: clsName(cls) });
+    $('#viewNote').textContent = tr('sc.schemNote'); $('#viewCredit').textContent = '';
     return;
   }
   $('#viewSchem').hidden = true;
   const v = list[((idx % list.length) + list.length) % list.length], key = v.src;
-  $('#viewNote').textContent = "Real Perseverance image of similar terrain (illustrative, not the astronaut's actual view).";
-  $('#viewCredit').innerHTML = `${v.camera === 'NAVCAM_LEFT' ? 'Navcam' : 'Front Hazcam'} · sol ${v.sol} · waypoint ${v.waypoint} · Credit: ${v.credit} · <a href="${v.page}" target="_blank" rel="noopener">raw image</a>`;
+  $('#viewNote').textContent = tr('sc.viewNote');
+  $('#viewCredit').innerHTML = tr('sc.viewCredit', { cam: v.camera === 'NAVCAM_LEFT' ? 'Navcam' : 'Front Hazcam', sol: v.sol, wp: v.waypoint, credit: v.credit, page: v.page });
   if (S.viewKey === key) return; S.viewKey = key;
   const a = $('#imgA'), b = $('#imgB'), on = a.classList.contains('on') ? a : b, off = on === a ? b : a;
   off.onload = () => { off.classList.add('on'); on.classList.remove('on'); };
@@ -490,18 +495,18 @@ function setView({ cls, where, idx }) {
 function play() {
   if (!S.plan || S.plan.fail) return;
   const end = S.plan.tl.t.at(-1); if (S.t >= end) S.t = 0;
-  S.playing = true; $('#play').innerHTML = '&#10074;&#10074; Pause';
+  S.playing = true; $('#play').textContent = tr('common.pause');
   let last = performance.now();
   const tick = (now) => {
     if (!S.playing) return;
     const dt = (now - last) / 1000; last = now;
-    setT(S.t + dt * +$('#speed').value);
+    setT(S.t + dt * SPEED_MIN_PER_S);
     if (S.t >= end) { stop(); return; }
     S.raf = requestAnimationFrame(tick);
   };
   S.raf = requestAnimationFrame(tick);
 }
-function stop() { S.playing = false; cancelAnimationFrame(S.raf); $('#play').innerHTML = '&#9654; Play'; }
+function stop() { S.playing = false; cancelAnimationFrame(S.raf); $('#play').textContent = tr('common.play'); }
 
 // ---------- UI
 function setStep(n) {
@@ -513,26 +518,21 @@ function setStep(n) {
 }
 function bindUI() {
   document.querySelectorAll('.step').forEach((b) => (b.onclick = () => setStep(+b.dataset.step)));
-  const lbl = () => {
-    $('#brushLbl').textContent = `${$('#brush').value} m`; $('#nTgLbl').textContent = $('#nTg').value;
-    $('#capLbl').textContent = $('#cap').value; $('#resLbl').textContent = `${$('#res').value} %`; $('#stayLbl').textContent = `${$('#stay').value} min`;
-  };
-  lbl();
-  for (const id of ['brush', 'nTg']) $('#' + id).addEventListener('input', lbl);
-  for (const id of ['cap', 'res', 'stay']) $('#' + id).addEventListener('input', () => { lbl(); if (S.plan) { planTour(); } });
+  const lbl = () => { $('#capLbl').textContent = $('#cap').value; };
+  lbl(); $('#play').textContent = tr('common.play'); $('#tLbl').textContent = fmtMin(0);
+  $('#cap').addEventListener('input', () => { lbl(); if (S.plan) { planTour(); } });
   $('#modeScratch').onclick = () => setMode('scratch'); $('#modePan').onclick = () => setMode('pan');
   $('#showCls').onchange = () => S.map.setLayoutProperty('cls', 'visibility', $('#showCls').checked ? 'visible' : 'none');
-  $('#showSc').onchange = updateSC;
   $('#revealAll').onclick = () => { $('#coverCanvas').getContext('2d').clearRect(0, 0, N, N); S.rev.fill(1); S.nRev = N * N; afterScratch(true); };
   $('#resetBtn').onclick = () => {
     stop(); S.rev.fill(0); S.nRev = 0; paintCover(); S.targets = []; S.analysis = null; S.plan = null; S.stale = false;
     drawTargets(); clearRoute(); afterScratch(true); renderTargets(); renderPlanOut();
   };
-  $('#analyse').onclick = () => { $('#analyse').disabled = true; $('#analyse').textContent = 'Analysing…'; setTimeout(() => { try { analyse(); } finally { $('#analyse').disabled = false; $('#analyse').textContent = 'Analyse revealed area'; } }, 20); };
+  $('#analyse').onclick = () => { $('#analyse').disabled = true; $('#analyse').textContent = tr('sc.analysing'); setTimeout(() => { try { analyse(); } finally { $('#analyse').disabled = false; $('#analyse').textContent = tr('sc.analyse'); } }, 20); };
   $('#plan').onclick = () => { if (S.stale && S.analysis) analyse(); planTour(); };
   $('#play').onclick = () => (S.playing ? stop() : play());
   $('#scrub').addEventListener('input', () => { stop(); S.scrubbing = true; setT(+$('#scrub').value / 1000 * S.plan.tl.t.at(-1)); S.scrubbing = false; });
   renderTargets(); renderPlanOut();
 }
 
-init().catch((e) => { console.error(e); document.body.insertAdjacentHTML('afterbegin', `<div class="msg">Failed to load: ${e.message}</div>`); });
+init().catch((e) => { console.error(e); document.body.insertAdjacentHTML('afterbegin', `<div class="msg">${tr('common.loadFail')}: ${e.message}</div>`); });

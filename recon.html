@@ -12,78 +12,58 @@
 </head>
 <body>
 <header id="top">
-  <a class="brand" href="index.html"><span class="logo">&#9679;</span> Marswalk Recon <span class="muted">· Jezero Crater</span></a>
+  <a class="brand" href="index.html"><span class="logo">&#9679;</span> Marswalk Recon <span class="muted" data-i18n="nav.place">· Jezero Crater</span></a>
   <nav id="pages" aria-label="Pages">
-    <a class="btn" href="index.html">Astronaut map</a>
-    <a class="btn active" href="recon.html" aria-current="page">Step 1 · Scout rover recon</a>
-    <a class="btn" href="data.html">Map data</a>
-    <a class="btn demo" href="scratch/">Interactive demo</a>
+    <a class="btn" href="index.html" data-i18n="nav.astro">Astronaut map</a>
+    <a class="btn active" href="recon.html" aria-current="page" data-i18n="nav.recon">Step 1 · Scout rover recon</a>
+    <a class="btn" href="data.html" data-i18n="nav.data">Map data</a>
+    <a class="btn demo" href="scratch/" data-i18n="nav.demo">Interactive demo</a>
   </nav>
   <div class="actions">
-    <button id="aboutBtn" class="btn">About<span class="long"> this simulation</span></button>
+    <button id="aboutBtn" class="btn" data-i18n="common.aboutBtn">About &amp; Limitations</button>
   </div>
 </header>
+<div id="skelBanner" role="note"><span data-i18n="rc.question">How much of the blurry orbital map does a scout rover uncover on its own in 30 loops?</span> <span class="pending" data-i18n="common.pending">review: pending</span></div>
 <main>
   <aside id="panel" aria-label="Recon controls">
     <section>
-      <h2 class="title">Step 1 · Scout rover recon <span class="badge simulated">simulated</span></h2>
-      <div class="row wrap" id="ruleSel"></div>
-      <p class="hint" id="ruleNote"></p>
-      <p class="lead">Before anyone walks, a scout rover leaves the habitat, plans its own loop, scratches off the blurry orbital map with its sensors, and comes back on a different path. Each loop it turns back on its own before its energy runs short.</p>
+      <h2 class="title"><span data-i18n="rc.title">Step 1 · Scout rover recon</span> <span class="badge simulated" data-i18n="badge.simulated">simulated</span></h2>
+      <p class="lead" data-i18n="rc.lead">The rover leaves the habitat, drives a loop on its own, uncovers the ground around it and comes back a different way before its energy runs short.</p>
     </section>
     <section class="ctrl">
       <div class="row">
-        <button id="play" class="btn" aria-label="Play">▶ Play</button>
-        <button id="prev" class="btn sm" aria-label="Previous loop">◀</button>
-        <button id="next" class="btn sm" aria-label="Next loop">▶</button>
-        <select id="speed" aria-label="Playback speed">
-          <option value="150">slow</option><option value="500" selected>normal</option><option value="1500">fast</option><option value="6000">very fast</option>
-        </select>
+        <button id="play" class="btn" aria-label="Play"></button>
       </div>
-      <label for="loop" class="sl">Loop <b id="loopLbl">0</b> of <span id="loopN"></span> <span class="muted" id="loopHint">(before departure)</span></label>
+      <label for="loop" class="sl"><span id="loopTxt"></span> <span class="muted" id="loopHint"></span></label>
       <input id="loop" type="range" min="0" max="1" step="1" value="0">
       <div class="row wrap">
-        <label><input type="radio" name="view" value="recon" checked> Recon view (what the rover knows)</label>
-        <label><input type="radio" name="view" value="all"> View all data</label>
-      </div>
-      <div class="row wrap">
-        <label><input type="checkbox" id="showClasses"> Terrain classes</label>
-        <label><input type="checkbox" id="showAll" checked> Earlier loops</label>
-        <label><input type="checkbox" id="showReplans"> Replan points</label>
+        <label><input type="radio" name="view" value="recon" checked> <span data-i18n="rc.viewRecon">What the rover knows</span></label>
+        <label><input type="radio" name="view" value="all"> <span data-i18n="rc.viewAll">All HiRISE data</span></label>
+        <label><input type="checkbox" id="showClasses"> <span data-i18n="rc.classes">Terrain classes</span></label>
       </div>
       <div class="legend line">
-        <span><i style="background:var(--s-out)"></i>outbound</span>
-        <span><i style="background:var(--s-ret)"></i>return (new path)</span>
-        <span><i class="dash" style="--c:var(--s-forced)"></i>forced return</span>
+        <span><i style="background:var(--s-out)"></i><span data-i18n="rc.lgOut">outbound</span></span>
+        <span><i style="background:var(--s-ret)"></i><span data-i18n="rc.lgRet">return (new path)</span></span>
+        <span><i class="dash" style="--c:var(--s-forced)"></i><span data-i18n="rc.lgForced">forced return</span></span>
       </div>
       <div class="legend line">
-        <span><i class="dot" style="background:transparent;border:2px solid #fff"></i>goal</span>
-        <span><i class="dot" style="background:#fff"></i>rover + sensing disc</span>
-        <span><i class="dot" style="background:var(--warn)"></i>turned back (budget)</span>
-        <span><i class="dot" style="background:var(--bad)"></i>reserve rule</span>
+        <span><i class="dot" style="background:transparent;border:2px solid #fff"></i><span data-i18n="rc.lgGoal">goal</span></span>
+        <span><i class="dot" style="background:#fff"></i><span data-i18n="rc.lgRover">rover + sensing disc</span></span>
+        <span><i class="dot" style="background:var(--warn)"></i><span data-i18n="rc.lgTurn">turned back (budget)</span></span>
+        <span><i class="dot" style="background:var(--bad)"></i><span data-i18n="rc.lgReserve">reserve rule</span></span>
       </div>
     </section>
     <section id="loopCard"></section>
     <section>
-      <h3>Area scratched off, by loop</h3>
+      <h3 data-i18n="rc.chartH">Area uncovered, by loop</h3>
       <div id="chart" class="chart" role="img" aria-label="Share of the study area observed after each loop"></div>
-      <p class="hint">Share of the 2.4 × 2.4 km study area where the rover has replaced the orbital prior (CTX, 20 m) with HiRISE reference terrain. Hover a bar for numbers.</p>
-      <details><summary>All loops as a table</summary><div id="table"></div></details>
-    </section>
-    <section>
-      <h3>Acceptance checks</h3>
-      <div id="checks"></div>
-    </section>
-    <section>
-      <h3>Parameters (proposed, not locked)</h3>
-      <div id="params"></div>
+      <details><summary data-i18n="rc.tableSum">All loops as a table</summary><div id="table"></div></details>
     </section>
   </aside>
   <div id="mapwrap">
     <div id="map"></div>
     <div id="scale"><div id="scaleBar"></div><span id="scaleLabel"></span></div>
     <div id="coords"></div>
-    <div id="review">Simulated rover · parameters proposed · review: pending</div>
     <div id="hud"></div>
   </div>
 </main>
@@ -93,6 +73,7 @@
 </dialog>
 <canvas id="revealCanvas" width="2400" height="2400" hidden></canvas>
 <canvas id="classCanvas" width="1200" height="1200" hidden></canvas>
+<script src="i18n.js"></script>
 <script src="lib/maplibre-gl.js"></script>
 <script src="recon.js"></script>
 </body>

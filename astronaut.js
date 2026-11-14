@@ -1,10 +1,11 @@
 // SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 /* Marswalk Recon — astronaut map: route A (orbital data only) vs route B (after the simulated rover recon),
-   both walked on the HiRISE reference terrain. Plain JS, no build step.
+   both walked on the HiRISE reference terrain. Plain JS, no build step. Interface text: i18n.js (tr()).
    Data: data/jezero/compare/compare.json (definitions + summary tables) and compare/routes/t<i>.json (per test point:
    each route with cumulative distance, predicted and actual time / oxygen, oxygen needed to get home on the plan's map
    and on the reference terrain, hazard flag and reference class at every kept vertex). Nothing is recomputed here
-   except the budget verdicts, which follow the oxygen sliders. Source: pipeline/compare_ab.py, export_compare.py. */
+   except the budget verdicts, which follow the oxygen slider. Source: pipeline/compare_ab.py, export_compare.py.
+   Product = the version-3 chain (compare_v3.json); ?rule=v2 still loads the version-2 record (no switch on screen). */
 'use strict';
 const R_MARS = 3396190, DEG = Math.PI / 180;
 const SCENE = 'jezero', BASE = `data/${SCENE}/`, CB = BASE + 'compare/';
@@ -14,17 +15,19 @@ const abs = (u) => new URL(u, location.href).href;
 const f0 = (v) => v == null || !isFinite(v) ? '–' : Math.round(v).toLocaleString('en-US');
 const f1 = (v) => v == null || !isFinite(v) ? '–' : (Math.round(v * 10) / 10).toLocaleString('en-US');
 const sg = (v, f = f0) => (v > 0 ? '+' : v < 0 ? '−' : '') + f(Math.abs(v));
-const fmtMin = (m) => { const h = Math.floor(m / 60), r = Math.round(m - 60 * h); return h ? `${h} h ${String(r).padStart(2, '0')} min` : `${r} min`; };
+const fmtMin = (m) => { const h = Math.floor(m / 60), r = Math.round(m - 60 * h); return h ? tr('fmt.hm', { h, m: String(r).padStart(2, '0') }) : tr('fmt.m', { m: r }); };
 const COL = { A: '#ff9f43', B: '#43b0f1', 'A+': '#c38bff', REF: '#e9e4dc' };
 const CLS = ['firm', 'rough', 'sand', 'blocked'];
+// fixed display defaults (no longer user settings): emergency reserve = the pipeline's reserve_frac; replay speed
+const RESERVE_PCT = 20, SPEED_MIN_PER_S = 6;
 const S = { k: 30, tgt: 0, route: 'A', t: 0, playing: false, cache: {} };
 
 async function getJSON(u) { const r = await fetch(u); if (!r.ok) throw new Error(`${u}: ${r.status}`); return r.json(); }
 async function bitmap(u) { return createImageBitmap(await (await fetch(u)).blob(), { colorSpaceConversion: 'none', premultiplyAlpha: 'none' }); }
 const bKey = (k = S.k) => (S.rule === 'v3' ? `B_v3@${k}` : `B@${k}`);
 const stateOf = (r) => (r === 'B' ? bKey() : r);
-const nameOf = (r) => ({ A: 'Route A · orbital data only', B: `Route B · after ${S.k} recon loop${S.k > 1 ? 's' : ''}${S.rule === 'v3' ? ' (rover v3)' : ''}`, 'A+': 'A+ · optimistic prior (bracket)', REF: 'Reference upper bound (not a recon result)' }[r]);
-function usable() { return +$('#cap').value * (1 - +$('#res').value / 100); }
+const nameOf = (r) => ({ A: tr('idx.routeA'), B: tr('idx.routeB', { k: S.k }), 'A+': tr('idx.routeAp'), REF: tr('idx.routeRef') }[r]);
+function usable() { return +$('#cap').value * (1 - RESERVE_PCT / 100); }
 
 async function init() {
   const [C, sc, PW] = await Promise.all([getJSON(CB + 'compare.json'), getJSON(BASE + 'scene.json'), getJSON(CB + 'pointwise.json')]);
@@ -35,34 +38,24 @@ async function init() {
   if (S.V3) {
     Object.assign(C.summary.all, S.V3.summary_all);
     C.rows.forEach((r) => Object.assign(r, S.V3.rows[String(r.target)] || {}));
-    $('#ruleBtns').innerHTML = `<a class="btn sm ${S.rule === 'v3' ? 'active' : ''}" href="index.html">Rover v3 (literature)</a><a class="btn sm ${S.rule === 'v2' ? 'active' : ''}" href="index.html?rule=v2">v2 (pre-registered record)</a>`;
-    $('#ruleNote').textContent = S.rule === 'v3'
-      ? 'Route B uses the version-3 rover (frontier targets, expected cost of unseen ground) and prices ground it has not seen at its expected cost (Sofman et al. 2006). Version 3 was designed after seeing version 2; version 2 with "unseen = orbital class" (the freespace assumption, Koenig & Smirnov 1997) is the pre-registered main comparison.'
-      : 'Route B from the version-2 rover, unseen ground = orbital class: the pre-registered main comparison.';
   }
   S.ks = C.states.filter((s) => s.startsWith('B@')).map((s) => +s.slice(2));
   S.k = S.ks[S.ks.length - 1];
   // default test point: the lattice point at (600, 0) m (the step-3 skeleton's first placeholder rule), else the first
   S.tgt = Math.max(0, C.rows.findIndex((r) => r.x === 600 && r.y === 0));
-  $('#tSel').innerHTML = C.rows.map((r, i) => `<option value="${i}">T${r.target} · x ${f0(r.x)} m, y ${f0(r.y)} m · ${r.band} m</option>`).join('');
-  $('#kBtns').innerHTML = S.ks.map((k) => `<button class="btn sm" data-k="${k}">${k}</button>`).join('') + '<span class="muted">loops</span>';
+  $('#tSel').innerHTML = C.rows.map((r, i) => `<option value="${i}">${esc(tr('idx.tOpt', { id: r.target, d: f0(r.dist_m) }))}</option>`).join('');
+  $('#kBtns').innerHTML = S.ks.map((k) => `<button class="btn sm" data-k="${k}">${k}</button>`).join('') + `<span class="muted">${tr('idx.loopsUnit')}</span>`;
   document.querySelectorAll('#kBtns button').forEach((b) => b.onclick = () => { S.k = +b.dataset.k; refresh(); });
-  // U3: three example walks, chosen by a fixed rule on B@30 - A actual oxygen (spikes/u2_pointwise.py); default point unchanged
-  const SC = PW.shortcuts_B30_actual_o2, idxOf = (t) => C.rows.findIndex((r) => r.target === t.target);
-  $('#shortcuts').innerHTML = [['median', 'Median walk'], ['most_improved', 'Most improved'], ['most_worsened', 'Most worsened']]
-    .map(([k, n]) => `<button class="btn sm" data-sc="${k}">${n} (${sg(SC[k].diff, f1)})</button>`).join('');
-  document.querySelectorAll('#shortcuts button').forEach((b) => b.onclick = () => { S.k = 30; selectTarget(idxOf(SC[b.dataset.sc])); });
-  $('#shortcutRule').textContent = 'Shortcuts are picked by the change in actual oxygen, route B after 30 loops minus route A, over all 63 test points: the point at the median, the largest drop and the largest rise. Values in nominal minutes.';
   $('#tSel').onchange = () => selectTarget(+$('#tSel').value);
   $('#tPrev').onclick = () => selectTarget((S.tgt - 1 + C.rows.length) % C.rows.length);
   $('#tNext').onclick = () => selectTarget((S.tgt + 1) % C.rows.length);
-  $('#cap').oninput = $('#res').oninput = () => { renderCmp(); setT(S.t); };
-  $('#showAp').onchange = $('#showRef').onchange = () => { renderRouteSel(); drawRoutes(); renderCmp(); };
+  $('#cap').oninput = () => { renderCmp(); setT(S.t); };
   $('#rSel').onchange = () => { stop(); S.route = $('#rSel').value; setT(0); drawRoutes(); };
   $('#scrub').oninput = () => { stop(); setT(+$('#scrub').value / 1000 * cur().act_t.at(-1)); };
   $('#play').onclick = () => (S.playing ? stop() : play());
+  $('#play').textContent = tr('common.play');
   $('#aboutBtn').onclick = () => { renderAbout(); $('#about').showModal(); };
-  $('#tableBtn').onclick = () => { renderTable(); renderRobust(); $('#table').showModal(); };
+  $('#tableBtn').onclick = () => { renderTable(); $('#table').showModal(); };
   for (const [id, lay] of [['showCls', 'cls'], ['showHaz', 'haz'], ['showSeen', 'seen'], ['showHi', 'hfull']])
     $('#' + id).onchange = () => S.map.setLayoutProperty(lay, 'visibility', $('#' + id).checked ? 'visible' : 'none');
   const tImg = await bitmap(CB + C.files.reveal_t);
@@ -92,57 +85,50 @@ async function selectTarget(i) {
     if (S.rule === 'v3') Object.assign(S.cache[r.target].states, (await getJSON(`${CB}routes_v3/t${r.target}.json`)).states);
   }
   S.routes = S.cache[r.target];
-  $('#tInfo').textContent = `Straight-line distance ${f0(r.dist_m)} m from the habitat (${r.band} m band). Test points are a fixed 300 m grid chosen before step 2 existed, not science targets; the step-2 stops have their own walk above.`;
+  $('#tInfo').textContent = tr('idx.tInfo', { d: f0(r.dist_m), band: r.band });
   refresh();
 }
 
 function refresh() {
   document.querySelectorAll('#kBtns button').forEach((b) => b.classList.toggle('active', +b.dataset.k === S.k));
   const of = S.rule === 'v3' ? S.V3.observed_frac[String(S.k)] : S.C.observed_frac[`B@${S.k}`];
-  $('#kInfo').textContent = `After ${S.k} loop${S.k > 1 ? 's' : ''} the rover had seen ${(100 * of).toFixed(1)}% of the study area. Route B uses the reference terrain only where the rover saw it, orbital data elsewhere.`;
+  $('#kInfo').textContent = tr('idx.kInfo', { k: S.k, pct: (100 * of).toFixed(1) });
   renderRouteSel(); renderCmp(); renderOverall(); drawSeen(); drawRoutes(); drawTargets(); setT(0);
 }
 
 function renderRouteSel() {
-  const opts = ['A', 'B', ...($('#showAp').checked ? ['A+'] : []), ...($('#showRef').checked ? ['REF'] : [])];
+  const opts = ['A', 'B'];
   if (!opts.includes(S.route)) S.route = 'A';
   $('#rSel').innerHTML = opts.map((o) => `<option value="${o}" ${o === S.route ? 'selected' : ''}>${esc(nameOf(o))}</option>`).join('');
 }
 
 function renderCmp() {
-  const r = row(), U = usable(), cols = ['A', 'B', ...($('#showAp').checked ? ['A+'] : []), ...($('#showRef').checked ? ['REF'] : [])];
-  $('#capLbl').textContent = `${$('#cap').value}`; $('#resLbl').textContent = `${$('#res').value}%`; $('#usableLbl').textContent = f0(U);
+  const r = row(), U = usable(), cols = ['A', 'B'];
+  $('#capLbl').textContent = `${$('#cap').value}`; $('#usableLbl').textContent = tr('idx.usable', { u: f0(U), res: RESERVE_PCT });
   const v = (c) => r[stateOf(c)];
-  const fits = (o2) => o2 <= U + 1e-9 ? '<span class="pass">yes</span>' : '<span class="fail">no</span>';
+  const fits = (o2) => o2 <= U + 1e-9 ? `<span class="pass">${tr('common.yes')}</span>` : `<span class="fail">${tr('common.no')}</span>`;
   const lines = [
-    ['Planned oxygen', (c) => f1(v(c).pred_o2)],
-    ['Actual oxygen', (c) => `<b>${f1(v(c).actual_o2)}</b>`],
-    ['Error (actual − planned)', (c) => sg(v(c).o2_error, f1)],
-    ['Planned walk fits budget', (c) => fits(v(c).pred_o2)],
-    ['Actual walk fits budget', (c) => fits(v(c).actual_o2)],
-    ['Planned time', (c) => fmtMin(v(c).pred_time_min)],
-    ['Actual time', (c) => fmtMin(v(c).actual_time_min)],
-    ['Metres in hazard zones', (c) => `<b>${f0(v(c).hazard_m)}</b>`],
-    ['Hazard crossings', (c) => `<b>${v(c).crossings}</b>`],
-    ['Metres on blocked cells', (c) => f0(v(c).blocked_m)],
-    ['Walk length (m)', (c) => f0(v(c).length_m)],
+    ['idx.c.pred', (c) => f1(v(c).pred_o2)],
+    ['idx.c.act', (c) => `<b>${f1(v(c).actual_o2)}</b>`],
+    ['idx.c.fits', (c) => fits(v(c).actual_o2)],
+    ['idx.c.time', (c) => fmtMin(v(c).actual_time_min)],
+    ['idx.c.haz', (c) => `<b>${f0(v(c).hazard_m)}</b>`],
+    ['idx.c.len', (c) => f0(v(c).length_m)],
   ];
-  $('#cmp').innerHTML = `<table class="cmp"><thead><tr><th></th>${cols.map((c) => `<th class="c${c === 'A+' ? 'Ap' : c === 'REF' ? 'R' : c}">${c === 'B' ? bKey() : c}</th>`).join('')}</tr></thead>
-<tbody>${lines.map(([n, f]) => `<tr><td>${n}</td>${cols.map((c) => `<td>${f(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>
-<p class="hint">Habitat → test point → back on the same path. Oxygen in nominal minutes. Whether a walk fits the budget is not evidence for either route (it can flip on a few minutes). Hazard zone: a patch of sand or blocked ground ≥ 400 m² on the reference terrain that the orbital map does not show; a crossing is a stretch ≥ 10 m inside one. A+ and the reference bound are context, not results.</p>`;
+  $('#cmp').innerHTML = `<table class="cmp"><thead><tr><th></th>${cols.map((c) => `<th class="c${c}">${c === 'B' ? tr('idx.colB', { k: S.k }) : tr('idx.colA')}</th>`).join('')}</tr></thead>
+<tbody>${lines.map(([n, f]) => `<tr><td>${tr(n)}</td>${cols.map((c) => `<td>${f(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>
+<p class="hint">${tr('idx.cmpHint')}</p>`;
 }
 
 function renderOverall() {
   const s = S.C.summary.all, A = s.A, B = s[bKey()], R = s.REF, sh = B.share_of_possible_improvement;
   const pc = (v) => v == null ? '–' : Math.round(100 * v) + '%';
-  const pw = S.rule === 'v3' ? (B.better_worse_same_vs_A_actual_o2 && { n: B.n, better: B.better_worse_same_vs_A_actual_o2[0], worse: B.better_worse_same_vs_A_actual_o2[1], same: B.better_worse_same_vs_A_actual_o2[2] }) : S.PW && S.PW.groups.all[`B@${S.k}`] && S.PW.groups.all[`B@${S.k}`].actual_o2;
-  $('#overall').innerHTML = `<table class="cmp"><thead><tr><th>mean per walk</th><th class="cA">A</th><th class="cB">${bKey()}</th><th class="cR">ref. bound</th></tr></thead><tbody>
-<tr><td>Metres in hazard zones</td><td>${f0(A.hazard_m.mean)}</td><td><b>${f0(B.hazard_m.mean)}</b></td><td>${f0(R.hazard_m.mean)}</td></tr>
-<tr><td>Hazard crossings <span class="muted">(do not fall steadily with more loops)</span></td><td>${f1(A.crossings.mean)}</td><td>${f1(B.crossings.mean)}</td><td>${f1(R.crossings.mean)}</td></tr>
-<tr><td>Actual oxygen</td><td>${f1(A.actual_o2.mean)}</td><td><b>${f1(B.actual_o2.mean)}</b></td><td>${f1(R.actual_o2.mean)}</td></tr>
-<tr><td>Oxygen underestimated by</td><td>${f1(A.o2_error.mean)}</td><td><b>${f1(B.o2_error.mean)}</b></td><td>${f1(R.o2_error.mean)}</td></tr></tbody></table>
-<p class="hint">After ${S.k} loop${S.k > 1 ? 's' : ''} the rover's map recovers ${pc(sh.hazard_m)} of the hazard metres and ${pc(sh.actual_o2)} of the oxygen that perfect knowledge (reference bound) would save${S.rule === 'v3' ? ` (version 2, the pre-registered record: ${pc(S.C.summary.all[`B@${S.k}`].share_of_possible_improvement.hazard_m)} / ${pc(S.C.summary.all[`B@${S.k}`].share_of_possible_improvement.actual_o2)})` : ''}. ${pw ? `Of the ${pw.n} walks, ${pw.better} use less actual oxygen than route A, ${pw.worse} more, ${pw.same} the same.` : ''} Oxygen in nominal minutes. Details by distance: <a href="#" id="tblLink">full table</a>.</p>`;
-  $('#tblLink').onclick = (e) => { e.preventDefault(); renderTable(); renderRobust(); $('#table').showModal(); };
+  const pw = S.rule === 'v3' ? (B.better_worse_same_vs_A_actual_o2 && { n: B.n, better: B.better_worse_same_vs_A_actual_o2[0], worse: B.better_worse_same_vs_A_actual_o2[1] }) : S.PW && S.PW.groups.all[`B@${S.k}`] && S.PW.groups.all[`B@${S.k}`].actual_o2;
+  $('#overall').innerHTML = `<table class="cmp"><thead><tr><th>${tr('idx.o.mean')}</th><th class="cA">A</th><th class="cB">B</th><th class="cR">${tr('idx.o.ref')}</th></tr></thead><tbody>
+<tr><td>${tr('idx.c.haz')}</td><td>${f0(A.hazard_m.mean)}</td><td><b>${f0(B.hazard_m.mean)}</b></td><td>${f0(R.hazard_m.mean)}</td></tr>
+<tr><td>${tr('idx.c.act')}</td><td>${f1(A.actual_o2.mean)}</td><td><b>${f1(B.actual_o2.mean)}</b></td><td>${f1(R.actual_o2.mean)}</td></tr>
+<tr><td>${tr('idx.o.under')}</td><td>${f1(A.o2_error.mean)}</td><td><b>${f1(B.o2_error.mean)}</b></td><td>${f1(R.o2_error.mean)}</td></tr></tbody></table>
+<p class="hint">${tr('idx.o.sum', { k: S.k, o2: pc(sh.actual_o2), hz: pc(sh.hazard_m) })}${pw ? ' ' + tr('idx.o.pw', { n: pw.n, better: pw.better, worse: pw.worse }) : ''}</p>`;
 }
 
 /* ---------------- map ---------------- */
@@ -155,7 +141,7 @@ function buildMap() {
     container: 'map', bounds: [[c[0][0], c[2][1]], [c[1][0], c[0][1]]], fitBoundsOptions: { padding: { top: 30, bottom: 30, left: 300, right: 30 } },
     maxZoom: 19, minZoom: 9, renderWorldCopies: false, dragRotate: false, pitchWithRotate: false,
     style: { version: 8, sources: {}, layers: [{ id: 'bg', type: 'background', paint: { 'background-color': '#0d0b0a' } }] },
-    attributionControl: { compact: true, customAttribution: 'NASA/JPL-Caltech/UArizona (HiRISE), NASA/JPL-Caltech/MSSS (CTX), USGS Astrogeology. Routes: derived; rover: simulated.' },
+    attributionControl: { compact: true, customAttribution: tr('idx.attrib') },
   });
   S.map = map; window.__mapIdle = false;
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
@@ -186,12 +172,12 @@ function buildMap() {
     const b = C.base;
     map.addSource('base', { type: 'geojson', data: { type: 'Feature', geometry: { type: 'Point', coordinates: [b.lon, b.lat] } } });
     map.addLayer({ id: 'base', type: 'circle', source: 'base', paint: { 'circle-radius': 8, 'circle-color': '#e8743b', 'circle-stroke-color': '#fff', 'circle-stroke-width': 2 } });
-    S.marker = new maplibregl.Marker({ element: Object.assign(document.createElement('div'), { className: 'astro-marker', title: 'Astronaut' }) }).setLngLat([b.lon, b.lat]).addTo(map);
+    S.marker = new maplibregl.Marker({ element: Object.assign(document.createElement('div'), { className: 'astro-marker', title: tr('common.astronaut') }) }).setLngLat([b.lon, b.lat]).addTo(map);
     const pop = new maplibregl.Popup({ closeButton: false, offset: 8 });
     map.on('click', 'tg', (e) => selectTarget(e.features[0].properties.i));
-    map.on('mouseenter', 'tg', (e) => { map.getCanvas().style.cursor = 'pointer'; const p = e.features[0].properties; pop.setLngLat(e.lngLat).setHTML(`Test point T${p.id}<br>${esc(p.band)} m band · click to select`).addTo(map); });
+    map.on('mouseenter', 'tg', (e) => { map.getCanvas().style.cursor = 'pointer'; const p = e.features[0].properties; pop.setLngLat(e.lngLat).setHTML(esc(tr('idx.tgPop', { id: p.id, band: p.band }))).addTo(map); });
     map.on('mouseleave', 'tg', () => { map.getCanvas().style.cursor = ''; pop.remove(); });
-    map.on('mouseenter', 'base', (e) => pop.setLngLat(e.lngLat).setHTML('<b>Habitat</b> <span class="badge assumed">assumed</span>').addTo(map));
+    map.on('mouseenter', 'base', (e) => pop.setLngLat(e.lngLat).setHTML(`<b>${tr('common.habitat')}</b> ${badgeHTML('assumed')}`).addTo(map));
     map.on('mouseleave', 'base', () => pop.remove());
     map.on('move', updateScale); map.on('mousemove', (e) => showCoords(e.lngLat));
     map.once('idle', () => { window.__mapIdle = true; });
@@ -207,11 +193,10 @@ function drawTargets() {
 
 function drawRoutes() {
   if (!S.map || !S.map.getSource('routes') || !S.routes) return;
-  const shown = ['REF', 'A+', 'A', 'B'].filter((r) => r === 'A' || r === 'B' || (r === 'A+' && $('#showAp').checked) || (r === 'REF' && $('#showRef').checked));
   const feats = [];
-  for (const r of shown) {
+  for (const r of ['A', 'B']) {
     const st = S.routes.states[stateOf(r)], n = st.turn_idx + 1, sel = r === S.route;
-    const w = sel ? 3.6 : (r === 'A' || r === 'B' ? 2.4 : 1.6);
+    const w = sel ? 3.6 : 2.4;
     // outbound half only (the walk comes back on the same path); split by hazard flag for the red dashes
     let seg = [[st.lon[0], st.lat[0]]], hz = st.haz[0];
     for (let j = 1; j < n; j++) {
@@ -241,88 +226,59 @@ function setT(t) {
   const used = lerp(st.act_o2, i, f), hk = lerp(st.home_k, i, f), hr = lerp(st.home_ref, i, f);
   const left = cap - used, mPlan = U - used - hk, mTrue = U - used - hr;
   $('#scrub').value = tot ? Math.round(S.t / tot * 1000) : 0;
-  $('#tLbl').textContent = `${f0(S.t)} of ${f0(tot)}`;
+  $('#tLbl').textContent = tr('idx.tOf', { t: f0(S.t), tot: f0(tot) });
   $('#hudRoute').innerHTML = `<span style="color:${COL[S.route]}">●</span> ${esc(nameOf(S.route))}`;
-  $('#hudTerr').textContent = `${CLS[st.cls[i]]}${st.haz[i] ? ' · hazard zone' : ''}`;
-  $('#o2Val').textContent = `${f0(left)} / ${f0(cap)} nominal min`;
+  $('#hudTerr').textContent = `${tr('cls.' + CLS[st.cls[i]])}${st.haz[i] ? ' · ' + tr('idx.lgHaz') : ''}`;
+  $('#o2Val').textContent = tr('idx.o2of', { l: f0(left), c: f0(cap) });
   const ob = $('#o2Bar'); ob.querySelector('.fill').style.width = `${Math.max(0, left / cap * 100)}%`; ob.querySelector('.res').style.width = `${resv / cap * 100}%`;
   ob.classList.toggle('low', left < resv);
-  const bar = (id, vid, m) => { $(vid).textContent = `${f0(m)} nominal min`; const b = $(id); b.querySelector('.fill').style.width = `${Math.max(0, Math.min(1, m / U)) * 100}%`; b.classList.toggle('crit', m < 0.15 * U); b.classList.toggle('neg', m < 0); };
+  const bar = (id, vid, m) => { $(vid).textContent = tr('idx.nomMin', { v: f0(m) }); const b = $(id); b.querySelector('.fill').style.width = `${Math.max(0, Math.min(1, m / U)) * 100}%`; b.classList.toggle('crit', m < 0.15 * U); b.classList.toggle('neg', m < 0); };
   bar('#mgBar', '#mgVal', mPlan); bar('#mtBar', '#mtVal', mTrue);
   const w = $('#warn');
-  if (mTrue < 0) { w.hidden = false; w.textContent = 'True return margin below zero: on the real terrain the oxygen would run into the reserve before getting home.'; }
-  else if (mTrue < mPlan - 0.15 * U) { w.hidden = false; w.textContent = 'The plan overestimates the margin: the terrain costs more than the map said.'; }
+  if (mTrue < 0) { w.hidden = false; w.textContent = tr('idx.warnNeg'); }
+  else if (mTrue < mPlan - 0.15 * U) { w.hidden = false; w.textContent = tr('idx.warnOver'); }
   else w.hidden = true;
   $('#tdVal').textContent = `${fmtMin(S.t)} · ${(lerp(st.d, i, f) / 1000).toFixed(2)} km`;
   if (S.marker) S.marker.setLngLat([lerp(st.lon, i, f), lerp(st.lat, i, f)]);
 }
 function play() {
   if (S.t >= cur().act_t.at(-1)) setT(0);
-  S.playing = true; $('#play').textContent = '❚❚ Pause';
+  S.playing = true; $('#play').textContent = tr('common.pause');
   let last = performance.now();
-  const step = (now) => { if (!S.playing) return; const dt = (now - last) / 1000; last = now; setT(S.t + dt * +$('#speed').value); if (S.t >= cur().act_t.at(-1)) { stop(); return; } requestAnimationFrame(step); };
+  const step = (now) => { if (!S.playing) return; const dt = (now - last) / 1000; last = now; setT(S.t + dt * SPEED_MIN_PER_S); if (S.t >= cur().act_t.at(-1)) { stop(); return; } requestAnimationFrame(step); };
   requestAnimationFrame(step);
 }
-function stop() { S.playing = false; $('#play').textContent = '▶ Play'; }
+function stop() { S.playing = false; $('#play').textContent = tr('common.play'); }
 
-/* ---------------- full table ---------------- */
+/* ---------------- full table (current version only; version-2 record via ?rule=v2) ---------------- */
 function renderTable() {
-  const C = S.C, G = ['all', ...Object.keys(C.definitions.bands_m)];
-  const st = C.states;
-  const lab = (s) => s === 'A' ? 'A · orbital only' : s === 'A+' ? 'A+ · bracket (uses reference)' : s === 'REF' ? 'Reference · upper bound' : `B · after ${s.slice(2)} loop${s.slice(2) === '1' ? '' : 's'}`;
-  const share = (d, q) => d.share_of_possible_improvement && d.share_of_possible_improvement[q] != null ? Math.round(100 * d.share_of_possible_improvement[q]) + '%' : '–';
-  const tbl = (g) => {
-    const s = C.summary[g]; if (!s || !s.A) return `<p class="hint">No test points in this band.</p>`;
-    return `<table class="full"><thead><tr><th>Knowledge used for planning</th><th>Planned O2 (mean)</th><th>Actual O2 (mean)</th><th>Error (mean)</th><th>Actual fits 384</th><th>Actual time (mean)</th><th>Hazard metres (mean / total)</th><th>Crossings (total)</th><th>Blocked m (total)</th><th>Zones entered (mean)</th><th>vs A: hazard m (mean)</th><th>vs A: actual O2 (mean)</th><th>vs A: crossings (mean)</th><th>Share of possible gain (O2 / hazard m)</th></tr></thead><tbody>
-${st.map((k) => { const d = s[k], dv = d.diff_vs_A; return `<tr class="${k === `B@${S.k}` ? 'hl' : ''}"><td>${esc(lab(k))}</td><td>${f1(d.pred_o2.mean)}</td><td>${f1(d.actual_o2.mean)}</td><td>${sg(d.o2_error.mean, f1)}</td><td>${d.n_actual_within_budget} / ${d.n}</td><td>${fmtMin(d.actual_time_min.mean)}</td><td>${f0(d.hazard_m.mean)} / ${f0(d.hazard_m.total)}</td><td>${f0(d.crossings.total)}</td><td>${f0(d.blocked_m.total)}</td><td>${f1(d.zones_entered.mean)}</td><td>${dv ? sg(dv.hazard_m.mean) : '–'}</td><td>${dv ? sg(dv.actual_o2.mean, f1) : '–'}</td><td>${dv ? sg(dv.crossings.mean, f1) : '–'}</td><td>${k.startsWith('B@') || k === 'A+' ? share(d, 'actual_o2') + ' / ' + share(d, 'hazard_m') : '–'}</td></tr>`; }).join('')}</tbody></table>`;
+  const C = S.C, s = C.summary.all;
+  const pc = (v) => v == null ? '–' : Math.round(100 * v) + '%';
+  const bws = (k) => {
+    const d = s[k]; if (d && d.better_worse_same_vs_A_actual_o2) return d.better_worse_same_vs_A_actual_o2.join(' / ');
+    const p = S.PW && S.PW.groups.all[k] && S.PW.groups.all[k].actual_o2; return p ? `${p.better} / ${p.worse} / ${p.same}` : '–';
   };
-  $('#tableBody').innerHTML = `<h2>Before vs after recon: every test point <span class="badge derived">derived</span></h2>
-<p>${C.rows.length} test points (300 m grid around the habitat, ≥ 300 m away, passable on both maps). For each: walk habitat → point → habitat on the least-oxygen path of the map named in the first column, then walk that same path on the HiRISE reference terrain. Oxygen in nominal minutes; usable budget 384 (480 with a 20% reserve). Computed ${esc(C.computed_at)}; definitions fixed before the first run (see DATA_LOG). Sand classes are <i>heuristic, not yet reviewed</i>.</p>
-${G.map((g) => `<h3>${g === 'all' ? 'All test points' : g + ' m from the habitat'} (n = ${C.summary[g].A ? C.summary[g].A.n : 0})</h3>${tbl(g)}`).join('')}
-${S.V3 ? `<h3>Route B from the version-3 rover (literature methods; designed after seeing version 2) — beside the version-2 record above</h3><table class="full"><thead><tr><th>Knowledge used for planning</th><th>p (firm / rough)</th><th>Planned O2</th><th>Actual O2</th><th>Error</th><th>Hazard m</th><th>vs A: actual O2 / hazard m</th><th>vs version-2 B: actual O2 / hazard m</th><th>Share of possible gain (O2 / hazard m)</th><th>Better / worse / same vs A</th></tr></thead><tbody>${[1, 5, 10, 20, 30].map((k) => { const d = S.V3.summary_all[`B_v3@${k}`], p = S.V3.p[String(k)]; return `<tr class="${k === S.k ? 'hl' : ''}"><td>B_v3 · after ${k} loop${k > 1 ? 's' : ''}</td><td>${p.p_firm.toFixed(2)} / ${p.p_rough.toFixed(2)}</td><td>${f1(d.pred_o2.mean)}</td><td>${f1(d.actual_o2.mean)}</td><td>${sg(d.o2_error.mean, f1)}</td><td>${f0(d.hazard_m.mean)}</td><td>${sg(d.diff_vs_A.actual_o2.mean, f1)} / ${sg(d.diff_vs_A.hazard_m.mean)}</td><td>${sg(d.diff_vs_frozen_B.actual_o2, f1)} / ${sg(d.diff_vs_frozen_B.hazard_m)}</td><td>${Math.round(100 * d.share_of_possible_improvement.actual_o2)}% / ${Math.round(100 * d.share_of_possible_improvement.hazard_m)}%</td><td>${d.better_worse_same_vs_A_actual_o2.join(' / ')}</td></tr>`; }).join('')}</tbody></table>` : ''}
-${pointwiseTables()}
-<div id="robust"></div>
-<p class="hint">Share of possible gain = (A − B) / (A − reference upper bound), on the means. A+ adds the large sand belts to the orbital map using the reference terrain (60 m blocks ≥ 50% sand): it is not real pre-departure knowledge and only brackets the result. The reference upper bound is what perfect knowledge would give; it is not a recon result.</p>`;
+  const lab = (k) => k === 'A' ? tr('idx.routeA') : k === 'A+' ? tr('idx.routeAp') : k === 'REF' ? tr('idx.routeRef') : tr('idx.routeBk', { k: k.split('@')[1] });
+  const keys = ['A', ...S.ks.map((k) => bKey(k)), 'A+', 'REF'];
+  const rows = keys.map((k) => {
+    const d = s[k]; if (!d) return '';
+    const dv = d.diff_vs_A, sh = d.share_of_possible_improvement;
+    return `<tr class="${k === bKey() ? 'hl' : ''}"><td>${esc(lab(k))}</td><td>${f1(d.pred_o2.mean)}</td><td>${f1(d.actual_o2.mean)}</td><td>${sg(d.o2_error.mean, f1)}</td><td>${f0(d.hazard_m.mean)}</td><td>${d.n_actual_within_budget} / ${d.n}</td><td>${fmtMin(d.actual_time_min.mean)}</td><td>${dv ? sg(dv.actual_o2.mean, f1) + ' / ' + sg(dv.hazard_m.mean) : '–'}</td><td>${sh && k !== 'REF' ? pc(sh.actual_o2) + ' / ' + pc(sh.hazard_m) : '–'}</td><td>${k === 'A' ? '–' : bws(k)}</td></tr>`;
+  }).join('');
+  const th = ['idx.t.map', 'idx.t.pred', 'idx.t.act', 'idx.t.err', 'idx.t.haz', 'idx.t.fits', 'idx.t.time', 'idx.t.vsA', 'idx.t.share', 'idx.t.bws'];
+  $('#tableBody').innerHTML = `<h2>${tr('idx.t.title')} ${badgeHTML('derived')}</h2>
+<p>${tr('idx.t.intro', { n: C.rows.length, u: f0(C.usable_o2) })}</p>
+<table class="full"><thead><tr>${th.map((k) => `<th>${tr(k)}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>
+<details class="explain"><summary>${tr('common.explain')}</summary><p class="hint">${tr('idx.t.notes')}</p></details>
+<div id="x1"></div>`;
+  renderX1();
 }
 
-async function renderRobust() {
-  let R; try { R = await getJSON(CB + 'robustness.json'); } catch (e) { return; }
-  const pc = (v) => v == null ? '–' : Math.round(100 * v) + '%';
-  let h = '<h3>Robustness checks written before they were run <span class="badge derived">derived</span></h3>';
-  if (R.t6) {
-    const W = R.t6.windows;
-    h += `<h4>Other 2.4 km windows of the same HiRISE mosaic (same rules, one run each)</h4><table class="full"><thead><tr><th>Window</th><th>Test points</th><th>Rover saw</th><th>Actual O2: A / B@30 / bound</th><th>B@30 − A O2</th><th>Hazard m: A / B@30 / bound</th><th>B@30 − A hazard m</th><th>Share of possible gain (O2 / hazard m)</th></tr></thead><tbody>
-${Object.entries(W).map(([k, w]) => `<tr><td>(${k})${k === '0,0' ? ' main' : ''}</td><td>${w.n_targets}</td><td>${f1(w.observed_pct_after_30)}%</td><td>${f1(w.A.actual_o2_mean)} / ${f1(w['B@30'].actual_o2_mean)} / ${f1(w.REF.actual_o2_mean)}</td><td>${sg(w['B@30'].diff_vs_A.actual_o2.mean, f1)}</td><td>${f0(w.A.hazard_m_mean)} / ${f0(w['B@30'].hazard_m_mean)} / ${f0(w.REF.hazard_m_mean)}</td><td>${sg(w['B@30'].diff_vs_A.hazard_m.mean)}</td><td>${pc(w['B@30'].share.actual_o2)} / ${pc(w['B@30'].share.hazard_m)}</td></tr>`).join('')}</tbody></table>`;
-    const line = (st, k, n) => { const x = st[k]; return `${n}: ${x.n_negative} of ${x.n} windows lower than A; median ${sg(x.median, f1)}${x.median_ci95_bootstrap ? ` (bootstrap 95% interval ${sg(x.median_ci95_bootstrap[0], f1)} to ${sg(x.median_ci95_bootstrap[1], f1)})` : ''}; ${x.wilcoxon_exact_two_sided_p != null ? 'exact two-sided Wilcoxon p = ' + x.wilcoxon_exact_two_sided_p.toFixed(3) + ' (the smallest p six windows can give; equal to the sign test; it says nothing about the size of the differences)' : 'no p-value (' + esc(x.p_not_reported_because) + ')'}.`; };
-    const all4 = (st) => `${line(st, 'main_hazard_m_all', 'Hazard metres, all windows')} ${line(st, 'main_hazard_m_excl_main', 'Without the main window')} ${line(st, 'secondary_actual_o2_all', 'Actual oxygen, all windows')} ${line(st, 'secondary_actual_o2_excl_main', 'Without the main window')}`;
-    h += `<p class="hint">${all4(R.t6.stats)}${Object.keys(R.t6.not_run || {}).length ? ' Not run: ' + Object.keys(R.t6.not_run).map((k) => `(${k})`).join(', ') + '.' : ''} Windows were chosen by a rule fixed after their HiRISE coverage was known and before any route number. The test points of one window share the walk out of its habitat and one recon run, so they are not independent; the window is the sample.</p>`;
-    if (W['-4,0']) h += `<p class="hint">Window (−4,0), the crater rim, has a 2.6% strip without HiRISE data on its west edge. Rule (set by the manager after the other five windows' numbers, before any number of this window): the strip is blocked for every map (orbital, A+, rover, reference) and for the rover, is not part of any hazard zone, is left out of the "rover saw" share, and test points within 50 m of it are dropped (1 point). Because the strip is identical for route A and route B, it cannot create a difference between them.</p>`;
-    if (R.t6_5windows) h += `<details><summary>Statistics over the first five windows (computed before (−4,0) ran; kept)</summary><p class="hint">${all4(R.t6_5windows.stats)}</p></details>`;
-  }
+async function renderX1() {
   try {
     const X = await getJSON(BASE + 'ai4mars/x1.json'), g = X.groups.sector, b = g.two_by_two;
-    const S1 = X.sensitivity && X.sensitivity.groups.sector, b1 = S1 && S1.two_by_two;
-    h += `<h4>Consistency with crowd labels: ground photos vs our HiRISE sand class (AI4MARS volunteer labels on ${g.n_images} Perseverance Navcam images at ${g.n_waypoints} waypoints)</h4>
-<p class="hint">Per image, the share of labelled pixels marked sand by volunteers is compared with the share of our HiRISE sand cells inside the camera's 30 m view sector; values are averaged per waypoint. Spearman ρ (sand vs sand) ${g.spearman_sand.rho.toFixed(2)}; bedrock vs non-sand ${g.spearman_bedrock_vs_hirise_nonsand.rho.toFixed(2)}. Sand-dominant (≥ 0.5) on both ${b.both_sand}; photos only ${b.photo_sand_only}; HiRISE only ${b.hirise_sand_only}; neither ${b.neither} (agreement ${Math.round(b.agreement * 100)}%, n = ${b.n}).${S1 ? ` Sensitivity, only cameras pointing ${X.sensitivity.elev[0]}° to ${X.sensitivity.elev[1]}° (no deck, no sky; ${S1.n_images} images): ρ ${S1.spearman_sand.rho.toFixed(2)}; ${b1.both_sand} / ${b1.photo_sand_only} / ${b1.hirise_sand_only} / ${b1.neither} (agreement ${Math.round(b1.agreement * 100)}%).` : ''} The merged crowd labels include frames with no ground (a deck labelled entirely as sand, a night sky labelled as bedrock and sand), and only 6 waypoints are sand-dominant in the photos. This is consistency with crowd labels, not a validation and not ground truth; the sand classes were not changed and still await a person's sign-off.</p>`;
-    h += `<p class="hint">Predicting the photos' sand share from orbit (72 waypoints, sol-segment splits): kNN and random forest on HiRISE or CTX features scored at chance on the held-out segments (balanced accuracy ≤ 0.50) and did not beat our hand-written HiRISE rule (0.89 — the same comparison as above) or the geologic-unit mean. The labels are too few and too concentrated: all 6 sand-dominant waypoints fall in the last sol segment. This is a negative result, not evidence that the hand-written rule is sufficient.</p>`;
+    $('#x1').innerHTML = `<h3>${tr('idx.x1.h')}</h3><p class="hint">${tr('idx.x1.body', { n: g.n_images, w: g.n_waypoints, rho: g.spearman_sand.rho.toFixed(2), agr: Math.round(b.agreement * 100), both: b.both_sand, nw: b.n })}</p>`;
   } catch (e) { /* X1 not exported */ }
-  if (R.t7) {
-    h += `<h4>Rover settings (main window; written after the locked run's 11.3% coverage was seen, before any route number; the locked setting stays the result)</h4><table class="full"><thead><tr><th>Rover setting</th><th>Seen after 1 / 5 / 10 / 20 / 30 loops</th><th>B@30: actual O2</th><th>B@30 − A O2</th><th>B@30: hazard m</th><th>B@30 − A hazard m</th><th>Share of possible gain (O2 / hazard m)</th><th>Still underestimated by</th></tr></thead><tbody>
-${Object.entries(R.t7).map(([k, t]) => { const b = t.summary.all['B@30']; return `<tr class="${k.startsWith('locked') ? 'hl' : ''}"><td>${esc(t.changed)}${k.startsWith('locked') ? ' (locked)' : ''}</td><td>${[1, 5, 10, 20, 30].map((i) => f1(100 * t.recon[i])).join(' / ')}%</td><td>${f1(b.actual_o2.mean)}</td><td>${sg(b.diff_vs_A.actual_o2.mean, f1)}</td><td>${f0(b.hazard_m.mean)}</td><td>${sg(b.diff_vs_A.hazard_m.mean)}</td><td>${pc(b.share_of_possible_improvement.actual_o2)} / ${pc(b.share_of_possible_improvement.hazard_m)}</td><td>${f1(b.o2_error.mean)}</td></tr>`; }).join('')}</tbody></table>`;
-  }
-  $('#robust').innerHTML = h;
-}
-
-function pointwiseTables() {
-  const PW = S.PW; if (!PW) return '';
-  const Q = [['actual_o2', 'Actual oxygen'], ['hazard_m', 'Hazard metres'], ['o2_error', 'Oxygen error (actual − planned)'], ['crossings', 'Crossings']];
-  const lab = (s) => s === 'A+' ? 'A+ (bracket)' : s === 'REF' ? 'Reference bound' : `B after ${s.slice(2)}`;
-  const f = (v) => (Math.abs(v) >= 100 ? f0(v) : f1(v));
-  const tb = (g) => { const G = PW.groups[g]; return `<table class="full"><thead><tr><th>vs route A, per point</th>${Q.map(([, n]) => `<th>${n}: better / worse / same</th><th>mean [95% resampling interval]</th><th>median (quartiles; min, max)</th>`).join('')}</tr></thead><tbody>
-${Object.keys(G).map((s) => `<tr class="${s === `B@${S.k}` ? 'hl' : ''}"><td>${esc(lab(s))}</td>${Q.map(([q]) => { const d = G[s][q]; return `<td>${d.better} / ${d.worse} / ${d.same}</td><td>${sg(d.mean, f)} [${sg(d.mean_ci95_resample_points[0], f)}, ${sg(d.mean_ci95_resample_points[1], f)}]</td><td>${sg(d.median, f)} (${sg(d.q1, f)}, ${sg(d.q3, f)}; ${sg(d.min, f)}, ${sg(d.max, f)})</td>`; }).join('')}</tr>`).join('')}</tbody></table>`; };
-  return `<h3>Point by point: how the ${PW.groups.all['B@30'].actual_o2.n} walks spread</h3>
-<p class="hint">Difference = route − route A for each test point. Better = lower (for the oxygen error: smaller in absolute value). The interval resamples the points 10,000 times (fixed seed). This describes the spread of these points; it is <b>not a significance test</b> — the points share the walk out of the habitat, one recon run and one study area. Added after the numbers were seen; no number was changed.</p>
-${['all', '300-600', '600-1200', '>1200'].map((g) => `<h4>${g === 'all' ? 'All test points' : g + ' m'} (n = ${PW.groups[g]['B@30'].actual_o2.n})</h4>${tb(g)}`).join('')}`;
 }
 
 /* ---------------- misc ---------------- */
@@ -330,37 +286,27 @@ function marsDist(a, b) { const dlat = (b.lat - a.lat) * DEG, dlon = (b.lng - a.
 function updateScale() {
   const m = S.map, H = m.getContainer().clientHeight, maxPx = 120, a = m.unproject([20, H - 40]), b = m.unproject([20 + maxPx, H - 40]);
   const d = marsDist(a, b), pow = 10 ** Math.floor(Math.log10(d)), n = d / pow, nice = (n >= 5 ? 5 : n >= 2 ? 2 : 1) * pow;
-  $('#scaleBar').style.width = (maxPx * nice / d) + 'px'; $('#scaleLabel').textContent = (nice >= 1000 ? nice / 1000 + ' km' : nice + ' m') + ' (Mars)';
+  $('#scaleBar').style.width = (maxPx * nice / d) + 'px'; $('#scaleLabel').textContent = (nice >= 1000 ? nice / 1000 + ' km' : nice + ' m') + ' ' + tr('common.mars');
 }
 function showCoords(ll) {
   const b = S.C.base, x = (ll.lng - b.lon) * DEG * R_MARS * S.C.k_coslat, y = (ll.lat - b.lat) * DEG * R_MARS;
-  $('#coords').innerHTML = `${ll.lat.toFixed(5)}°N ${ll.lng.toFixed(5)}°E<br>x ${x.toFixed(0)} m E, y ${y.toFixed(0)} m N of the habitat`;
+  $('#coords').innerHTML = `${ll.lat.toFixed(5)}°N ${ll.lng.toFixed(5)}°E<br>${esc(tr('common.xy', { x: x.toFixed(0), y: y.toFixed(0) }))}`;
 }
 
 function renderAbout() {
-  const P = S.C.astronaut_params;
-  $('#aboutBody').innerHTML = `<h2>Marswalk Recon · astronaut map</h2>
-<p>A scout rover leaves the habitat first and maps the ground; then an astronaut's walk is planned within the suit's oxygen budget. This page shows what that recon is worth: the same walk planned from orbital data only (route A) and from the rover's map (route B), both checked on the HiRISE reference terrain.</p>
-<h3>How the numbers are made</h3>
-<ul><li><b>Orbital map (prior)</b>: CTX 20 m terrain model → slope classes. It cannot see sand ripples, so it has no sand.</li>
-<li><b>Reference terrain</b>: HiRISE 1 m terrain model and 0.25 m image → firm / rough / sand / blocked on a 2 m grid. It is orbital data too; we use it as the stand-in for the ground, never as ground truth.</li>
-<li><b>Rover recon</b> (simulated): the rover drives loops from the habitat on its own; within 15 m of its path the reference terrain replaces the orbital map. Route B uses the rover's map after 1, 5, 10, 20 or 30 loops.</li>
-<li><b>Walk model</b> (assumed): ${P.speed_kmh} km/h on firm ground; speed factor firm / rough / sand ${P.speed_factor.firm} / ${P.speed_factor.rough} / ${P.speed_factor.sand}; oxygen factor ${P.o2_factor.firm} / ${P.o2_factor.rough} / ${P.o2_factor.sand}; slopes ≥ 25° blocked; suit ${P.o2_capacity_nominal_min} nominal minutes with ${Math.round(P.reserve_frac * 100)}% reserve.</li>
-<li><b>Return margin</b> = usable oxygen left − oxygen needed to walk home on the cheapest route. "As the plan sees it" uses the map the route was planned on; "true" uses the reference terrain. Oxygen used so far is always the actual (reference) value.</li></ul>
-<h3>Labels</h3><p><span class="badge measured">measured</span> HiRISE, CTX (orbital) · <span class="badge derived">derived</span> classes, routes, oxygen, time · <span class="badge assumed">assumed</span> walk and rover parameters, habitat position · <span class="badge simulated">simulated</span> rover recon.</p>
-<h3>Limitations</h3><ul>
-<li>Sand classes are an automatic texture rule, not yet reviewed by a person (heuristic). Long bright/dark edges (scarps, albedo contacts) are sometimes called sand; thin small ripples and large ripples get the same cost.</li>
-<li>The orbital map has no sand: the same texture test on the CTX image could not find the sand fields (AUC 0.48). An experienced image interpreter might guess the large sand belt from CTX; our prior does not. The A+ column brackets that case.</li>
-<li>Walk speed and oxygen factors come from the team's earlier prototype; their original sources are still being checked. No physiological values are modelled.</li>
-<li>Test points are a fixed grid chosen before step 2 existed. The walk to the step-2 stops was designed after the main comparison; its stops lie within 0.9 km, so every plan reaches every stop.</li>
-<li>Step 2 groups Perseverance's SuperCam chemistry; it gives no science score. The number-of-groups rule was written after a check table made with earlier positions (4 groups there); with the final site/drive positions it gives 3 groups for all data — the 4-group boundary was fragile. Positions are the rover's position (rock within about 7 m).</li>
-<li>Six 2.4 km windows of the same mosaic all show route B better than route A; the windows' statistic details were ratified after five windows were seen, and the crater-rim window's HiRISE gap rule was set before its numbers.</li>
-<li>Route B uses the version-3 rover by default (published exploration methods; designed after seeing version 2, which stays the pre-registered record: <code>?rule=v2</code>). Its candidate rule was changed once by the manager after a stopped first loop, and a program bug in its energy rule was fixed before the one rerun that is shown; the defective run's numbers are listed in the README as not results.</li>
-<li>Routes are not replanned during the walk; route A walks into what it did not know about.</li>
-<li>After recon the plan still underestimates a walk by 108 nominal minutes on average (plans 58, costs 167); loops 20 to 30 brought no further gain; knowing part of the map is sometimes worse than knowing none (a detour around seen sand can run into unseen sand).</li>
-<li>Three comparison definitions (hazard metres only inside hazard zones; crossings measured by in-zone metres; no dwell time at the point) were set by the implementer before the run and ratified by the manager after the numbers were seen.</li>
-<li>One study area and one recon run; the 63 test points are not independent, so no per-point p-value is given.</li>
-<li>Full list: <code>README.md</code> and <code>DATA_LOG.md</code> in the repository.</li></ul>`;
+  const P = S.C.astronaut_params, B = S.C.summary.all[bKey(30)];
+  const li = (k, v) => `<li>${tr(k, v)}</li>`;
+  $('#aboutBody').innerHTML = `<h2>${tr('idx.ab.title')}</h2>
+<p>${tr('idx.ab.intro')}</p>
+<h3>${tr('common.howMade')}</h3>
+<ul>${li('idx.ab.prior')}${li('idx.ab.ref')}${li('idx.ab.rover')}${li('idx.ab.routeB')}
+${li('idx.ab.walk', { v: P.speed_kmh, sf: P.speed_factor.firm, sr: P.speed_factor.rough, ss: P.speed_factor.sand, of: P.o2_factor.firm, or: P.o2_factor.rough, os: P.o2_factor.sand, cap: P.o2_capacity_nominal_min, res: Math.round(P.reserve_frac * 100) })}
+${li('idx.ab.unit')}${li('idx.ab.cmp')}${li('idx.ab.haz')}${li('idx.ab.margin')}${li('idx.ab.points')}${li('idx.ab.share')}</ul>
+<h3>${tr('common.labels')}</h3><p>${badgeHTML('measured')} ${tr('idx.ab.lMeasured')} · ${badgeHTML('derived')} ${tr('idx.ab.lDerived')} · ${badgeHTML('assumed')} ${tr('idx.ab.lAssumed')} · ${badgeHTML('simulated')} ${tr('idx.ab.lSimulated')}</p>
+<h3>${tr('common.limits')}</h3><ul>
+${li('idx.ab.L.sand')}${li('idx.ab.L.prior')}${li('idx.ab.L.params')}
+${B ? li('idx.ab.L.under', { e: f0(B.o2_error.mean), p: f0(B.pred_o2.mean), a: f0(B.actual_o2.mean) }) : ''}
+${li('idx.ab.L.v3')}${li('idx.ab.L.step2')}${li('idx.ab.L.stops')}${li('idx.ab.L.noReplan')}${li('idx.ab.L.defs')}${li('idx.ab.L.robust')}${li('idx.ab.L.indep')}${li('idx.ab.L.more')}</ul>`;
 }
 
-init().catch((e) => { document.body.insertAdjacentHTML('afterbegin', `<pre style="color:#f88;padding:12px">Failed to load: ${esc(e.message)}</pre>`); console.error(e); });
+init().catch((e) => { document.body.insertAdjacentHTML('afterbegin', `<pre style="color:#f88;padding:12px">${esc(tr('common.loadFail'))}: ${esc(e.message)}</pre>`); console.error(e); });

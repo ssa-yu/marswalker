@@ -2,7 +2,8 @@
 /* Marswalk Recon — Step 1 scout-rover recon replay. Plain JS, no build step.
    Data: data/jezero/scene.json (map layers) + data/jezero/recon/recon.json (simulation output).
    The reveal ("scratch-off") is computed in the browser from reveal_t.png: a 2 m cell is shown in HiRISE
-   once the replay time passes the step at which the simulated rover first observed it. */
+   once the replay time passes the step at which the simulated rover first observed it. Interface text: i18n.js (tr()).
+   Product = rover rule version 3 (recon_v3/); ?rule=v2 still loads the version-2 record (no switch on screen). */
 'use strict';
 const R_MARS = 3396190, DEG = Math.PI / 180;
 const SCENE = 'jezero', BASE = `data/${SCENE}/`;
@@ -11,6 +12,8 @@ const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const abs = (u) => new URL(u, location.href).href;
 const pct = (v, d = 1) => v == null ? '–' : (v * 100).toFixed(d) + '%';
+// fixed display defaults (no longer user settings): replay speed in steps per second, earlier loops shown, replan points hidden
+const SPEED = 500, SHOW_ALL_LOOPS = true, SHOW_REPLANS = false;
 const S = { T: 0, loop: 0, playing: false, view: 'recon', revealT: null, imgs: {}, lastDrawT: -1 };
 
 async function getJSON(u) { const r = await fetch(u); if (!r.ok) throw new Error(`${u}: ${r.status}`); return r.json(); }
@@ -26,11 +29,6 @@ async function pickRule() {
   try { hasV3 = (await fetch(BASE + 'recon_v3/recon.json', { method: 'HEAD' })).ok; } catch (e) { hasV3 = false; }
   S.rule = want === 'v2' || !hasV3 ? 'v2' : 'v3';
   RB = BASE + (S.rule === 'v3' ? 'recon_v3/' : 'recon/');
-  const box = $('#ruleSel');
-  if (box) {
-    box.innerHTML = hasV3 ? `<a class="btn sm ${S.rule === 'v3' ? 'active' : ''}" href="recon.html">Rover rule v3 (literature methods)</a><a class="btn sm ${S.rule === 'v2' ? 'active' : ''}" href="recon.html?rule=v2">v2 (pre-registered record)</a>` : '';
-    $('#ruleNote').textContent = S.rule === 'v3' ? 'Version 3 picks frontier targets by expected gain per expected cost (Yamauchi 1997; Burgard et al. 2005; Singh et al. 2009; Sofman et al. 2006). It was designed after seeing version 2\'s repeat coverage; version 2 and the main route comparison stay the pre-registered record.' : (hasV3 ? 'Version 2: the rule fixed before the main route comparison (its record).' : '');
-  }
 }
 
 async function init() {
@@ -49,15 +47,14 @@ async function init() {
   S.maskCtx = S.mask.getContext('2d'); S.maskData = S.maskCtx.createImageData(c.width, c.height);
   S.tmp = document.createElement('canvas'); S.tmp.width = c.width; S.tmp.height = c.height;
   buildMap();
-  $('#loop').max = S.N; $('#loopN').textContent = S.N;
+  $('#loop').max = S.N;
   $('#loop').oninput = () => { stop(); setLoop(+$('#loop').value); };
-  $('#prev').onclick = () => { stop(); setLoop(Math.max(0, S.loop - 1)); };
-  $('#next').onclick = () => { stop(); setLoop(Math.min(S.N, S.loop + 1)); };
   $('#play').onclick = () => (S.playing ? stop() : play());
+  $('#play').textContent = tr('common.play');
   document.querySelectorAll('input[name=view]').forEach((r) => r.onchange = () => { S.view = r.value; applyView(); });
-  $('#showClasses').onchange = applyView; $('#showAll').onchange = () => drawPaths(); $('#showReplans').onchange = () => drawEvents();
+  $('#showClasses').onchange = applyView;
   $('#aboutBtn').onclick = () => { renderAbout(); $('#about').showModal(); };
-  renderChart(); renderTable(); renderChecks(); renderParams();
+  renderChart(); renderTable();
 }
 
 function buildMap() {
@@ -67,7 +64,7 @@ function buildMap() {
     container: 'map', bounds, fitBoundsOptions: { padding: 30 }, maxZoom: 20, minZoom: 9, renderWorldCopies: false,
     dragRotate: false, pitchWithRotate: false,
     style: { version: 8, sources: {}, layers: [{ id: 'bg', type: 'background', paint: { 'background-color': '#0d0b0a' } }] },
-    attributionControl: { compact: true, customAttribution: 'NASA/JPL-Caltech/UArizona (HiRISE), NASA/JPL-Caltech/MSSS (CTX), USGS Astrogeology. Rover route: simulated.' },
+    attributionControl: { compact: true, customAttribution: tr('rc.attrib') },
   });
   S.map = map; window.__mapIdle = false;
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
@@ -110,7 +107,7 @@ function buildMap() {
     const pop = new maplibregl.Popup({ closeButton: false, offset: 8 });
     map.on('mouseenter', 'events', (e) => { const p = e.features[0].properties; pop.setLngLat(e.lngLat).setHTML(eventText(p)).addTo(map); });
     map.on('mouseleave', 'events', () => pop.remove());
-    map.on('mouseenter', 'base', (e) => pop.setLngLat(e.lngLat).setHTML(`<b>Habitat (base)</b> <span class="badge assumed">assumed</span><br>Every loop starts and ends here.`).addTo(map));
+    map.on('mouseenter', 'base', (e) => pop.setLngLat(e.lngLat).setHTML(`<b>${tr('common.habitat')}</b> ${badgeHTML('assumed')}<br>${tr('rc.basePop')}`).addTo(map));
     map.on('mouseleave', 'base', () => pop.remove());
     map.on('move', updateScale); map.on('mousemove', (e) => showCoords(e.lngLat));
     map.once('idle', () => { window.__mapIdle = true; });
@@ -120,9 +117,8 @@ function buildMap() {
 
 const fc = (f) => ({ type: 'FeatureCollection', features: f });
 function eventText(p) {
-  const name = { goal: 'Loop goal', turn_back: 'Turned back: planned cost home would not fit the planning budget', return_direct: 'Return switched to the cheapest known route',
-    safety_return: 'Reserve rule: going home over terrain already seen', goal_unreachable: 'Goal found unreachable' }[p.type] || p.type;
-  return `<b>Loop ${p.loop}</b> · ${esc(name)}${p.spent != null ? `<br>energy spent so far ${(+p.spent).toFixed(0)} units` : ''}`;
+  const name = ['goal', 'turn_back', 'return_direct', 'safety_return', 'goal_unreachable'].includes(p.type) ? tr('rc.ev.' + p.type) : p.type;
+  return `<b>${tr('rc.loopN', { n: p.loop })}</b> · ${esc(name)}${p.spent != null ? `<br>${tr('rc.evSpent', { e: (+p.spent).toFixed(0) })}` : ''}`;
 }
 
 /* ---------- time ---------------------------------------------------------------------------- */
@@ -139,7 +135,7 @@ function setT(T) {
 }
 function play() {
   if (S.loop >= S.N) setLoop(0);
-  S.playing = true; $('#play').textContent = '❚❚ Pause';
+  S.playing = true; $('#play').textContent = tr('common.pause');
   const L0 = S.rc.loops[Math.min(S.loop, S.N - 1)];
   if (S.T >= L0.t1 || S.loop === 0) S.T = S.loop === 0 ? 0 : S.rc.loops[S.loop - 1].t1;
   let last = performance.now();
@@ -147,7 +143,7 @@ function play() {
   const step = (now) => {
     if (!S.playing) return;
     const dt = Math.min(0.1, (now - last) / 1000); last = now;
-    const T = Math.min(S.rc.t_max, S.T + dt * +$('#speed').value);
+    const T = Math.min(S.rc.t_max, S.T + dt * SPEED);
     setT(Math.round(T));
     if (T >= S.rc.t_max) { stop(); return; }
     requestAnimationFrame(step);
@@ -155,7 +151,7 @@ function play() {
   requestAnimationFrame(step);
 }
 function stop() {
-  S.playing = false; $('#play').textContent = '▶ Play';
+  S.playing = false; $('#play').textContent = tr('common.play');
   const s = S.map && S.map.getSource('reveal'); if (s) { s.play(); setTimeout(() => s.pause(), 60); }
   const c = S.map && S.map.getSource('classes'); if (c) { c.play(); setTimeout(() => c.pause(), 60); }
 }
@@ -163,8 +159,8 @@ function stop() {
 function refresh() {
   drawReveal(); drawPaths(); drawEvents(); drawRover(); renderLoopCard(); renderHud(); highlightChart(); renderTable();
   if (!S.playing) { const s = S.map.getSource('reveal'); if (s) { s.play(); setTimeout(() => s.pause(), 60); } const c = S.map.getSource('classes'); if (c) { c.play(); setTimeout(() => c.pause(), 60); } }
-  $('#loopLbl').textContent = S.loop;
-  $('#loopHint').textContent = S.loop === 0 ? '(before departure: only the orbital prior)' : (S.playing ? '(replaying)' : '(state after this loop)');
+  $('#loopTxt').innerHTML = tr('rc.loopOf', { k: S.loop, n: S.N });
+  $('#loopHint').textContent = S.loop === 0 ? tr('rc.hint0') : (S.playing ? tr('rc.hintPlay') : '');
 }
 
 /* ---------- scratch-off compositing ----------------------------------------------------------- */
@@ -200,7 +196,7 @@ function partial(seg, T) {
 }
 function drawPaths() {
   if (!S.map.getSource('paths')) return;
-  const T = S.T, cur = S.loop, showAll = $('#showAll').checked, feats = [];
+  const T = S.T, cur = S.loop, showAll = SHOW_ALL_LOOPS, feats = [];
   for (const L of S.rc.loops) {
     if (L.t0 >= T && T > 0) break;
     if (T === 0) break;
@@ -222,7 +218,7 @@ function drawEvents() {
       feats.push({ type: 'Feature', geometry: { type: 'Point', coordinates: L.goal }, properties: { type: 'goal', loop: L.id } });
       for (const e of L.events) {
         if (e.t > T || e.type === 'goal_reached') continue;
-        if (e.type === 'replan' && !$('#showReplans').checked) continue;
+        if (e.type === 'replan' && !SHOW_REPLANS) continue;
         feats.push({ type: 'Feature', geometry: { type: 'Point', coordinates: [e.lon, e.lat] }, properties: { ...e, loop: L.id } });
       }
     }
@@ -250,7 +246,6 @@ function applyView() {
   S.map.setLayoutProperty('reveal', 'visibility', all ? 'none' : 'visible');
   S.map.setLayoutProperty('classes', 'visibility', $('#showClasses').checked ? 'visible' : 'none');
   S.forceDraw = true; refresh();
-  $('#review').textContent = all ? 'View all data: full HiRISE reference terrain (not what the rover knows)' : 'Simulated rover · parameters proposed · review: pending';
 }
 
 /* ---------- panels ------------------------------------------------------------------------------ */
@@ -259,8 +254,7 @@ function renderHud() {
   const L = T === 0 ? null : loopAtT(T);
   const obs = S.loop === 0 && !S.playing ? S.rc.loops[0] && 0 : null;
   const obsFrac = coveredAt(T);
-  $('#hud').innerHTML = L ? `Loop <b>${L.id}</b> · step <b>${T - L.t0}</b> / ${L.t1 - L.t0}<br>Scratched off so far: <b>${pct(obsFrac)}</b> of study area`
-    : `Before departure · the rover knows only the CTX prior (20 m)<br>Scratched off: <b>${pct(obsFrac)}</b> (around the habitat)`;
+  $('#hud').innerHTML = (L ? tr('rc.hudLoop', { n: L.id }) : tr('rc.hudBefore')) + '<br>' + tr('rc.hudSeen', { p: pct(obsFrac) }) + (S.view === 'all' ? `<br><span class="muted">${tr('rc.hudAll')}</span>` : '');
 }
 function coveredAt(T) { // cheap: count from the reveal raster
   let n = 0; const tt = S.revealT; for (let i = 0; i < tt.length; i += 7) if (tt[i] <= T) n++;
@@ -268,23 +262,19 @@ function coveredAt(T) { // cheap: count from the reveal raster
 }
 function renderLoopCard() {
   if (S.loop === 0) {
-    $('#loopCard').innerHTML = `<div class="card"><h4>Before departure</h4><p class="hint" style="margin:0">The rover plans on the CTX prior: ${pct(S.rc.initial_belief_agrees_with_reference_frac)} of cells already carry the same terrain class as the HiRISE reference; it cannot see sand or small rough patches yet. Press Play or move the slider.</p></div>`;
+    $('#loopCard').innerHTML = `<div class="card"><h4>${tr('rc.before')}</h4><p class="hint" style="margin:0">${tr('rc.beforeTxt')}</p></div>`;
     return;
   }
   const L = S.rc.loops[S.loop - 1], P = S.rc.params, B = L.budget, plan = B * P.planning_frac;
-  const ev = [L.n_turn_back ? `${L.n_turn_back} turn-back` : '', L.n_return_direct ? `${L.n_return_direct} return switched to cheapest route` : '', L.n_safety_return ? `${L.n_safety_return} reserve rule` : ''].filter(Boolean).join(', ') || 'none';
-  $('#loopCard').innerHTML = `<div class="card"><h4><span>Loop ${L.id}</span><span class="badge simulated">simulated</span></h4>
-<div class="bar" title="energy used of the loop budget"><div class="fill" style="width:${(100 * L.cost_total / B).toFixed(1)}%"></div><div class="mark" style="left:${(100 * plan / B).toFixed(1)}%"></div></div>
-<div class="barlbl"><span>energy ${L.cost_total.toFixed(0)} / ${B.toFixed(0)} units</span><span>| planning limit ${plan.toFixed(0)}</span></div>
+  $('#loopCard').innerHTML = `<div class="card"><h4><span>${tr('rc.loopN', { n: L.id })}</span>${badgeHTML('simulated')}</h4>
+<div class="bar" title="${esc(tr('rc.energyTitle'))}"><div class="fill" style="width:${(100 * L.cost_total / B).toFixed(1)}%"></div><div class="mark" style="left:${(100 * plan / B).toFixed(1)}%"></div></div>
+<div class="barlbl"><span>${tr('rc.energy', { e: L.cost_total.toFixed(0), b: B.toFixed(0) })}</span><span>| ${tr('rc.planLimit', { p: plan.toFixed(0) })}</span></div>
 <div class="kv" style="margin-top:6px">
-<span>Distance driven</span><span>${(L.length_m / 1000).toFixed(2)} km</span>
-<span>New area observed</span><span>${(L.new_observed_m2 / 1e4).toFixed(1)} ha</span>
-<span>Study area observed (total)</span><span>${pct(L.observed_frac_aoi)}</span>
-<span>Return on the outbound track</span><span>${pct(L.overlap_ratio, 0)}</span>
-<span>Goal reached</span><span>${L.goal_reached ? 'yes' : 'no (turned back)'}</span>
-<span>Replans (hazard / ×2 cost ahead)</span><span>${L.n_replan}</span>
-<span>Belief map = reference</span><span>${pct(L.belief_agrees_with_reference_frac)}</span>
-</div><p class="hint" style="margin-top:4px">Forced-return events: ${esc(ev)}</p><p class="hint">1 energy unit = 1 m on firm ground (rough ×2.5, sand ×6; assumed). "Return on the outbound track" = share of the way home within 6 m of the way out (excluding 30 m around the habitat).</p></div>`;
+<span>${tr('rc.kv.km')}</span><span>${(L.length_m / 1000).toFixed(2)} km</span>
+<span>${tr('rc.kv.new')}</span><span>${(L.new_observed_m2 / 1e4).toFixed(1)} ha</span>
+<span>${tr('rc.kv.total')}</span><span>${pct(L.observed_frac_aoi)}</span>
+<span>${tr('rc.kv.goal')}</span><span>${L.goal_reached ? tr('common.yes') : tr('rc.kv.goalNo')}</span>
+</div></div>`;
 }
 
 function renderChart() {
@@ -309,7 +299,7 @@ function renderChart() {
   el.querySelectorAll('rect.hit').forEach((r) => {
     r.onmouseenter = () => { const l = Ls[+r.dataset.i], bb = r.getBoundingClientRect(), eb = el.getBoundingClientRect();
       tip.hidden = false; tip.style.left = (bb.left - eb.left + bb.width / 2) + 'px'; tip.style.top = '30px';
-      tip.innerHTML = `Loop ${l.id}: ${pct(l.observed_frac_aoi)} observed (+${(l.new_observed_m2 / 1e4).toFixed(1)} ha)`; };
+      tip.innerHTML = tr('rc.tip', { n: l.id, p: pct(l.observed_frac_aoi), ha: (l.new_observed_m2 / 1e4).toFixed(1) }); };
     r.onmouseleave = () => { tip.hidden = true; };
     r.onclick = () => { stop(); setLoop(+r.dataset.i + 1); };
     r.style.cursor = 'pointer';
@@ -319,74 +309,68 @@ function highlightChart() {
   $('#chart').querySelectorAll('rect:not(.hit)').forEach((r) => r.setAttribute('fill', +r.dataset.i === S.loop - 1 ? '#f2b36b' : '#8a6a3a'));
 }
 function renderTable() {
-  let h = '<table><tr><th>loop</th><th>energy</th><th>km</th><th>new ha</th><th>total</th><th>overlap</th><th>replan</th><th>forced</th></tr>';
+  let h = `<table><tr>${['rc.th.loop', 'rc.th.energy', 'rc.th.km', 'rc.th.new', 'rc.th.total'].map((k) => `<th>${tr(k)}</th>`).join('')}</tr>`;
   S.rc.loops.forEach((l) => {
-    h += `<tr class="${l.id === S.loop ? 'cur' : ''}"><td>${l.id}</td><td>${l.cost_total.toFixed(0)}</td><td>${(l.length_m / 1000).toFixed(2)}</td><td>${(l.new_observed_m2 / 1e4).toFixed(1)}</td><td>${pct(l.observed_frac_aoi)}</td><td>${pct(l.overlap_ratio, 0)}</td><td>${l.n_replan}</td><td>${l.n_turn_back + l.n_return_direct + l.n_safety_return}</td></tr>`;
+    h += `<tr class="${l.id === S.loop ? 'cur' : ''}"><td>${l.id}</td><td>${l.cost_total.toFixed(0)}</td><td>${(l.length_m / 1000).toFixed(2)}</td><td>${(l.new_observed_m2 / 1e4).toFixed(1)}</td><td>${pct(l.observed_frac_aoi)}</td></tr>`;
   });
   $('#table').innerHTML = h + '</table>';
 }
-function renderChecks() {
+// acceptance checks and parameters: moved from the panel into About (same values)
+function checksHTML() {
   const Ls = S.rc.loops, B = S.rc.params.loop_budget;
-  const ov = Ls.map((l) => l.overlap_ratio).filter((v) => v != null).sort((a, b) => a - b);
-  const med = ov.length ? ov[Math.floor((ov.length - 1) / 2)] : null;
-  const ok = (v) => v ? '<span class="pass">pass</span>' : '<span class="fail">fail</span>';
+  const ok = (v) => v ? `<span class="pass">${tr('common.pass')}</span>` : `<span class="fail">${tr('common.fail')}</span>`;
   const maxc = Math.max(...Ls.map((l) => l.cost_total));
   const ac = S.rc.acceptance || {};
-  $('#checks').innerHTML = `<table>
-<tr><td>Every loop starts and ends at the habitat</td><td>${ac.start_end_at_base == null ? '–' : ok(ac.start_end_at_base)}</td></tr>
-<tr><td>No loop over its energy budget (max ${maxc.toFixed(0)} / ${B})</td><td>${ok(maxc <= B)}</td></tr>
-<tr><td>Never drives onto impassable reference terrain</td><td>${ac.no_impassable == null ? '–' : ok(ac.no_impassable)}</td></tr>
-<tr><td>Planner never read reference terrain it had not observed</td><td>${ac.no_unobserved_reads == null ? '–' : ok(ac.no_unobserved_reads)}</td></tr>
-<tr><td>Median return-on-outbound-track &lt; 30% (MVP target)</td><td>${pct(med, 0)} ${med == null ? '' : ok(med < 0.3)}</td></tr>
-</table><p class="hint">Checked by the pipeline tests (app/tests/test_recon.py) on the exported loops.</p>`;
+  const ov = Ls.map((l) => l.overlap_ratio).filter((v) => v != null).sort((a, b) => a - b);
+  const med = ov.length ? ov[Math.floor((ov.length - 1) / 2)] : null;
+  return `<table>
+<tr><td>${tr('rc.ck.base')}</td><td>${ac.start_end_at_base == null ? '–' : ok(ac.start_end_at_base)}</td></tr>
+<tr><td>${tr('rc.ck.budget', { m: maxc.toFixed(0), b: B })}</td><td>${ok(maxc <= B)}</td></tr>
+<tr><td>${tr('rc.ck.imp')}</td><td>${ac.no_impassable == null ? '–' : ok(ac.no_impassable)}</td></tr>
+<tr><td>${tr('rc.ck.unseen')}</td><td>${ac.no_unobserved_reads == null ? '–' : ok(ac.no_unobserved_reads)}</td></tr>
+${med == null ? '' : `<tr><td>${tr('rc.ck.overlap')}</td><td>${pct(med, 0)} ${ok(med < 0.3)}</td></tr>`}
+</table><p class="hint">${tr('rc.ck.note')}</p>`;
 }
-function renderParams() {
+function paramsHTML() {
   const P = S.rc.params, TP = S.rc.terrain_params;
   const rows = [
-    ['Loop energy budget', `${P.loop_budget} units (planning ${Math.round(P.planning_frac * 100)}%, reserve ${Math.round((1 - P.planning_frac) * 100)}%)`],
-    ['Sensing radius', `${P.sense_radius_m} m`], ['Cost per metre firm / rough / sand', `${P.cost_factor.firm} / ${P.cost_factor.rough} / ${P.cost_factor.sand}`],
-    ['Revisit penalty on the way home', `×${1 + P.revisit_penalty}`], ['Home margin (floor; learned above it)', `×${P.home_margin}`],
+    [tr('rc.pm.budget'), tr('rc.pm.budgetV', { b: P.loop_budget, p: Math.round(P.planning_frac * 100), r: Math.round((1 - P.planning_frac) * 100) })],
+    [tr('rc.pm.radius'), `${P.sense_radius_m} m`], [tr('rc.pm.cost'), `${P.cost_factor.firm} / ${P.cost_factor.rough} / ${P.cost_factor.sand}`],
+    [tr('rc.pm.revisit'), `×${1 + P.revisit_penalty}`], [tr('rc.pm.margin'), `×${P.home_margin}`],
     P.goal_rule === 'v2_sector_band'
-      ? ['Goal rule (v2)', `8 sectors in turn (${P.sector_order.join(', ')}); distance bands near 100–600 m, mid 600–1200 m, far >1200 m (8 loops each); most unseen area; cost ≤ ${Math.round(P.outbound_frac * 100)}% of planning budget`]
-      : ['Goal distance', `${Math.round(P.goal_min_frac * 100)}–${Math.round(P.outbound_frac * 100)}% of planning budget`],
-    ['Slope baseline / rough / rover-blocked', `${TP.slope_baseline_m} m / ≥${TP.slope_rough_deg}° / ≥${TP.slope_block_rover_deg}°`],
-    TP.sand_method ? ['Sand', 'sand-field indicator v2: ripple-field texture over tens of metres, fixed thresholds (needs a person to confirm)']
-      : ['Sand', `ripple index ≥ P${TP.ripple_percentile} (needs a person to confirm)`],
+      ? [tr('rc.pm.goalV2'), tr('rc.pm.goalV2v', { o: Math.round(P.outbound_frac * 100) })]
+      : [tr('rc.pm.goalV3'), tr('rc.pm.goalV3v', { a: P.alpha0, b: P.beta0, rho: P.rho, K: P.K })],
+    [tr('rc.pm.slope'), `${TP.slope_baseline_m} m / ≥${TP.slope_rough_deg}° / ≥${TP.slope_block_rover_deg}°`],
+    [tr('rc.pm.sand'), tr('rc.pm.sandV')],
   ];
-  $('#params').innerHTML = '<table>' + rows.map((r) => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join('') + '</table><p class="hint"><span class="badge assumed">assumed</span> All values are proposals waiting to be locked; none was tuned on route comparisons.</p>';
+  return '<table>' + rows.map((r) => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join('') + `</table><p class="hint">${badgeHTML('assumed')} ${tr('rc.pm.note')}</p>`;
 }
 
 function marsDist(a, b) { const dlat = (b.lat - a.lat) * DEG, dlon = (b.lng - a.lng) * DEG; const h = Math.sin(dlat / 2) ** 2 + Math.cos(a.lat * DEG) * Math.cos(b.lat * DEG) * Math.sin(dlon / 2) ** 2; return 2 * R_MARS * Math.asin(Math.sqrt(h)); }
 function updateScale() {
   const m = S.map, H = m.getContainer().clientHeight, maxPx = 120, a = m.unproject([20, H - 40]), b = m.unproject([20 + maxPx, H - 40]);
   const d = marsDist(a, b), pow = 10 ** Math.floor(Math.log10(d)), n = d / pow, nice = (n >= 5 ? 5 : n >= 2 ? 2 : 1) * pow;
-  $('#scaleBar').style.width = (maxPx * nice / d) + 'px'; $('#scaleLabel').textContent = (nice >= 1000 ? nice / 1000 + ' km' : nice + ' m') + ' (Mars)';
+  $('#scaleBar').style.width = (maxPx * nice / d) + 'px'; $('#scaleLabel').textContent = (nice >= 1000 ? nice / 1000 + ' km' : nice + ' m') + ' ' + tr('common.mars');
 }
 function showCoords(ll) {
   const b = S.rc.base, k = Math.cos(b.lat * DEG);
   const x = (ll.lng - b.lon) * DEG * R_MARS * k, y = (ll.lat - b.lat) * DEG * R_MARS;
-  $('#coords').innerHTML = `${ll.lat.toFixed(5)}°N ${ll.lng.toFixed(5)}°E<br>x ${x.toFixed(0)} m E, y ${y.toFixed(0)} m N of base`;
+  $('#coords').innerHTML = `${ll.lat.toFixed(5)}°N ${ll.lng.toFixed(5)}°E<br>${esc(tr('common.xy', { x: x.toFixed(0), y: y.toFixed(0) }))}`;
 }
 function renderAbout() {
-  const P = S.rc.params;
-  $('#aboutBody').innerHTML = `<h2>Step 1 · Scout rover recon — how it works</h2>
-<p><b>The rover is simulated.</b> Its loops are produced by our planner; it is not Perseverance and does not follow Perseverance's route. Perseverance's own measurements are not used on this page.</p>
-<h3>What the rover knows</h3>
-<ul><li><b>Before leaving</b> it has only orbital data available to any mission planner: the CTX terrain model (20 m) and image. Terrain classes from it: firm / rough / blocked by slope. CTX cannot show sand ripples.</li>
-<li><b>While driving</b> it "scratches off" a disc of ${P.sense_radius_m} m around itself. Inside that disc the map switches to the <i>HiRISE reference terrain</i> (1 m terrain model, 0.25 m image). HiRISE is also orbital: it stands in for what the rover's own cameras would measure (simulated sensing). It is not ground truth.</li>
-<li>The planner never reads HiRISE values it has not scratched off (enforced in code and tested).</li></ul>
-<h3>One loop</h3>
-<ol><li>Pick a goal (rule v2): the eight compass sectors take turns (N, S, E, W, NE, SW, SE, NW), and distance bands near 100–600 m, mid 600–1200 m, far &gt;1200 m take turns every eight loops; within that sector and band, the goal with the most unexplored area around it, at most ${Math.round(P.outbound_frac * 100)}% of the planning budget away. Terrain only: no science value and no Perseverance data are used.</li>
-<li>Drive there on its current map. If a newly seen cell ahead is impassable or twice as costly as expected, replan.</li>
-<li>Turn back by itself when (energy spent + planned cost home × margin) reaches the planning budget. The margin starts at ×${P.home_margin} and is raised to how much more the terrain has cost than the orbital map predicted.</li>
-<li>Go home a different way: cells already seen cost ×${1 + P.revisit_penalty} on the way back.</li>
-<li>Reserve rule (guarantee): it keeps enough energy to get home over terrain it has <i>already seen</i> (hard rule; tested: no loop of the recorded run exceeds its budget). When that margin runs out, it goes home that way (dashed green). So no loop can exceed its budget.</li></ol>
-<h3>Labels</h3><p><span class="badge simulated">simulated</span> rover routes, events and statistics · <span class="badge assumed">assumed</span> budget, costs, radius, thresholds (proposed, review pending) · <span class="badge measured">measured</span> HiRISE and CTX data (orbital).</p>
-<h3>Limitations</h3><ul><li>Terrain classes are a heuristic from slope, roughness and an image texture index; the sand class in particular (heuristic, not yet reviewed) still needs a person to check it.</li>
-<li>Rover energy units are relative (1 = 1 m of firm ground), not watt-hours.</li>
-<li>Budget, cost factors (firm 1, rough 2.5, sand 6) and the 15 m sensing radius are assumptions locked before the run. With sand now about 40% of the reference terrain the rover rarely gets beyond ~600 m from the habitat; this is reported as is, not tuned away.</li>
-<li>The first run of this rule had a defect (5 loops ended 1.3–4.8 units over budget). It was fixed (the reserve rule keeps a margin of two steps instead of one) and the simulation was re-run once; this page shows the rerun. Both runs are listed in DATA_LOG.</li>
-<li>The big difference between what the rover saw and the orbital prior comes from data resolution (CTX 20 m vs HiRISE 1 m), not from cleverness of the rover.</li></ul>`;
+  const P = S.rc.params, v3 = P.goal_rule !== 'v2_sector_band';
+  const li = (k, v) => `<li>${tr(k, v)}</li>`;
+  $('#aboutBody').innerHTML = `<h2>${tr('rc.ab.title')}</h2>
+<p>${tr('rc.ab.sim')}</p>
+<h3>${tr('rc.ab.knowsH')}</h3>
+<ul>${li('rc.ab.before')}${li('rc.ab.driving', { r: P.sense_radius_m })}${li('rc.ab.noPeek')}</ul>
+<h3>${tr('rc.ab.loopH')}</h3>
+<ol>${v3 ? li('rc.ab.goalV3') : li('rc.ab.goalV2', { o: Math.round(P.outbound_frac * 100) })}${li('rc.ab.drive')}${li('rc.ab.turn', { m: P.home_margin })}${li('rc.ab.home', { p: 1 + P.revisit_penalty })}${li('rc.ab.reserve')}</ol>
+<h3>${tr('rc.ab.unitH')}</h3><p class="hint">${tr('rc.ab.unit')}</p>
+<h3>${tr('rc.ab.checksH')}</h3>${checksHTML()}
+<h3>${tr('rc.ab.paramsH')}</h3>${paramsHTML()}
+<h3>${tr('common.labels')}</h3><p>${badgeHTML('simulated')} ${tr('rc.ab.lSim')} · ${badgeHTML('assumed')} ${tr('rc.ab.lAss')} · ${badgeHTML('measured')} ${tr('rc.ab.lMea')}</p>
+<h3>${tr('common.limits')}</h3><ul>${li('rc.ab.L.classes')}${li('rc.ab.L.params')}${v3 ? li('rc.ab.L.v3') : ''}${li('rc.ab.L.res')}</ul>`;
 }
 
-init().catch((e) => { document.body.insertAdjacentHTML('afterbegin', `<pre style="color:#f88;padding:12px">Failed to load: ${esc(e.message)}</pre>`); console.error(e); });
+init().catch((e) => { document.body.insertAdjacentHTML('afterbegin', `<pre style="color:#f88;padding:12px">${esc(tr('common.loadFail'))}: ${esc(e.message)}</pre>`); console.error(e); });

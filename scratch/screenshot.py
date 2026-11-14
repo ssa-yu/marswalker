@@ -55,7 +55,7 @@ with sync_playwright() as p:
     pg.click(".step[data-step='3']")
     pg.click("#plan"); pg.wait_for_function("S.plan && S.plan.tl", timeout=30000)
     print("plan", pg.evaluate("({order: S.plan.order, o2Act: Math.round(S.plan.o2Act), o2Plan: Math.round(S.plan.o2Plan), U: S.plan.U, km: (S.plan.dist/1000).toFixed(2), minMargin: Math.round(S.plan.minMarginAct)})"))
-    pg.select_option("#speed", "20"); pg.click("#play"); pg.wait_for_timeout(2500)
+    pg.click("#play"); pg.wait_for_timeout(2500)
     pg.evaluate("stop(); setT(S.plan.tl.t.at(-1) * 0.3)")
     idle(pg); pg.wait_for_timeout(700); pg.screenshot(path=str(out / "03_playing.png")); print("saved 03")
     pg.close()

@@ -1,5 +1,4 @@
 /* SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md */
-#skelBanner { background: rgba(233,185,73,.14); border-bottom: 1px solid var(--warn); color: var(--warn); font-size: 12px; padding: 4px 14px; flex: none; height: 26px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 h2.title { font-size: 16px; margin: 4px 0 6px; display: flex; gap: 8px; align-items: center; }
 p.lead { color: var(--muted); margin: 0 0 6px; }
 .ctrl .row { display: flex; gap: 6px; align-items: center; margin: 6px 0; }
@@ -27,7 +26,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 .bar .res { position: absolute; left: 0; top: 0; bottom: 0; background: repeating-linear-gradient(45deg, rgba(224,98,90,.55) 0 4px, transparent 4px 8px); border-right: 1px solid var(--bad); }
 #warn { margin-top: 6px; padding: 4px 8px; border-radius: 5px; background: rgba(224,98,90,.18); border: 1px solid var(--bad); color: var(--bad); font-weight: 600; }
 .astro-marker { width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 3px solid #43b0f1; box-shadow: 0 0 0 2px #000; }
-@media (max-width: 760px) { main { height: auto; } #hud { width: 220px; } #skelBanner { white-space: normal; height: auto; } }
+@media (max-width: 760px) { main { height: auto; } #hud { width: 220px; } }
 .pt-lbl { color: #fff; font-size: 11.5px; font-weight: 600; text-shadow: 0 0 3px #000, 0 0 3px #000; white-space: nowrap; pointer-events: none; }
 .cA { color: #ff9f43; } .cB { color: #43b0f1; } .cAp { color: #c38bff; } .cR { color: #e9e4dc; }
 table.cmp { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
