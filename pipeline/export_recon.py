@@ -25,20 +25,29 @@ def hex_rgb(h):
     return tuple(int(h[i:i + 2], 16) for i in (1, 3, 5))
 
 
-def run(scene: str):
+def run(scene: str, version: str = "v2"):
+    """version v2 = the T1 rerun (web/data/<scene>/recon/); v3 = rover goal rule version 3 (recon_v3/, reuses the
+    v2 folder's images, which do not depend on the rover)."""
     sc = Scene(scene)
-    R = read_json(sc.work / "recon_loops.json")
-    st = dict(np.load(sc.work / "recon_state.npz"))
+    wd = sc.work if version == "v2" else sc.work / "v3"
+    R = read_json(wd / "recon_loops.json")
+    st = dict(np.load(wd / "recon_state.npz"))
     T = dict(np.load(sc.work / "terrain_2m.npz"))
     gm = read_json(sc.work / "grid.json")
-    out = sc.web / "recon"; out.mkdir(parents=True, exist_ok=True)
+    out = sc.web / ("recon" if version == "v2" else "recon_v3"); out.mkdir(parents=True, exist_ok=True)
     ext = R["extent_local_m"]; res = R["params"]["grid_res_m"]
 
     ft = st["first_t"].astype(np.int64)
     v = np.where(ft < 0, 0xFFFFFF, ft).astype(np.uint32)
     rgb = np.dstack([(v >> 16) & 255, (v >> 8) & 255, v & 255]).astype(np.uint8)
     Image.fromarray(rgb, "RGB").save(out / "reveal_t.png", optimize=True)
+    if version == "v2":
+        write_images(sc, out, T)
+    loops = loops_json(sc, R, version)
+    finish(sc, scene, R, st, T, gm, out, loops, version)
 
+
+def write_images(sc, out, T):
     o = read(sc.work / "ortho_025.tif"); o[o == 0] = np.nan
     o1 = block(o, 4, "mean")
     lo, hi = np.nanpercentile(o1, 0.5), np.nanpercentile(o1, 99.5)
@@ -49,6 +58,9 @@ def run(scene: str):
         pal = np.array([hex_rgb(h) + (a,) for h, a in zip(CLASS_COLORS, (70, 200, 220, 235))], np.uint8)
         Image.fromarray(pal[c], "RGBA").save(out / f"{name}.png", optimize=True)
 
+
+def loops_json(sc, R, version):
+    ext = R["extent_local_m"]; res = R["params"]["grid_res_m"]
     x0, y1 = ext[0], ext[3]
     loops = []
     for L in R["loops"]:
@@ -71,16 +83,28 @@ def run(scene: str):
             i = j + 1
         ev = []
         for e in L["events"]:
+            if version == "v3" and e["type"] in ("select", "goal_reached"):
+                continue
             k = int(np.searchsorted(t, e["t"]))
             k = min(k, len(t) - 1)
             ev.append({**e, "lon": round(float(lon[k]), 7), "lat": round(float(lat[k]), 7)})
-        gr, gc = L["goal_rc"]
+        gr, gc = L["goal_rc"] if L.get("goal_rc") else R["base_rc"]
         glon, glat = sc.grid.xy_to_lonlat(x0 + (gc + .5) * res, y1 - (gr + .5) * res)
         keep = {k: L.get(k) for k in ("id", "t0", "t1", "cost_total", "budget", "length_m", "new_observed_m2", "observed_total_m2",
                                   "overlap_ratio", "n_replan", "n_turn_back", "n_return_direct", "n_safety_return",
                                   "goal_reached", "observed_frac_aoi", "belief_agrees_with_reference_frac", "margin_after_loop")}
         keep.update({"goal": [round(float(glon), 7), round(float(glat), 7)], "segments": segs, "events": ev})
+        if version == "v3":
+            tg = np.array(L.get("targets_rc") or [], float).reshape(-1, 2)
+            tl, tt = sc.grid.xy_to_lonlat(x0 + (tg[:, 1] + .5) * res, y1 - (tg[:, 0] + .5) * res)
+            keep.update({"targets": [[round(float(a), 7), round(float(b), 7)] for a, b in zip(tl, tt)],
+                         **{k: L.get(k) for k in ("n_targets_selected", "n_goals_reached", "n_reselect", "p_firm", "p_rough")}})
         loops.append(keep)
+    return loops
+
+
+def finish(sc, scene, R, st, T, gm, out, loops, version):
+    ext = R["extent_local_m"]; res = R["params"]["grid_res_m"]
     # acceptance (MVP_PLAN P6): start/end at base, never on impassable reference terrain, never on a cell
     # before it was observed (so the planner could not have used an unobserved reference value)
     base_rc = tuple(R["base_rc"]); imp = (T["class_ref"] == 3) | T["blocked_rover_ref"]
@@ -100,7 +124,9 @@ def run(scene: str):
            "base": sc.cfg["base"], "aoi_area_m2": R["aoi_area_m2"],
            "initial_belief_agrees_with_reference_frac": R["initial_belief_agrees_with_reference_frac"],
            "params": P, "terrain_params": R["terrain_params"], "classes": CLASSES, "class_colors": CLASS_COLORS,
-           "files": {"reveal_t": "reveal_t.png", "hirise": "hirise_1m.jpg", "class_ref": "class_ref.png", "class_prior": "class_prior.png"},
+           "files": {"reveal_t": "reveal_t.png", **({"hirise": "hirise_1m.jpg", "class_ref": "class_ref.png", "class_prior": "class_prior.png"} if version == "v2" else
+                     {"hirise": "../recon/hirise_1m.jpg", "class_ref": "../recon/class_ref.png", "class_prior": "../recon/class_prior.png"})},
+           "rule_version": version, **({"disclosure": R.get("disclosure"), "readings": R.get("readings")} if version == "v3" else {}),
            "t_max": int(max(L["t1"] for L in R["loops"])) if R["loops"] else 0,
            "loops": loops, "seconds": R["seconds"]}
     write_json(out / "recon.json", doc)
@@ -111,4 +137,6 @@ def run(scene: str):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--scene", default="jezero")
-    run(ap.parse_args().scene)
+    ap.add_argument("--version", default="v2", choices=["v2", "v3"])
+    a = ap.parse_args()
+    run(a.scene, a.version)

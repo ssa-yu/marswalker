@@ -36,3 +36,4 @@ p.lead { color: var(--muted); margin: 0 0 6px; }
   aside#panel { width: auto; height: 46vh; max-height: none; order: 2; }
   #mapwrap { height: 54vh; }
 }
+#ruleSel { display: flex; gap: 4px; margin: 4px 0; }

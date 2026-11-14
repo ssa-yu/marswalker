@@ -137,6 +137,7 @@
   "class_ref": "class_ref.png",
   "class_prior": "class_prior.png"
  },
+ "rule_version": "v2",
  "t_max": 20431,
  "loops": [
   {
