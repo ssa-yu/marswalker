@@ -38,6 +38,8 @@ Label: measured = instrument data as published; derived = computed by us from me
 | AI4MARS (status update) | NASA JPL, Zenodo | https://zenodo.org/records/15995036 | Terrain classes on rover photos (later step) | measured labels (crowd; Perseverance has no expert test set) | no | subset stored (2026-11-14): Perseverance NAV labels 3,827 + main-AOI Navcam images 2,215 (6,043 files, 0.63 GB, CRC checked) in `data_raw/jezero/ai4mars/`, index `index.csv`; no GEO/mcam/HAFIQ |
 | DONKI SEP / WSA-ENLIL | NASA CCMC via api.nasa.gov | https://api.nasa.gov/ | Step 3 space-weather scenario (Q7) | archived | no | not fetched (DEMO_KEY rate limit) |
 
+SI: every JSON output carries a top-level `"si"` field (computed by AI-written code from NASA data). The NumPy arrays (`.npz`/`.npy` in `data_work/`: terrain_2m, recon_state, hazard_zones, features) cannot hold text metadata; they are produced by the same AI-written code (see `docs/AI_USE.md`).
+
 ## Log
 
 ### 2026-11-14 checkpoint 1 (maps & real imagery)

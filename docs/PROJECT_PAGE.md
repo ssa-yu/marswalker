@@ -47,6 +47,8 @@ Also checked but not used in the results: CRISM mineral maps (failed our registr
 
 See `docs/REFERENCES.md` (data products, methods and parameter sources, software, design references).
 
-## Use of AI
+## Use of Super Intelligence (SI)
 
-See `docs/AI_USE.md`. In short: the code, checks and drafts were written by AI coding agents (Anthropic Claude via Claude Code) under the team's direction; rules were fixed before each run; no AI-generated images; no language model makes decisions inside the product.
+(Summary of `docs/AI_USE.md`; the team should check it and may rewrite it in their own words.)
+
+The idea — a scout rover goes first, the data it brings back are analysed, and then an astronaut walk is planned that stays within the suit's oxygen, at Jezero, with a "scratch-off" map and the check "treat the data as unknown and see whether the method finds the known answer" — comes from the team (Discord and the team meeting, 13 Nov 2026, before any AI plan). The way to prove it works (route A planned on orbital data vs route B planned after a simulated recon, both checked on HiRISE terrain), nearly all rules and parameters, all code, all tests, the data checks, and the drafts of every document and page text were proposed and produced by AI agents (Anthropic Claude: claude.ai and Claude Code). Several of the agents' rule decisions were made by an AI "manager" agent, with the team able to overrule; Shan made the direction decisions listed below. No image, video or audio is AI-generated; all imagery is NASA data or computed from it by AI-written code, and figures meant for the project page carry a visible SI watermark.

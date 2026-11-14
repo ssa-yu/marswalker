@@ -98,6 +98,11 @@ The full list with links, roles and labels (measured / derived / assumed / simul
 - Navcam photo directions are derived from the camera model and rover attitude (checked on 3 images against the CTX horizon, within 1°); Front Hazcam and Mastcam-Z directions are not checked and not drawn.
 - MapLibre draws Mars coordinates with Earth Web Mercator maths; the scale bar and coordinates are computed on the Mars sphere.
 
+## SI (AI) use and branding
+
+- Every source file, JSON output and submission figure carries an SI notice; who decided what and what the AI agents produced is in `docs/AI_USE.md`. Third-party code (`web/lib/`, MapLibre GL JS, BSD-3) is not AI-written and is unmodified.
+- No NASA branding is used (no logos, flags or mission insignia); text credits such as "NASA/JPL-Caltech/UArizona" are data attributions.
+
 ## Layout
 
 | Path | Content |
