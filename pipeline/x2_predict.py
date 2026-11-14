@@ -188,7 +188,12 @@ def run():
     res_main, info_main = evaluate(main, None, 100.0) if len(main) >= 10 else ({}, {"n": len(main)})
     for r in rows:
         r["fold"] = r["window"]
-    res_all, info_all = evaluate(rows, None, 0.0) if len(rows) >= 10 else ({}, {"n": len(rows)})
+    nwin = len({r["window"] for r in rows})
+    if nwin >= 2 and len(rows) >= 10:
+        res_all, info_all = evaluate(rows, None, 0.0)
+    else:   # AI4MARS NAV labels exist only for sols 9-288, i.e. inside the main window: leave-one-window-out impossible
+        res_all, info_all = {}, {"n": len(rows), "windows_with_labels": sorted({r["window"] for r in rows}),
+                                 "not_computed": "labelled waypoints in fewer than 2 of the six windows"}
     out = {"label": "derived, model estimate; answers = AI4MARS crowd labels (measured); agreement with crowd labels, not expert accuracy",
            "rules": __doc__.split("Rules", 1)[1], "computed_at": time.strftime("%Y-%m-%d %H:%M:%S %Z"),
            "main_aoi": {"info": info_main, "results": res_main}, "waypoints_inside_the_six_windows": {"info": info_all, "results": res_all},
