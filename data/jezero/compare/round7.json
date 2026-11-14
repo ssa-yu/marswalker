@@ -3472,6 +3472,2087 @@
      }
     }
    }
+  },
+  "i_v3": {
+   "note": "table (i), version-3 chain: stops from the measurements the v3 rover unlocked by loop 30",
+   "stops": [
+    {
+     "wp": "3_110",
+     "x": 3.43,
+     "y": -4.97,
+     "roles": [
+      [
+       1,
+       "representative",
+       "tselchee"
+      ]
+     ]
+    },
+    {
+     "wp": "4_48",
+     "x": 74.97,
+     "y": -27.68,
+     "roles": [
+      [
+       1,
+       "anomaly",
+       "tseebi_tsaadah"
+      ]
+     ]
+    },
+    {
+     "wp": "3_2208",
+     "x": 79.39,
+     "y": -5.84,
+     "roles": [
+      [
+       2,
+       "representative",
+       "a_koo"
+      ]
+     ]
+    },
+    {
+     "wp": "4_592",
+     "x": -10.63,
+     "y": -155.25,
+     "roles": [
+      [
+       2,
+       "anomaly",
+       "hastaa"
+      ]
+     ]
+    }
+   ],
+   "rows": {
+    "A": {
+     "main": {
+      "n_planned_stops": 4,
+      "stops_reached_with_safe_return": 4,
+      "stops_reached_within_usable": 4,
+      "pred_o2": 82.24987705168346,
+      "actual_o2": 88.12634458150067,
+      "o2_error": 5.876467529817219,
+      "pred_time_min": 82.24987705168346,
+      "actual_time_min": 84.43256499132994,
+      "hazard_m": 48.97056274847715,
+      "blocked_m": 0.0,
+      "sand_m": 48.97056274847715,
+      "crossings": 1,
+      "zones_entered": 1,
+      "length_m": 427.0782104868019,
+      "actual_within_budget": true,
+      "pred_within_budget": true,
+      "order": [
+       0,
+       2,
+       1,
+       3
+      ],
+      "skipped": [],
+      "true_margin_at_stops": [
+       365.76823549801213,
+       344.14835324701835,
+       325.45788398409746,
+       295.8736554184994
+      ],
+      "first_true_margin_negative": null
+     }
+    },
+    "A+": {
+     "main": {
+      "n_planned_stops": 4,
+      "stops_reached_with_safe_return": 4,
+      "stops_reached_within_usable": 4,
+      "pred_o2": 82.24987705168346,
+      "actual_o2": 88.12634458150067,
+      "o2_error": 5.876467529817219,
+      "pred_time_min": 82.24987705168346,
+      "actual_time_min": 84.43256499132994,
+      "hazard_m": 48.97056274847715,
+      "blocked_m": 0.0,
+      "sand_m": 48.97056274847715,
+      "crossings": 1,
+      "zones_entered": 1,
+      "length_m": 427.0782104868019,
+      "actual_within_budget": true,
+      "pred_within_budget": true,
+      "order": [
+       0,
+       2,
+       1,
+       3
+      ],
+      "skipped": [],
+      "true_margin_at_stops": [
+       365.76823549801213,
+       344.14835324701835,
+       325.45788398409746,
+       295.8736554184994
+      ],
+      "first_true_margin_negative": null,
+      "diff_vs_A": {
+       "actual_o2": 0.0,
+       "actual_time_min": 0.0,
+       "o2_error": 0.0,
+       "hazard_m": 0.0,
+       "sand_m": 0.0,
+       "crossings": 0,
+       "length_m": 0.0,
+       "stops_reached_with_safe_return": 0,
+       "stops_reached_within_usable": 0,
+       "n_planned_stops": 0
+      }
+     }
+    },
+    "B_v3@1": {
+     "main": {
+      "n_planned_stops": 4,
+      "stops_reached_with_safe_return": 4,
+      "stops_reached_within_usable": 4,
+      "pred_o2": 93.28526355703026,
+      "actual_o2": 85.62152380466512,
+      "o2_error": -7.663739752365146,
+      "pred_time_min": 86.35605571268636,
+      "actual_time_min": 83.50952380466514,
+      "hazard_m": 28.0,
+      "blocked_m": 0.0,
+      "sand_m": 28.0,
+      "crossings": 1,
+      "zones_entered": 1,
+      "length_m": 427.5634918610404,
+      "actual_within_budget": true,
+      "pred_within_budget": true,
+      "order": [
+       2,
+       1,
+       3,
+       0
+      ],
+      "skipped": [],
+      "true_margin_at_stops": [
+       362.17647099602436,
+       343.4860017331036,
+       316.17824069732274,
+       298.3784761953348
+      ],
+      "first_true_margin_negative": null,
+      "diff_vs_A": {
+       "actual_o2": -2.504820776835558,
+       "actual_time_min": -0.9230411866648041,
+       "o2_error": -13.540207282182365,
+       "hazard_m": -20.97056274847715,
+       "sand_m": -20.97056274847715,
+       "crossings": 0,
+       "length_m": 0.48528137423852513,
+       "stops_reached_with_safe_return": 0,
+       "stops_reached_within_usable": 0,
+       "n_planned_stops": 0
+      }
+     },
+     "secondary_A_order": {
+      "n_planned_stops": 4,
+      "stops_reached_with_safe_return": 4,
+      "stops_reached_within_usable": 4,
+      "pred_o2": 93.2950561314774,
+      "actual_o2": 85.6098770516834,
+      "o2_error": -7.685179079793997,
+      "pred_time_min": 86.352372138464,
+      "actual_time_min": 83.4978770516835,
+      "hazard_m": 28.0,
+      "blocked_m": 0.0,
+      "sand_m": 28.0,
+      "crossings": 1,
+      "zones_entered": 1,
+      "length_m": 427.0782104868018,
+      "actual_within_budget": true,
+      "pred_within_budget": true,
+      "order": [
+       0,
+       2,
+       1,
+       3
+      ],
+      "skipped": [],
+      "true_margin_at_stops": [
+       365.76823549801213,
+       344.14835324701835,
+       325.45788398409746,
+       298.15012294831666
+      ],
+      "first_true_margin_negative": null,
+      "diff_vs_A": {
+       "actual_o2": -2.5164675298172767,
+       "actual_time_min": -0.9346879396464374,
+       "o2_error": -13.561646609611216,
+       "hazard_m": -20.97056274847715,
+       "sand_m": -20.97056274847715,
+       "crossings": 0,
+       "length_m": -5.684341886080802e-14,
+       "stops_reached_with_safe_return": 0,
+       "stops_reached_within_usable": 0,
+       "n_planned_stops": 0
+      }
+     }
+    },
+    "Bv3prior@1": {
+     "main": {
+      "n_planned_stops": 4,
+      "stops_reached_with_safe_return": 4,
+      "stops_reached_within_usable": 4,
+      "pred_o2": 82.24987705168346,
+      "actual_o2": 88.12634458150067,
+      "o2_error": 5.876467529817219,
+      "pred_time_min": 82.24987705168346,
+      "actual_time_min": 84.43256499132994,
+      "hazard_m": 48.97056274847715,
+      "blocked_m": 0.0,
+      "sand_m": 48.97056274847715,
+      "crossings": 1,
+      "zones_entered": 1,
+      "length_m": 427.0782104868019,
+      "actual_within_budget": true,
+      "pred_within_budget": true,
+      "order": [
+       0,
+       2,
+       1,
+       3
+      ],
+      "skipped": [],
+      "true_margin_at_stops": [
+       365.76823549801213,
+       344.14835324701835,
+       325.45788398409746,
+       295.8736554184994
+      ],
+      "first_true_margin_negative": null,
+      "diff_vs_A": {
+       "actual_o2": 0.0,
+       "actual_time_min": 0.0,
+       "o2_error": 0.0,
+       "hazard_m": 0.0,
+       "sand_m": 0.0,
+       "crossings": 0,
+       "length_m": 0.0,
+       "stops_reached_with_safe_return": 0,
+       "stops_reached_within_usable": 0,
+       "n_planned_stops": 0
+      }
+     },
+     "secondary_A_order": {
+      "n_planned_stops": 4,
+      "stops_reached_with_safe_return": 4,
+      "stops_reached_within_usable": 4,
+      "pred_o2": 82.24987705168346,
+      "actual_o2": 88.12634458150067,
+      "o2_error": 5.876467529817219,
+      "pred_time_min": 82.24987705168346,
+      "actual_time_min": 84.43256499132994,
+      "hazard_m": 48.97056274847715,
+      "blocked_m": 0.0,
+      "sand_m": 48.97056274847715,
+      "crossings": 1,
+      "zones_entered": 1,
+      "length_m": 427.0782104868019,
+      "actual_within_budget": true,
+      "pred_within_budget": true,
+      "order": [
+       0,
+       2,
+       1,
+       3
+      ],
+      "skipped": [],
+      "true_margin_at_stops": [
+       365.76823549801213,
+       344.14835324701835,
+       325.45788398409746,
+       295.8736554184994
+      ],
+      "first_true_margin_negative": null,
+      "diff_vs_A": {
+       "actual_o2": 0.0,
+       "actual_time_min": 0.0,
+       "o2_error": 0.0,
+       "hazard_m": 0.0,
+       "sand_m": 0.0,
+       "crossings": 0,
+       "length_m": 0.0,
+       "stops_reached_with_safe_return": 0,
+       "stops_reached_within_usable": 0,
+       "n_planned_stops": 0
+      }
+     }
+    },
+    "B_v3@5": {
+     "main": {
+      "n_planned_stops": 4,
+      "stops_reached_with_safe_return": 4,
+      "stops_reached_within_usable": 4,
+      "pred_o2": 85.38085524436086,
+      "actual_o2": 82.69893332653106,
+      "o2_error": -2.681921917829797,
+      "pred_time_min": 83.69507575315363,
+      "actual_time_min": 82.69893332653106,
+      "hazard_m": 0.0,
+      "blocked_m": 0.0,
+      "sand_m": 0.0,
+      "crossings": 0,
+      "zones_entered": 0,
+      "length_m": 445.7888886054572,
+      "actual_within_budget": true,
+      "pred_within_budget": true,
+      "order": [
+       0,
+       3,
+       1,
+       2
+      ],
+      "skipped": [],
+      "true_margin_at_stops": [
+       365.76823549801213,
+       339.4150649403656,
+       319.7461264145238,
+       301.301066673469
+      ],
+      "first_true_margin_negative": null,
+      "diff_vs_A": {
+       "actual_o2": -5.427411254969613,
+       "actual_time_min": -1.733631664798878,
+       "o2_error": -8.558389447647016,
+       "hazard_m": -48.97056274847715,
+       "sand_m": -48.97056274847715,
+       "crossings": -1,
+       "length_m": 18.710678118655323,
+       "stops_reached_with_safe_return": 0,
+       "stops_reached_within_usable": 0,
+       "n_planned_stops": 0
+      }
+     },
+     "secondary_A_order": {
+      "n_planned_stops": 4,
+      "stops_reached_with_safe_return": 4,
+      "stops_reached_within_usable": 4,
+      "pred_o2": 85.40897299336685,
+      "actual_o2": 82.7270510755371,
+      "o2_error": -2.68192191782974,
+      "pred_time_min": 83.72319350215953,
+      "actual_time_min": 82.7270510755371,
+      "hazard_m": 0.0,
+      "blocked_m": 0.0,
+      "sand_m": 0.0,
+      "crossings": 0,
+      "zones_entered": 0,
+      "length_m": 446.9604614807109,
+      "actual_within_budget": true,
+      "pred_within_budget": true,
+      "order": [
+       0,
+       2,
+       1,
+       3
+      ],
+      "skipped": [],
+      "true_margin_at_stops": [
+       365.76823549801213,
+       344.14835324701835,
+       325.45788398409746,
+       301.27294892446287
+      ],
+      "first_true_margin_negative": null,
+      "diff_vs_A": {
+       "actual_o2": -5.39929350596357,
+       "actual_time_min": -1.7055139157928352,
+       "o2_error": -8.55838944764696,
+       "hazard_m": -48.97056274847715,
+       "sand_m": -48.97056274847715,
+       "crossings": -1,
+       "length_m": 19.882250993908997,
+       "stops_reached_with_safe_return": 0,
+       "stops_reached_within_usable": 0,
+       "n_planned_stops": 0
+      }
+     }
+    },
+    "Bv3prior@5": {
+     "main": {
+      "n_planned_stops": 4,
+      "stops_reached_with_safe_return": 4,
+      "stops_reached_within_usable": 4,
+      "pred_o2": 82.69893332653118,
+      "actual_o2": 82.69893332653118,
+      "o2_error": 0.0,
+      "pred_time_min": 82.69893332653118,
+      "actual_time_min": 82.69893332653118,
+      "hazard_m": 0.0,
+      "blocked_m": 0.0,
+      "sand_m": 0.0,
+      "crossings": 0,
+      "zones_entered": 0,
+      "length_m": 445.78888860545715,
+      "actual_within_budget": true,
+      "pred_within_budget": true,
+      "order": [
+       2,
+       1,
+       3,
+       0
+      ],
+      "skipped": [],
+      "true_margin_at_stops": [
+       362.17647099602436,
+       343.4860017331036,
+       319.30106667346894,
+       301.3010666734688
+      ],
+      "first_true_margin_negative": null,
+      "diff_vs_A": {
+       "actual_o2": -5.427411254969499,
+       "actual_time_min": -1.7336316647987644,
+       "o2_error": -5.876467529817219,
+       "hazard_m": -48.97056274847715,
+       "sand_m": -48.97056274847715,
+       "crossings": -1,
+       "length_m": 18.710678118655267,
+       "stops_reached_with_safe_return": 0,
+       "stops_reached_within_usable": 0,
+       "n_planned_stops": 0
+      }
+     },
+     "secondary_A_order": {
+      "n_planned_stops": 4,
+      "stops_reached_with_safe_return": 4,
+      "stops_reached_within_usable": 4,
+      "pred_o2": 82.7270510755371,
+      "actual_o2": 82.7270510755371,
+      "o2_error": 0.0,
+      "pred_time_min": 82.7270510755371,
+      "actual_time_min": 82.7270510755371,
+      "hazard_m": 0.0,
+      "blocked_m": 0.0,
+      "sand_m": 0.0,
+      "crossings": 0,
+      "zones_entered": 0,
+      "length_m": 446.960461480711,
+      "actual_within_budget": true,
+      "pred_within_budget": true,
+      "order": [
+       0,
+       2,
+       1,
+       3
+      ],
+      "skipped": [],
+      "true_margin_at_stops": [
+       365.76823549801213,
+       344.14835324701835,
+       325.45788398409746,
+       301.27294892446287
+      ],
+      "first_true_margin_negative": null,
+      "diff_vs_A": {
+       "actual_o2": -5.39929350596357,
+       "actual_time_min": -1.7055139157928352,
+       "o2_error": -5.876467529817219,
+       "hazard_m": -48.97056274847715,
+       "sand_m": -48.97056274847715,
+       "crossings": -1,
+       "length_m": 19.88225099390911,
+       "stops_reached_with_safe_return": 0,
+       "stops_reached_within_usable": 0,
+       "n_planned_stops": 0
+      }
+     }
+    },
+    "B_v3@10": {
+     "main": {
+      "n_planned_stops": 4,
+      "stops_reached_with_safe_return": 4,
+      "stops_reached_within_usable": 4,
+      "pred_o2": 82.69893332653118,
+      "actual_o2": 82.69893332653118,
+      "o2_error": 0.0,
+      "pred_time_min": 82.69893332653118,
+      "actual_time_min": 82.69893332653118,
+      "hazard_m": 0.0,
+      "blocked_m": 0.0,
+      "sand_m": 0.0,
+      "crossings": 0,
+      "zones_entered": 0,
+      "length_m": 445.78888860545715,
+      "actual_within_budget": true,
+      "pred_within_budget": true,
+      "order": [
+       2,
+       1,
+       3,
+       0
+      ],
+      "skipped": [],
+      "true_margin_at_stops": [
+       362.17647099602436,
+       343.4860017331036,
+       319.30106667346894,
+       301.3010666734688
+      ],
+      "first_true_margin_negative": null,
+      "diff_vs_A": {
+       "actual_o2": -5.427411254969499,
+       "actual_time_min": -1.7336316647987644,
+       "o2_error": -5.876467529817219,
+       "hazard_m": -48.97056274847715,
+       "sand_m": -48.97056274847715,
+       "crossings": -1,
+       "length_m": 18.710678118655267,
+       "stops_reached_with_safe_return": 0,
+       "stops_reached_within_usable": 0,
+       "n_planned_stops": 0
+      }
+     },
+     "secondary_A_order": {
+      "n_planned_stops": 4,
+      "stops_reached_with_safe_return": 4,
+      "stops_reached_within_usable": 4,
+      "pred_o2": 82.7270510755371,
+      "actual_o2": 82.7270510755371,
+      "o2_error": 0.0,
+      "pred_time_min": 82.7270510755371,
+      "actual_time_min": 82.7270510755371,
+      "hazard_m": 0.0,
+      "blocked_m": 0.0,
+      "sand_m": 0.0,
+      "crossings": 0,
+      "zones_entered": 0,
+      "length_m": 446.960461480711,
+      "actual_within_budget": true,
+      "pred_within_budget": true,
+      "order": [
+       0,
+       2,
+       1,
+       3
+      ],
+      "skipped": [],
+      "true_margin_at_stops": [
+       365.76823549801213,
+       344.14835324701835,
+       325.45788398409746,
+       301.27294892446287
+      ],
+      "first_true_margin_negative": null,
+      "diff_vs_A": {
+       "actual_o2": -5.39929350596357,
+       "actual_time_min": -1.7055139157928352,
+       "o2_error": -5.876467529817219,
+       "hazard_m": -48.97056274847715,
+       "sand_m": -48.97056274847715,
+       "crossings": -1,
+       "length_m": 19.88225099390911,
+       "stops_reached_with_safe_return": 0,
+       "stops_reached_within_usable": 0,
+       "n_planned_stops": 0
+      }
+     }
+    },
+    "Bv3prior@10": {
+     "main": {
+      "n_planned_stops": 4,
+      "stops_reached_with_safe_return": 4,
+      "stops_reached_within_usable": 4,
+      "pred_o2": 82.69893332653118,
+      "actual_o2": 82.69893332653118,
+      "o2_error": 0.0,
+      "pred_time_min": 82.69893332653118,
+      "actual_time_min": 82.69893332653118,
+      "hazard_m": 0.0,
+      "blocked_m": 0.0,
+      "sand_m": 0.0,
+      "crossings": 0,
+      "zones_entered": 0,
+      "length_m": 445.78888860545715,
+      "actual_within_budget": true,
+      "pred_within_budget": true,
+      "order": [
+       2,
+       1,
+       3,
+       0
+      ],
+      "skipped": [],
+      "true_margin_at_stops": [
+       362.17647099602436,
+       343.4860017331036,
+       319.30106667346894,
+       301.3010666734688
+      ],
+      "first_true_margin_negative": null,
+      "diff_vs_A": {
+       "actual_o2": -5.427411254969499,
+       "actual_time_min": -1.7336316647987644,
+       "o2_error": -5.876467529817219,
+       "hazard_m": -48.97056274847715,
+       "sand_m": -48.97056274847715,
+       "crossings": -1,
+       "length_m": 18.710678118655267,
+       "stops_reached_with_safe_return": 0,
+       "stops_reached_within_usable": 0,
+       "n_planned_stops": 0
+      }
+     },
+     "secondary_A_order": {
+      "n_planned_stops": 4,
+      "stops_reached_with_safe_return": 4,
+      "stops_reached_within_usable": 4,
+      "pred_o2": 82.7270510755371,
+      "actual_o2": 82.7270510755371,
+      "o2_error": 0.0,
+      "pred_time_min": 82.7270510755371,
+      "actual_time_min": 82.7270510755371,
+      "hazard_m": 0.0,
+      "blocked_m": 0.0,
+      "sand_m": 0.0,
+      "crossings": 0,
+      "zones_entered": 0,
+      "length_m": 446.960461480711,
+      "actual_within_budget": true,
+      "pred_within_budget": true,
+      "order": [
+       0,
+       2,
+       1,
+       3
+      ],
+      "skipped": [],
+      "true_margin_at_stops": [
+       365.76823549801213,
+       344.14835324701835,
+       325.45788398409746,
+       301.27294892446287
+      ],
+      "first_true_margin_negative": null,
+      "diff_vs_A": {
+       "actual_o2": -5.39929350596357,
+       "actual_time_min": -1.7055139157928352,
+       "o2_error": -5.876467529817219,
+       "hazard_m": -48.97056274847715,
+       "sand_m": -48.97056274847715,
+       "crossings": -1,
+       "length_m": 19.88225099390911,
+       "stops_reached_with_safe_return": 0,
+       "stops_reached_within_usable": 0,
+       "n_planned_stops": 0
+      }
+     }
+    },
+    "B_v3@20": {
+     "main": {
+      "n_planned_stops": 4,
+      "stops_reached_with_safe_return": 4,
+      "stops_reached_within_usable": 4,
+      "pred_o2": 82.69893332653118,
+      "actual_o2": 82.69893332653118,
+      "o2_error": 0.0,
+      "pred_time_min": 82.69893332653118,
+      "actual_time_min": 82.69893332653118,
+      "hazard_m": 0.0,
+      "blocked_m": 0.0,
+      "sand_m": 0.0,
+      "crossings": 0,
+      "zones_entered": 0,
+      "length_m": 445.78888860545715,
+      "actual_within_budget": true,
+      "pred_within_budget": true,
+      "order": [
+       2,
+       1,
+       3,
+       0
+      ],
+      "skipped": [],
+      "true_margin_at_stops": [
+       362.17647099602436,
+       343.4860017331036,
+       319.30106667346894,
+       301.3010666734688
+      ],
+      "first_true_margin_negative": null,
+      "diff_vs_A": {
+       "actual_o2": -5.427411254969499,
+       "actual_time_min": -1.7336316647987644,
+       "o2_error": -5.876467529817219,
+       "hazard_m": -48.97056274847715,
+       "sand_m": -48.97056274847715,
+       "crossings": -1,
+       "length_m": 18.710678118655267,
+       "stops_reached_with_safe_return": 0,
+       "stops_reached_within_usable": 0,
+       "n_planned_stops": 0
+      }
+     },
+     "secondary_A_order": {
+      "n_planned_stops": 4,
+      "stops_reached_with_safe_return": 4,
+      "stops_reached_within_usable": 4,
+      "pred_o2": 82.7270510755371,
+      "actual_o2": 82.7270510755371,
+      "o2_error": 0.0,
+      "pred_time_min": 82.7270510755371,
+      "actual_time_min": 82.7270510755371,
+      "hazard_m": 0.0,
+      "blocked_m": 0.0,
+      "sand_m": 0.0,
+      "crossings": 0,
+      "zones_entered": 0,
+      "length_m": 446.960461480711,
+      "actual_within_budget": true,
+      "pred_within_budget": true,
+      "order": [
+       0,
+       2,
+       1,
+       3
+      ],
+      "skipped": [],
+      "true_margin_at_stops": [
+       365.76823549801213,
+       344.14835324701835,
+       325.45788398409746,
+       301.27294892446287
+      ],
+      "first_true_margin_negative": null,
+      "diff_vs_A": {
+       "actual_o2": -5.39929350596357,
+       "actual_time_min": -1.7055139157928352,
+       "o2_error": -5.876467529817219,
+       "hazard_m": -48.97056274847715,
+       "sand_m": -48.97056274847715,
+       "crossings": -1,
+       "length_m": 19.88225099390911,
+       "stops_reached_with_safe_return": 0,
+       "stops_reached_within_usable": 0,
+       "n_planned_stops": 0
+      }
+     }
+    },
+    "Bv3prior@20": {
+     "main": {
+      "n_planned_stops": 4,
+      "stops_reached_with_safe_return": 4,
+      "stops_reached_within_usable": 4,
+      "pred_o2": 82.69893332653118,
+      "actual_o2": 82.69893332653118,
+      "o2_error": 0.0,
+      "pred_time_min": 82.69893332653118,
+      "actual_time_min": 82.69893332653118,
+      "hazard_m": 0.0,
+      "blocked_m": 0.0,
+      "sand_m": 0.0,
+      "crossings": 0,
+      "zones_entered": 0,
+      "length_m": 445.78888860545715,
+      "actual_within_budget": true,
+      "pred_within_budget": true,
+      "order": [
+       2,
+       1,
+       3,
+       0
+      ],
+      "skipped": [],
+      "true_margin_at_stops": [
+       362.17647099602436,
+       343.4860017331036,
+       319.30106667346894,
+       301.3010666734688
+      ],
+      "first_true_margin_negative": null,
+      "diff_vs_A": {
+       "actual_o2": -5.427411254969499,
+       "actual_time_min": -1.7336316647987644,
+       "o2_error": -5.876467529817219,
+       "hazard_m": -48.97056274847715,
+       "sand_m": -48.97056274847715,
+       "crossings": -1,
+       "length_m": 18.710678118655267,
+       "stops_reached_with_safe_return": 0,
+       "stops_reached_within_usable": 0,
+       "n_planned_stops": 0
+      }
+     },
+     "secondary_A_order": {
+      "n_planned_stops": 4,
+      "stops_reached_with_safe_return": 4,
+      "stops_reached_within_usable": 4,
+      "pred_o2": 82.7270510755371,
+      "actual_o2": 82.7270510755371,
+      "o2_error": 0.0,
+      "pred_time_min": 82.7270510755371,
+      "actual_time_min": 82.7270510755371,
+      "hazard_m": 0.0,
+      "blocked_m": 0.0,
+      "sand_m": 0.0,
+      "crossings": 0,
+      "zones_entered": 0,
+      "length_m": 446.960461480711,
+      "actual_within_budget": true,
+      "pred_within_budget": true,
+      "order": [
+       0,
+       2,
+       1,
+       3
+      ],
+      "skipped": [],
+      "true_margin_at_stops": [
+       365.76823549801213,
+       344.14835324701835,
+       325.45788398409746,
+       301.27294892446287
+      ],
+      "first_true_margin_negative": null,
+      "diff_vs_A": {
+       "actual_o2": -5.39929350596357,
+       "actual_time_min": -1.7055139157928352,
+       "o2_error": -5.876467529817219,
+       "hazard_m": -48.97056274847715,
+       "sand_m": -48.97056274847715,
+       "crossings": -1,
+       "length_m": 19.88225099390911,
+       "stops_reached_with_safe_return": 0,
+       "stops_reached_within_usable": 0,
+       "n_planned_stops": 0
+      }
+     }
+    },
+    "B_v3@30": {
+     "main": {
+      "n_planned_stops": 4,
+      "stops_reached_with_safe_return": 4,
+      "stops_reached_within_usable": 4,
+      "pred_o2": 82.69893332653118,
+      "actual_o2": 82.69893332653118,
+      "o2_error": 0.0,
+      "pred_time_min": 82.69893332653118,
+      "actual_time_min": 82.69893332653118,
+      "hazard_m": 0.0,
+      "blocked_m": 0.0,
+      "sand_m": 0.0,
+      "crossings": 0,
+      "zones_entered": 0,
+      "length_m": 445.78888860545715,
+      "actual_within_budget": true,
+      "pred_within_budget": true,
+      "order": [
+       2,
+       1,
+       3,
+       0
+      ],
+      "skipped": [],
+      "true_margin_at_stops": [
+       362.17647099602436,
+       343.4860017331036,
+       319.30106667346894,
+       301.3010666734688
+      ],
+      "first_true_margin_negative": null,
+      "diff_vs_A": {
+       "actual_o2": -5.427411254969499,
+       "actual_time_min": -1.7336316647987644,
+       "o2_error": -5.876467529817219,
+       "hazard_m": -48.97056274847715,
+       "sand_m": -48.97056274847715,
+       "crossings": -1,
+       "length_m": 18.710678118655267,
+       "stops_reached_with_safe_return": 0,
+       "stops_reached_within_usable": 0,
+       "n_planned_stops": 0
+      }
+     },
+     "secondary_A_order": {
+      "n_planned_stops": 4,
+      "stops_reached_with_safe_return": 4,
+      "stops_reached_within_usable": 4,
+      "pred_o2": 82.7270510755371,
+      "actual_o2": 82.7270510755371,
+      "o2_error": 0.0,
+      "pred_time_min": 82.7270510755371,
+      "actual_time_min": 82.7270510755371,
+      "hazard_m": 0.0,
+      "blocked_m": 0.0,
+      "sand_m": 0.0,
+      "crossings": 0,
+      "zones_entered": 0,
+      "length_m": 446.960461480711,
+      "actual_within_budget": true,
+      "pred_within_budget": true,
+      "order": [
+       0,
+       2,
+       1,
+       3
+      ],
+      "skipped": [],
+      "true_margin_at_stops": [
+       365.76823549801213,
+       344.14835324701835,
+       325.45788398409746,
+       301.27294892446287
+      ],
+      "first_true_margin_negative": null,
+      "diff_vs_A": {
+       "actual_o2": -5.39929350596357,
+       "actual_time_min": -1.7055139157928352,
+       "o2_error": -5.876467529817219,
+       "hazard_m": -48.97056274847715,
+       "sand_m": -48.97056274847715,
+       "crossings": -1,
+       "length_m": 19.88225099390911,
+       "stops_reached_with_safe_return": 0,
+       "stops_reached_within_usable": 0,
+       "n_planned_stops": 0
+      }
+     }
+    },
+    "Bv3prior@30": {
+     "main": {
+      "n_planned_stops": 4,
+      "stops_reached_with_safe_return": 4,
+      "stops_reached_within_usable": 4,
+      "pred_o2": 82.69893332653118,
+      "actual_o2": 82.69893332653118,
+      "o2_error": 0.0,
+      "pred_time_min": 82.69893332653118,
+      "actual_time_min": 82.69893332653118,
+      "hazard_m": 0.0,
+      "blocked_m": 0.0,
+      "sand_m": 0.0,
+      "crossings": 0,
+      "zones_entered": 0,
+      "length_m": 445.78888860545715,
+      "actual_within_budget": true,
+      "pred_within_budget": true,
+      "order": [
+       2,
+       1,
+       3,
+       0
+      ],
+      "skipped": [],
+      "true_margin_at_stops": [
+       362.17647099602436,
+       343.4860017331036,
+       319.30106667346894,
+       301.3010666734688
+      ],
+      "first_true_margin_negative": null,
+      "diff_vs_A": {
+       "actual_o2": -5.427411254969499,
+       "actual_time_min": -1.7336316647987644,
+       "o2_error": -5.876467529817219,
+       "hazard_m": -48.97056274847715,
+       "sand_m": -48.97056274847715,
+       "crossings": -1,
+       "length_m": 18.710678118655267,
+       "stops_reached_with_safe_return": 0,
+       "stops_reached_within_usable": 0,
+       "n_planned_stops": 0
+      }
+     },
+     "secondary_A_order": {
+      "n_planned_stops": 4,
+      "stops_reached_with_safe_return": 4,
+      "stops_reached_within_usable": 4,
+      "pred_o2": 82.7270510755371,
+      "actual_o2": 82.7270510755371,
+      "o2_error": 0.0,
+      "pred_time_min": 82.7270510755371,
+      "actual_time_min": 82.7270510755371,
+      "hazard_m": 0.0,
+      "blocked_m": 0.0,
+      "sand_m": 0.0,
+      "crossings": 0,
+      "zones_entered": 0,
+      "length_m": 446.960461480711,
+      "actual_within_budget": true,
+      "pred_within_budget": true,
+      "order": [
+       0,
+       2,
+       1,
+       3
+      ],
+      "skipped": [],
+      "true_margin_at_stops": [
+       365.76823549801213,
+       344.14835324701835,
+       325.45788398409746,
+       301.27294892446287
+      ],
+      "first_true_margin_negative": null,
+      "diff_vs_A": {
+       "actual_o2": -5.39929350596357,
+       "actual_time_min": -1.7055139157928352,
+       "o2_error": -5.876467529817219,
+       "hazard_m": -48.97056274847715,
+       "sand_m": -48.97056274847715,
+       "crossings": -1,
+       "length_m": 19.88225099390911,
+       "stops_reached_with_safe_return": 0,
+       "stops_reached_within_usable": 0,
+       "n_planned_stops": 0
+      }
+     }
+    },
+    "REF": {
+     "main": {
+      "n_planned_stops": 4,
+      "stops_reached_with_safe_return": 4,
+      "stops_reached_within_usable": 4,
+      "pred_o2": 82.69893332653118,
+      "actual_o2": 82.69893332653118,
+      "o2_error": 0.0,
+      "pred_time_min": 82.69893332653118,
+      "actual_time_min": 82.69893332653118,
+      "hazard_m": 0.0,
+      "blocked_m": 0.0,
+      "sand_m": 0.0,
+      "crossings": 0,
+      "zones_entered": 0,
+      "length_m": 445.78888860545715,
+      "actual_within_budget": true,
+      "pred_within_budget": true,
+      "order": [
+       2,
+       1,
+       3,
+       0
+      ],
+      "skipped": [],
+      "true_margin_at_stops": [
+       362.17647099602436,
+       343.4860017331036,
+       319.30106667346894,
+       301.3010666734688
+      ],
+      "first_true_margin_negative": null,
+      "diff_vs_A": {
+       "actual_o2": -5.427411254969499,
+       "actual_time_min": -1.7336316647987644,
+       "o2_error": -5.876467529817219,
+       "hazard_m": -48.97056274847715,
+       "sand_m": -48.97056274847715,
+       "crossings": -1,
+       "length_m": 18.710678118655267,
+       "stops_reached_with_safe_return": 0,
+       "stops_reached_within_usable": 0,
+       "n_planned_stops": 0
+      }
+     }
+    }
+   },
+   "paths": {
+    "A": {
+     "main": {
+      "lon": [
+       77.4509035,
+       77.4509391,
+       77.4522907,
+       77.4522907,
+       77.4522195,
+       77.452184,
+       77.4512948,
+       77.4512948,
+       77.4506901,
+       77.4506901,
+       77.4509035,
+       77.4509035
+      ],
+      "lat": [
+       18.4446103,
+       18.4445428,
+       18.4445428,
+       18.4442391,
+       18.4441716,
+       18.4440367,
+       18.4431594,
+       18.4425858,
+       18.4420122,
+       18.4431257,
+       18.4433281,
+       18.4446103
+      ],
+      "stop_vertex": [
+       1,
+       2,
+       4,
+       8
+      ]
+     }
+    },
+    "A+": {
+     "main": {
+      "lon": [
+       77.4509035,
+       77.4509391,
+       77.4522907,
+       77.4522907,
+       77.4522195,
+       77.452184,
+       77.4512948,
+       77.4512948,
+       77.4506901,
+       77.4506901,
+       77.4509035,
+       77.4509035
+      ],
+      "lat": [
+       18.4446103,
+       18.4445428,
+       18.4445428,
+       18.4442391,
+       18.4441716,
+       18.4440367,
+       18.4431594,
+       18.4425858,
+       18.4420122,
+       18.4431257,
+       18.4433281,
+       18.4446103
+      ],
+      "stop_vertex": [
+       1,
+       2,
+       4,
+       8
+      ]
+     }
+    },
+    "B_v3@1": {
+     "main": {
+      "lon": [
+       77.4509035,
+       77.4512236,
+       77.4512592,
+       77.4522551,
+       77.4522907,
+       77.4522907,
+       77.4522195,
+       77.4522195,
+       77.4521128,
+       77.4521128,
+       77.4516504,
+       77.4516504,
+       77.4507257,
+       77.4507257,
+       77.4506901,
+       77.4506901,
+       77.4508324,
+       77.4508324,
+       77.4509391,
+       77.4509035
+      ],
+      "lat": [
+       18.4446103,
+       18.4446103,
+       18.4445765,
+       18.4445765,
+       18.4445428,
+       18.4442391,
+       18.4441716,
+       18.4436993,
+       18.443598,
+       18.4435643,
+       18.4431257,
+       18.4430582,
+       18.4421809,
+       18.4420459,
+       18.4420122,
+       18.4442391,
+       18.4443741,
+       18.4444416,
+       18.4445428,
+       18.4446103
+      ],
+      "stop_vertex": [
+       4,
+       6,
+       14,
+       18
+      ]
+     },
+     "secondary_A_order": {
+      "lon": [
+       77.4509035,
+       77.4509391,
+       77.4522907,
+       77.4522907,
+       77.4522195,
+       77.4522195,
+       77.4521128,
+       77.4521128,
+       77.4516504,
+       77.4516504,
+       77.4507257,
+       77.4507257,
+       77.4506901,
+       77.4506901,
+       77.4508324,
+       77.4508324,
+       77.4509035
+      ],
+      "lat": [
+       18.4446103,
+       18.4445428,
+       18.4445428,
+       18.4442391,
+       18.4441716,
+       18.4436993,
+       18.443598,
+       18.4435643,
+       18.4431257,
+       18.4430582,
+       18.4421809,
+       18.4420459,
+       18.4420122,
+       18.4442391,
+       18.4443741,
+       18.4445428,
+       18.4446103
+      ],
+      "stop_vertex": [
+       1,
+       2,
+       4,
+       12
+      ]
+     }
+    },
+    "Bv3prior@1": {
+     "main": {
+      "lon": [
+       77.4509035,
+       77.4509391,
+       77.4522907,
+       77.4522907,
+       77.4522195,
+       77.452184,
+       77.4512948,
+       77.4512948,
+       77.4506901,
+       77.4506901,
+       77.4509035,
+       77.4509035
+      ],
+      "lat": [
+       18.4446103,
+       18.4445428,
+       18.4445428,
+       18.4442391,
+       18.4441716,
+       18.4440367,
+       18.4431594,
+       18.4425858,
+       18.4420122,
+       18.4431257,
+       18.4433281,
+       18.4446103
+      ],
+      "stop_vertex": [
+       1,
+       2,
+       4,
+       8
+      ]
+     },
+     "secondary_A_order": {
+      "lon": [
+       77.4509035,
+       77.4509391,
+       77.4522907,
+       77.4522907,
+       77.4522195,
+       77.452184,
+       77.4512948,
+       77.4512948,
+       77.4506901,
+       77.4506901,
+       77.4509035,
+       77.4509035
+      ],
+      "lat": [
+       18.4446103,
+       18.4445428,
+       18.4445428,
+       18.4442391,
+       18.4441716,
+       18.4440367,
+       18.4431594,
+       18.4425858,
+       18.4420122,
+       18.4431257,
+       18.4433281,
+       18.4446103
+      ],
+      "stop_vertex": [
+       1,
+       2,
+       4,
+       8
+      ]
+     }
+    },
+    "B_v3@5": {
+     "main": {
+      "lon": [
+       77.4509035,
+       77.4509391,
+       77.4509391,
+       77.4511881,
+       77.4511881,
+       77.4513303,
+       77.4513303,
+       77.4506901,
+       77.4506901,
+       77.4506901,
+       77.451935,
+       77.451935,
+       77.452184,
+       77.4522195,
+       77.4522195,
+       77.4522907,
+       77.4509746,
+       77.4509035
+      ],
+      "lat": [
+       18.4446103,
+       18.4445428,
+       18.4440029,
+       18.443733,
+       18.4434968,
+       18.4433619,
+       18.4432606,
+       18.4426533,
+       18.4420122,
+       18.4426533,
+       18.4438342,
+       18.443868,
+       18.4441042,
+       18.4441716,
+       18.4444753,
+       18.4445428,
+       18.4445428,
+       18.4446103
+      ],
+      "stop_vertex": [
+       1,
+       8,
+       13,
+       15
+      ]
+     },
+     "secondary_A_order": {
+      "lon": [
+       77.4509035,
+       77.4509391,
+       77.4522907,
+       77.4522907,
+       77.4522195,
+       77.4521484,
+       77.4506901,
+       77.4506901,
+       77.4506901,
+       77.4513303,
+       77.4513303,
+       77.4509035
+      ],
+      "lat": [
+       18.4446103,
+       18.4445428,
+       18.4445428,
+       18.4442391,
+       18.4441716,
+       18.4440367,
+       18.4426533,
+       18.4420122,
+       18.4426533,
+       18.4432606,
+       18.4442054,
+       18.4446103
+      ],
+      "stop_vertex": [
+       1,
+       2,
+       4,
+       7
+      ]
+     }
+    },
+    "Bv3prior@5": {
+     "main": {
+      "lon": [
+       77.4509035,
+       77.4522195,
+       77.4522907,
+       77.4522907,
+       77.4522195,
+       77.452184,
+       77.4512948,
+       77.4512948,
+       77.4506901,
+       77.4506901,
+       77.4508324,
+       77.4508324,
+       77.4513303,
+       77.4513303,
+       77.4509391,
+       77.4509035
+      ],
+      "lat": [
+       18.4446103,
+       18.4446103,
+       18.4445428,
+       18.4442391,
+       18.4441716,
+       18.4440367,
+       18.4431594,
+       18.4425858,
+       18.4420122,
+       18.4425183,
+       18.4426533,
+       18.442687,
+       18.4431594,
+       18.4441716,
+       18.4445428,
+       18.4446103
+      ],
+      "stop_vertex": [
+       2,
+       4,
+       8,
+       14
+      ]
+     },
+     "secondary_A_order": {
+      "lon": [
+       77.4509035,
+       77.4509391,
+       77.4522907,
+       77.4522907,
+       77.4522195,
+       77.452184,
+       77.4512948,
+       77.4512948,
+       77.4506901,
+       77.4506901,
+       77.4508324,
+       77.4508324,
+       77.4513303,
+       77.4513303,
+       77.4509035
+      ],
+      "lat": [
+       18.4446103,
+       18.4445428,
+       18.4445428,
+       18.4442391,
+       18.4441716,
+       18.4440367,
+       18.4431594,
+       18.4425858,
+       18.4420122,
+       18.4425183,
+       18.4426533,
+       18.442687,
+       18.4431594,
+       18.4442054,
+       18.4446103
+      ],
+      "stop_vertex": [
+       1,
+       2,
+       4,
+       8
+      ]
+     }
+    },
+    "B_v3@10": {
+     "main": {
+      "lon": [
+       77.4509035,
+       77.4522195,
+       77.4522907,
+       77.4522907,
+       77.4522195,
+       77.452184,
+       77.4512948,
+       77.4512948,
+       77.4506901,
+       77.4506901,
+       77.4508324,
+       77.4508324,
+       77.4513303,
+       77.4513303,
+       77.4509391,
+       77.4509035
+      ],
+      "lat": [
+       18.4446103,
+       18.4446103,
+       18.4445428,
+       18.4442391,
+       18.4441716,
+       18.4440367,
+       18.4431594,
+       18.4425858,
+       18.4420122,
+       18.4425183,
+       18.4426533,
+       18.442687,
+       18.4431594,
+       18.4441716,
+       18.4445428,
+       18.4446103
+      ],
+      "stop_vertex": [
+       2,
+       4,
+       8,
+       14
+      ]
+     },
+     "secondary_A_order": {
+      "lon": [
+       77.4509035,
+       77.4509391,
+       77.4522907,
+       77.4522907,
+       77.4522195,
+       77.452184,
+       77.4512948,
+       77.4512948,
+       77.4506901,
+       77.4506901,
+       77.4508324,
+       77.4508324,
+       77.4513303,
+       77.4513303,
+       77.4509035
+      ],
+      "lat": [
+       18.4446103,
+       18.4445428,
+       18.4445428,
+       18.4442391,
+       18.4441716,
+       18.4440367,
+       18.4431594,
+       18.4425858,
+       18.4420122,
+       18.4425183,
+       18.4426533,
+       18.442687,
+       18.4431594,
+       18.4442054,
+       18.4446103
+      ],
+      "stop_vertex": [
+       1,
+       2,
+       4,
+       8
+      ]
+     }
+    },
+    "Bv3prior@10": {
+     "main": {
+      "lon": [
+       77.4509035,
+       77.4522195,
+       77.4522907,
+       77.4522907,
+       77.4522195,
+       77.452184,
+       77.4512948,
+       77.4512948,
+       77.4506901,
+       77.4506901,
+       77.4508324,
+       77.4508324,
+       77.4513303,
+       77.4513303,
+       77.4509391,
+       77.4509035
+      ],
+      "lat": [
+       18.4446103,
+       18.4446103,
+       18.4445428,
+       18.4442391,
+       18.4441716,
+       18.4440367,
+       18.4431594,
+       18.4425858,
+       18.4420122,
+       18.4425183,
+       18.4426533,
+       18.442687,
+       18.4431594,
+       18.4441716,
+       18.4445428,
+       18.4446103
+      ],
+      "stop_vertex": [
+       2,
+       4,
+       8,
+       14
+      ]
+     },
+     "secondary_A_order": {
+      "lon": [
+       77.4509035,
+       77.4509391,
+       77.4522907,
+       77.4522907,
+       77.4522195,
+       77.452184,
+       77.4512948,
+       77.4512948,
+       77.4506901,
+       77.4506901,
+       77.4508324,
+       77.4508324,
+       77.4513303,
+       77.4513303,
+       77.4509035
+      ],
+      "lat": [
+       18.4446103,
+       18.4445428,
+       18.4445428,
+       18.4442391,
+       18.4441716,
+       18.4440367,
+       18.4431594,
+       18.4425858,
+       18.4420122,
+       18.4425183,
+       18.4426533,
+       18.442687,
+       18.4431594,
+       18.4442054,
+       18.4446103
+      ],
+      "stop_vertex": [
+       1,
+       2,
+       4,
+       8
+      ]
+     }
+    },
+    "B_v3@20": {
+     "main": {
+      "lon": [
+       77.4509035,
+       77.4522195,
+       77.4522907,
+       77.4522907,
+       77.4522195,
+       77.452184,
+       77.4512948,
+       77.4512948,
+       77.4506901,
+       77.4506901,
+       77.4508324,
+       77.4508324,
+       77.4513303,
+       77.4513303,
+       77.4509391,
+       77.4509035
+      ],
+      "lat": [
+       18.4446103,
+       18.4446103,
+       18.4445428,
+       18.4442391,
+       18.4441716,
+       18.4440367,
+       18.4431594,
+       18.4425858,
+       18.4420122,
+       18.4425183,
+       18.4426533,
+       18.442687,
+       18.4431594,
+       18.4441716,
+       18.4445428,
+       18.4446103
+      ],
+      "stop_vertex": [
+       2,
+       4,
+       8,
+       14
+      ]
+     },
+     "secondary_A_order": {
+      "lon": [
+       77.4509035,
+       77.4509391,
+       77.4522907,
+       77.4522907,
+       77.4522195,
+       77.452184,
+       77.4512948,
+       77.4512948,
+       77.4506901,
+       77.4506901,
+       77.4508324,
+       77.4508324,
+       77.4513303,
+       77.4513303,
+       77.4509035
+      ],
+      "lat": [
+       18.4446103,
+       18.4445428,
+       18.4445428,
+       18.4442391,
+       18.4441716,
+       18.4440367,
+       18.4431594,
+       18.4425858,
+       18.4420122,
+       18.4425183,
+       18.4426533,
+       18.442687,
+       18.4431594,
+       18.4442054,
+       18.4446103
+      ],
+      "stop_vertex": [
+       1,
+       2,
+       4,
+       8
+      ]
+     }
+    },
+    "Bv3prior@20": {
+     "main": {
+      "lon": [
+       77.4509035,
+       77.4522195,
+       77.4522907,
+       77.4522907,
+       77.4522195,
+       77.452184,
+       77.4512948,
+       77.4512948,
+       77.4506901,
+       77.4506901,
+       77.4508324,
+       77.4508324,
+       77.4513303,
+       77.4513303,
+       77.4509391,
+       77.4509035
+      ],
+      "lat": [
+       18.4446103,
+       18.4446103,
+       18.4445428,
+       18.4442391,
+       18.4441716,
+       18.4440367,
+       18.4431594,
+       18.4425858,
+       18.4420122,
+       18.4425183,
+       18.4426533,
+       18.442687,
+       18.4431594,
+       18.4441716,
+       18.4445428,
+       18.4446103
+      ],
+      "stop_vertex": [
+       2,
+       4,
+       8,
+       14
+      ]
+     },
+     "secondary_A_order": {
+      "lon": [
+       77.4509035,
+       77.4509391,
+       77.4522907,
+       77.4522907,
+       77.4522195,
+       77.452184,
+       77.4512948,
+       77.4512948,
+       77.4506901,
+       77.4506901,
+       77.4508324,
+       77.4508324,
+       77.4513303,
+       77.4513303,
+       77.4509035
+      ],
+      "lat": [
+       18.4446103,
+       18.4445428,
+       18.4445428,
+       18.4442391,
+       18.4441716,
+       18.4440367,
+       18.4431594,
+       18.4425858,
+       18.4420122,
+       18.4425183,
+       18.4426533,
+       18.442687,
+       18.4431594,
+       18.4442054,
+       18.4446103
+      ],
+      "stop_vertex": [
+       1,
+       2,
+       4,
+       8
+      ]
+     }
+    },
+    "B_v3@30": {
+     "main": {
+      "lon": [
+       77.4509035,
+       77.4522195,
+       77.4522907,
+       77.4522907,
+       77.4522195,
+       77.452184,
+       77.4512948,
+       77.4512948,
+       77.4506901,
+       77.4506901,
+       77.4508324,
+       77.4508324,
+       77.4513303,
+       77.4513303,
+       77.4509391,
+       77.4509035
+      ],
+      "lat": [
+       18.4446103,
+       18.4446103,
+       18.4445428,
+       18.4442391,
+       18.4441716,
+       18.4440367,
+       18.4431594,
+       18.4425858,
+       18.4420122,
+       18.4425183,
+       18.4426533,
+       18.442687,
+       18.4431594,
+       18.4441716,
+       18.4445428,
+       18.4446103
+      ],
+      "stop_vertex": [
+       2,
+       4,
+       8,
+       14
+      ]
+     },
+     "secondary_A_order": {
+      "lon": [
+       77.4509035,
+       77.4509391,
+       77.4522907,
+       77.4522907,
+       77.4522195,
+       77.452184,
+       77.4512948,
+       77.4512948,
+       77.4506901,
+       77.4506901,
+       77.4508324,
+       77.4508324,
+       77.4513303,
+       77.4513303,
+       77.4509035
+      ],
+      "lat": [
+       18.4446103,
+       18.4445428,
+       18.4445428,
+       18.4442391,
+       18.4441716,
+       18.4440367,
+       18.4431594,
+       18.4425858,
+       18.4420122,
+       18.4425183,
+       18.4426533,
+       18.442687,
+       18.4431594,
+       18.4442054,
+       18.4446103
+      ],
+      "stop_vertex": [
+       1,
+       2,
+       4,
+       8
+      ]
+     }
+    },
+    "Bv3prior@30": {
+     "main": {
+      "lon": [
+       77.4509035,
+       77.4522195,
+       77.4522907,
+       77.4522907,
+       77.4522195,
+       77.452184,
+       77.4512948,
+       77.4512948,
+       77.4506901,
+       77.4506901,
+       77.4508324,
+       77.4508324,
+       77.4513303,
+       77.4513303,
+       77.4509391,
+       77.4509035
+      ],
+      "lat": [
+       18.4446103,
+       18.4446103,
+       18.4445428,
+       18.4442391,
+       18.4441716,
+       18.4440367,
+       18.4431594,
+       18.4425858,
+       18.4420122,
+       18.4425183,
+       18.4426533,
+       18.442687,
+       18.4431594,
+       18.4441716,
+       18.4445428,
+       18.4446103
+      ],
+      "stop_vertex": [
+       2,
+       4,
+       8,
+       14
+      ]
+     },
+     "secondary_A_order": {
+      "lon": [
+       77.4509035,
+       77.4509391,
+       77.4522907,
+       77.4522907,
+       77.4522195,
+       77.452184,
+       77.4512948,
+       77.4512948,
+       77.4506901,
+       77.4506901,
+       77.4508324,
+       77.4508324,
+       77.4513303,
+       77.4513303,
+       77.4509035
+      ],
+      "lat": [
+       18.4446103,
+       18.4445428,
+       18.4445428,
+       18.4442391,
+       18.4441716,
+       18.4440367,
+       18.4431594,
+       18.4425858,
+       18.4420122,
+       18.4425183,
+       18.4426533,
+       18.442687,
+       18.4431594,
+       18.4442054,
+       18.4446103
+      ],
+      "stop_vertex": [
+       1,
+       2,
+       4,
+       8
+      ]
+     }
+    },
+    "REF": {
+     "main": {
+      "lon": [
+       77.4509035,
+       77.4522195,
+       77.4522907,
+       77.4522907,
+       77.4522195,
+       77.452184,
+       77.4512948,
+       77.4512948,
+       77.4506901,
+       77.4506901,
+       77.4508324,
+       77.4508324,
+       77.4513303,
+       77.4513303,
+       77.4509391,
+       77.4509035
+      ],
+      "lat": [
+       18.4446103,
+       18.4446103,
+       18.4445428,
+       18.4442391,
+       18.4441716,
+       18.4440367,
+       18.4431594,
+       18.4425858,
+       18.4420122,
+       18.4425183,
+       18.4426533,
+       18.442687,
+       18.4431594,
+       18.4441716,
+       18.4445428,
+       18.4446103
+      ],
+      "stop_vertex": [
+       2,
+       4,
+       8,
+       14
+      ]
+     }
+    }
+   }
   }
  }
 }
