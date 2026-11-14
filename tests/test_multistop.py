@@ -115,3 +115,18 @@ def test_round7_table_plumbing_on_synthetic_grid():
     assert r["B@1"]["secondary_A_order"]["order"] == r["A"]["main"]["order"]
     assert r["REF"]["main"]["o2_error"] == 0 or abs(r["REF"]["main"]["o2_error"]) < 1e-6
     assert r["A"]["main"]["stops_reached_with_safe_return"] <= r["A"]["main"]["n_planned_stops"]
+
+
+def test_round7_accepts_expected_cost_map():
+    from pipeline.astro_plan import PARAMS as AP2, per_metre as pm
+    from pipeline.compare_ab import hazard_zones
+    from pipeline.round7 import run_table
+    tm, om = pm(AP2)
+    prior = firm(120); ref = prior.copy(); ref[40:80, 20:50] = 2
+    E = {"o2": np.full(prior.shape, 0.8 * om[0] + 0.2 * om[2]), "t": np.full(prior.shape, 0.8 * tm[0] + 0.2 * tm[2]), "cls": prior}
+    S = {"A": prior, "B_v3@1": E, "REF": ref}
+    zones, _ = hazard_zones(ref, prior, RES)
+    t, _ = run_table(S, ref, zones, (60, 60), [{"x": -80.0, "y": 0.0}, {"x": 40.0, "y": 60.0}], [-120.0, -120.0, 120.0, 120.0], RES)
+    r = t["rows"]["B_v3@1"]
+    assert r["main"]["pred_o2"] > t["rows"]["A"]["main"]["pred_o2"]        # expected cost is dearer than the prior
+    assert r["secondary_A_order"]["order"] == t["rows"]["A"]["main"]["order"]

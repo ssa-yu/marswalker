@@ -25,7 +25,19 @@ import numpy as np
 
 from skimage.graph import MCP_Geometric
 
-from .astro_plan import PARAMS, cost_grids, field, step_len, usable_o2
+from .astro_plan import PARAMS, cost_grids as _class_grids, field, step_len, usable_o2
+
+
+def cost_grids(cls, res, P=PARAMS):
+    """Class grid -> (O2, time) MCP cell costs; a dict {"o2", "t"} of per-metre arrays (an expected-cost map such as
+    B_v3, round 7 v3 chain) is used as given. Blocked cells of a class grid stay impassable."""
+    if isinstance(cls, dict):
+        return cls["o2"] * res, cls["t"] * res
+    return _class_grids(cls, res, P)
+
+
+def _eval_grid(cls):
+    return cls if isinstance(cls, dict) else np.minimum(cls, 2)
 
 DWELL = {"dwell_min": 18.0, "dwell_o2_factor": 1.0, "status": "confirmed (manager 2026-11-14)", "label": "assumed",
          "source": "MVP_PLAN value 18 min (decisions 2026-11-14); O2 rate at rest = firm-ground walking rate (no source)"}
@@ -84,7 +96,7 @@ def plan_multistop(cls, base_rc, targets_rc, res, dwell=DWELL, capacity=None, re
 def walk(path, stop_idx, cls_eval, res, dwell=DWELL, P=PARAMS, home=None, U=None):
     """Cumulative time / O2 along the tour on cls_eval (dwell added on arrival at each stop).
     home: O2-home field on cls_eval (for the true return margin). Blocked cells charged at the sand rate."""
-    o2c, tc = cost_grids(np.minimum(cls_eval, 2), res, P)
+    o2c, tc = cost_grids(_eval_grid(cls_eval), res, P)
     dw_t = float(dwell["dwell_min"]); dw_o = dw_t * float(dwell["dwell_o2_factor"])
     stops = set(stop_idx)
     t = [0.0]; o = [0.0]
@@ -126,11 +138,11 @@ def own_map_home_cost_on(cls_plan, cls_eval, base_rc, res, P=PARAMS):
     """For every cell: O2 of walking home along the least-O2 way of the PLAN map (cls_plan), charged on cls_eval
     (blocked charged at the sand rate). inf where the plan map has no way home."""
     o2p, _ = cost_grids(cls_plan, res, P)
-    o2e, _ = cost_grids(np.minimum(cls_eval, 2), res, P)
+    o2e, _ = cost_grids(_eval_grid(cls_eval), res, P)
     m = MCP_Geometric(o2p, fully_connected=True)
     cc, tb = m.find_costs([tuple(base_rc)])
     off = np.asarray(m.offsets)
-    H, W = cls_plan.shape
+    H, W = o2p.shape
     rr, cc_ = np.mgrid[0:H, 0:W]
     ok = np.isfinite(cc) & (tb >= 0)
     t = np.where(ok, tb, 0)
