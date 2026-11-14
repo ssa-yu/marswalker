@@ -1,0 +1,55 @@
+{
+ "si": "computed by AI-written code (Anthropic Claude via Claude Code, under the team's direction); inputs are NASA data; see docs/AI_USE.md",
+ "top_sand": {
+  "n_available": 557,
+  "blocks": [
+   [
+    35,
+    27
+   ],
+   [
+    36,
+    24
+   ]
+  ]
+ },
+ "top_not": {
+  "n_available": 573,
+  "blocks": [
+   [
+    0,
+    11
+   ],
+   [
+    3,
+    9
+   ]
+  ]
+ },
+ "ours_not_noahh": {
+  "n_available": 1,
+  "blocks": [
+   [
+    2,
+    1
+   ]
+  ]
+ },
+ "noahh_not_ours": {
+  "n_available": 66,
+  "blocks": [
+   [
+    10,
+    26
+   ],
+   [
+    7,
+    33
+   ],
+   [
+    22,
+    13
+   ]
+  ]
+ }
+}

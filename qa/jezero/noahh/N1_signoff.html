@@ -1,0 +1,21 @@
+<!doctype html>
+<!-- SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md -->
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>沙地對照 NOAH-H</title>
+<style>:root{--bg:#fafaf7;--fg:#1d1d1b;--muted:#666;--line:#ddd}@media (prefers-color-scheme: dark){:root{--bg:#161616;--fg:#eee;--muted:#aaa;--line:#333}}body{background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,sans-serif;margin:0 auto;max-width:1200px;padding:16px}img{width:100%;height:auto;border:1px solid var(--line)}.muted{color:var(--muted)}</style></head><body>
+<h1>我們的沙地 對照 NOAH-H（請 Shan 看圖）</h1>
+<p><b>判定：一致（M1 漏判方向 0.89，n=614：一致；M2 誤判方向 0.00，n=477：一致）。NOAH-H 只看得到我們沙地的 67%（粗沙紋層）</b></p>
+<p>每張小圖 60 m 寬，三格：原圖｜我們判的沙地（橘框）｜NOAH-H 判的沙紋（藍框）。<b>每張只要回答：像上排的「沙」、像上排的「不是沙」、還是看不出來？</b></p>
+<p class="muted">NOAH-H classes: Wright et al. 2022, CC BY 4.0（第三方深度學習模型，同樣只看 HiRISE；一致性對照，不是驗證）。內部 QA，不上產品頁。種子 20261114。</p>
+<h2>範例：兩邊都說是沙（可抽 557 塊，抽 2 塊）</h2>
+<p>範例 1：像沙／不像沙／看不出來？</p><img src="N1_top_sand_1.png" alt="範例：兩邊都說是沙 1">
+<p>範例 2：像沙／不像沙／看不出來？</p><img src="N1_top_sand_2.png" alt="範例：兩邊都說是沙 2">
+<h2>範例：兩邊都說不是沙（可抽 573 塊，抽 2 塊）</h2>
+<p>範例 1：像沙／不像沙／看不出來？</p><img src="N1_top_not_1.png" alt="範例：兩邊都說不是沙 1">
+<p>範例 2：像沙／不像沙／看不出來？</p><img src="N1_top_not_2.png" alt="範例：兩邊都說不是沙 2">
+<h2>爭議：我們說沙、NOAH-H 說岩盤／礫石（可抽 1 塊，抽 1 塊）</h2>
+<p>爭議 1：像沙／不像沙／看不出來？</p><img src="N1_ours_not_noahh_1.png" alt="爭議：我們說沙、NOAH-H 說岩盤／礫石 1">
+<h2>爭議：NOAH-H 說連續大沙紋、我們說不是（可抽 66 塊，抽 3 塊）</h2>
+<p>爭議 1：像沙／不像沙／看不出來？</p><img src="N1_noahh_not_ours_1.png" alt="爭議：NOAH-H 說連續大沙紋、我們說不是 1">
+<p>爭議 2：像沙／不像沙／看不出來？</p><img src="N1_noahh_not_ours_2.png" alt="爭議：NOAH-H 說連續大沙紋、我們說不是 2">
+<p>爭議 3：像沙／不像沙／看不出來？</p><img src="N1_noahh_not_ours_3.png" alt="爭議：NOAH-H 說連續大沙紋、我們說不是 3">
+<h2>另外 3 個有地面照片的地點</h2><p>HiRISE 說是沙、但照片的群眾標註說不是（X1）。每列同樣只問：像沙／不像沙／看不出來？</p><img src="../X1_hirise_only_sand_signoff.png" alt="3 waypoints with ground photos"></body></html>

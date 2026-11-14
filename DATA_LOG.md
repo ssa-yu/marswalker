@@ -36,6 +36,7 @@ Label: measured = instrument data as published; derived = computed by us from me
 | JPL Horizons Sun azimuth/elevation at Jezero (2026-11-15, 2 min) | JPL Solar System Dynamics | https://ssd.jpl.nasa.gov/api/horizons.api | Step 3 daylight window (Q6); shadow check | derived (ephemeris) | no | stored locally (`data_raw/jezero/horizons/`), not in the web yet |
 | SuperCam PDS calibrated-spectra labels + masterlist (2 labels, masterlist header) | Mars 2020 SuperCam; PDS Geosciences | https://pds-geosciences.wustl.edu/m2020/urn-nasa-pds-mars2020_supercam/ | S6-5 check: site/drive in labels | measured | no | checked only (not stored in app) |
 | AI4MARS (status update) | NASA JPL, Zenodo | https://zenodo.org/records/15995036 | Terrain classes on rover photos (later step) | measured labels (crowd; Perseverance has no expert test set) | no | subset stored (2026-11-14): Perseverance NAV labels 3,827 + main-AOI Navcam images 2,215 (6,043 files, 0.63 GB, CRC checked) in `data_raw/jezero/ai4mars/`, index `index.csv`; no GEO/mcam/HAFIQ |
+| NOAH-H terrain classification mosaic, 14 descriptive classes (Wright et al. 2022) | third-party deep-learning model on HiRISE; Open University ORDO | https://doi.org/10.21954/ou.rd.17121482.v1 | Cross-check of our sand class only (N1) | derived (third-party model) | no | DC mosaic extracted to `data_raw/jezero/noahh/` (CC BY 4.0) |
 | DONKI SEP / WSA-ENLIL | NASA CCMC via api.nasa.gov | https://api.nasa.gov/ | Step 3 space-weather scenario (Q7) | archived | no | not fetched (DEMO_KEY rate limit) |
 
 SI: every JSON output carries a top-level `"si"` field (computed by AI-written code from NASA data). The NumPy arrays (`.npz`/`.npy` in `data_work/`: terrain_2m, recon_state, hazard_zones, features) cannot hold text metadata; they are produced by the same AI-written code (see `docs/AI_USE.md`).
@@ -755,3 +756,14 @@ Role: **consistency with an independent classifier (NOAH-H)** — method indepen
 #### N1 run — invariants, name check and N7 (in order; each before the next)
 - Invariants: recomputed `class_ref` = frozen (0 cells differ); 14 codes; main-AOI valid coverage 100 %. Name check: the 4 m window at the habitat is code 13 "Bedrock – fractured", as the paper states → names consistent.
 - **N7 alignment** (`qa/jezero/noahh/N7_alignment_blocks.png`, `N7_alignment_overview.png`; 645 candidate blocks, 6 drawn with seed 20261114): NOAH-H boundaries follow ripple-field edges, boulder clusters and bright-rock outcrops in all six blocks; **no systematic offset > 10 m is visible** (the AOI thumbnail at 1/16 resolution shows only scattered boundary pixels and is not informative). No shift applied. Continue to the metrics.
+
+#### N1 result — the single comparison run (2026-11-14 20:19:46 CST, 4.8 s), reported as computed
+`data_work/jezero/noahh/n_result.json`. Main AOI: NOAH-H coverage 100 %, valid cells 100 %, 1,600 valid 60 m blocks.
+- **M1 (missed) = 0.893 (n = 614) → agree. M2 (false) = 0.002 (n = 477) → agree. Overall: agree** — consistency with an independent classifier (NOAH-H), not validation.
+- **X (coarse layer) = 66.8 %** of our sand area; fine only 31.5 %; fill 1.7 %. → "NOAH-H can check 67 % of our sand area (the coarse layer); the rest it cannot see — AI4MARS photos and people." X ≥ 50 %, so release option B stays available.
+- Block 2×2 (our sand block × NOAH-H ripples ≥ 0.5): both 557, ours only 59, NOAH-H only 78, neither 906; agreement 91.4 %, Cohen's κ 0.820.
+- Fine-layer sand blocks (n = 139), on our sand cells: r_s median 0.86 (mean 0.81), l_s 0.02 (0.08), q_s 0.04 (0.10), x_s 0.001 (0.017) — described only.
+- 2 m confusion, share of each of our classes by NOAH-H code (≥ 2 %): firm — 10: 32.5 %, 8: 28.0 %, 7: 13.4 %, 13: 9.1 %, 12: 9.0 %, 11: 5.4 %; rough — 10: 52.1 %, 8: 15.8 %, 11: 10.1 %, 7: 8.4 %, 12: 7.4 %, 13: 3.7 %; **sand — 12: 82.4 %**, 10: 7.3 %, 7: 3.1 %, 8: 2.5 %; blocked — 11: 55.6 %, 10: 22.8 %, 8: 11.3 %, 13: 3.6 %, 7: 3.4 %.
+- N4(e): no valid block is dominated (≥ 0.5) by isolated large ripples or by small ripples (n = 0 for both).
+- N8 not run (overall = agree). Frozen sand and every frozen number unchanged.
+- N9 figures: `qa/jezero/noahh/N1_overview.png`; `qa/jezero/noahh/N1_signoff.html` — examples 2 + 2 (from 557 / 573 eligible blocks), disputes: "ours sand, NOAH-H bedrock / boulders" **only 1 eligible block, taken**; "NOAH-H continuous large ripples, ours not" 3 of 66; plus the 3 ground-photo waypoints (`qa/jezero/X1_hirise_only_sand_signoff.png`).
