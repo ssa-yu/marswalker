@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Scratch demo: build the small derived files used by scratch.html (interactive demo only, not the analysis).
 
 Run from app/:  .conda-env/bin/python web/scratch/build_data.py
@@ -8,6 +9,7 @@ Writes: web/scratch/data/terrain.bin   1200 x 1200 uint8, row 0 = north (y = 140
                                        (0 firm, 1 rough, 2 sand, 3 blocked; sand classes heuristic, not yet reviewed)
         web/scratch/data/supercam.json SuperCam LIBS sites in the AOI (placed on the rover's last waypoint
                                        at or before the sol, same rule as spikes/s3_report.py), mean oxides
+        (terrain.bin is raw bytes and carries no metadata; its SI notice is in this header and on the page)
         web/scratch/data/views.json    hand-picked Perseverance images per terrain class of the 22 m window
                                        around the waypoint where they were taken (illustrative only)
 """
@@ -21,6 +23,7 @@ import numpy as np
 APP = Path(__file__).resolve().parents[2]
 OUT = APP / "web/scratch/data"
 OUT.mkdir(parents=True, exist_ok=True)
+SI = "SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md"
 AOI = (-1700, -1000, 700, 1400)
 RES = 2.0
 
@@ -65,7 +68,7 @@ for s in sites.values():
     out.append({"id": s["id"], "x": s["x"], "y": s["y"], "lon": s["lon"], "lat": s["lat"], "n_shots": s["n"],
                 "targets": sorted(s["targets"]), "sols": sorted(s["sols"]), "mean_wt_pct": mean})
 out.sort(key=lambda s: s["sols"][0])
-json.dump({"label": "measured (oxides); location derived",
+json.dump({"si": SI, "label": "measured (oxides); location derived",
            "location_rule": "rover's last waypoint at or before the sol of the shot (site/drive not used); precision = waypoint, LIBS standoff median ~3 m",
            "source": "Mars 2020 SuperCam LIBS major-oxide table (supercam_libs_moc.csv), PDS Geosciences; calibration targets excluded",
            "oxides": OX, "sites": out}, open(OUT / "supercam.json", "w"), indent=0)
@@ -100,7 +103,7 @@ for k, idx in CHOSEN.items():
                          "sol": im["sol"], "waypoint": w["id"], "x": w["x"], "y": w["y"],
                          "class_share_22m": round(fr, 2), "credit": im.get("credit") or P["credit_default"],
                          "page": im.get("page"), "heading_deg": (im.get("view") or {}).get("heading_deg")})
-json.dump({"label": "measured images; class assignment derived; use illustrative",
+json.dump({"si": SI, "label": "measured images; class assignment derived; use illustrative",
            "rule": "terrain class = majority HiRISE reference class in the 22 m window around the waypoint; Navcam/Front Hazcam only; picked by eye for a forward view",
            "views": views}, open(OUT / "views.json", "w"), indent=1)
 print({k: len(v) for k, v in views.items()}, "supercam sites", len(out))

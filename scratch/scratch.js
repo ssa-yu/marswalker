@@ -1,3 +1,4 @@
+// SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 /* Scratch the map — interactive demo (NOT the analysis results). Plain JS, no build step.
    1 Scratch: a blurry CTX cover over the Jezero AOI is erased where the user drags, revealing HiRISE imagery and the
      HiRISE reference terrain classes (2 m). 2 Analyse: simple, explainable rules on the revealed cells only.

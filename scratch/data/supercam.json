@@ -1,4 +1,5 @@
 {
+"si": "SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md",
 "label": "measured (oxides); location derived",
 "location_rule": "rover's last waypoint at or before the sol of the shot (site/drive not used); precision = waypoint, LIBS standoff median ~3 m",
 "source": "Mars 2020 SuperCam LIBS major-oxide table (supercam_libs_moc.csv), PDS Geosciences; calibration targets excluded",

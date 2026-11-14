@@ -1,7 +1,6 @@
+/* SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md */
 /* Scratch demo page. Builds on ../style.css tokens (--bg, --panel, --accent ...). */
 html, body { height: 100%; }
-body { display: flex; flex-direction: column; background: var(--bg); }
-header#sTop { display: flex; align-items: center; gap: 12px; padding: 8px 14px; background: var(--panel); border-bottom: 1px solid var(--line); flex: none; }
 #demoBanner { flex: none; background: rgba(214,95,143,.14); border-bottom: 1px solid var(--simulated); color: #f0b9cf; font-size: 12px; padding: 5px 14px; }
 #demoBanner b { color: #ffd6e6; }
 main#sMain { flex: 1; min-height: 0; height: auto; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(340px, 1fr); }
