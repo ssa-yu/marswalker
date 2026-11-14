@@ -17,6 +17,7 @@ For each state S in A+, B@1, B@5, B@10, B@20, B@30, REF and each quantity, per p
 All points and each distance band.
 """
 import json
+from pipeline.common import SI_DATA
 
 import numpy as np
 
@@ -72,7 +73,7 @@ def main():
         "most_improved": {"target": ds[0][1], "x": ds[0][2], "y": ds[0][3], "diff": round(ds[0][0], 3)},
         "most_worsened": {"target": ds[-1][1], "x": ds[-1][2], "y": ds[-1][3], "diff": round(ds[-1][0], 3)}}
     (APP / "qa/jezero/U2_pointwise_summary.json").write_text(json.dumps(out, indent=1))
-    (APP / "web/data/jezero/compare/pointwise.json").write_text(json.dumps(out))
+    (APP / "web/data/jezero/compare/pointwise.json").write_text(json.dumps({"si": SI_DATA, **out}, indent=1))
     a = out["groups"]["all"]["B@30"]
     print("B@30 all:", {q: {k: a[q][k] for k in ("better", "worse", "same", "mean", "median", "mean_ci95_resample_points")} for q in QTY})
     print("shortcuts:", out["shortcuts_B30_actual_o2"])
