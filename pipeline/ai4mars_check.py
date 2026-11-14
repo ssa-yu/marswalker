@@ -44,16 +44,18 @@ SAND, BEDROCK, UNL = 2, 1, 255
 
 
 def label_index():
+    """NLF labels with sol >= 13 from data-curator's index.csv (data_raw/jezero/ai4mars/index.csv); label files are
+    resolved by name in m2020/labels/NAV/. Vgnc ('unmatched') rows are not used (A1)."""
+    import csv
     out = []
-    for f in sorted(glob.glob(str(AI / "labels/NAV/*.png"))):
-        stem = Path(f).stem
-        m = re.match(r"NLF_(\d{4})_\d+_\d+\w*?_N(\d{3})(\d{4})NCAM", stem)
-        if not m:
-            continue                      # Vgnc and other names: not used (A1)
-        sol, site, drive = int(m.group(1)), int(m.group(2)), int(m.group(3))
-        if sol < 13:
+    for r in csv.DictReader(open(AI.parents[1] / "index.csv")):
+        if r["naming"] != "NLF" or int(r["sol"]) < 13 or r["has_label"] != "yes":
             continue
-        out.append({"stem": stem, "label": f, "sol": sol, "site": site, "drive": drive})
+        f = AI / "labels/NAV" / Path(r["label_file"]).name
+        if not f.exists():
+            continue
+        out.append({"stem": r["image_name"], "label": str(f), "sol": int(r["sol"]), "site": int(r["site"]), "drive": int(r["drive"]),
+                    "same_name_in_photos_json": r["same_name_in_photos_json"] == "yes"})
     return out
 
 
@@ -105,7 +107,7 @@ def run():
         n = int((lab != UNL).sum())
         if n == 0:
             n_empty += 1; continue
-        m = meta.get(L["stem"]) or meta.get(re.sub(r"(_\d{3}J)\d*$", r"\1", L["stem"]))
+        m = meta.get(L["stem"])
         view = None
         if m and m.get("attitude") and "camera_model_component_list" in m.get("camera", {}):
             try:
@@ -114,7 +116,7 @@ def run():
                 view = None
         rr, cc = sector_mask(ref.shape, ext, res, w["x"], w["y"], view["edge_left_deg"] if view else None, view["edge_right_deg"] if view else None)
         rc = ref[rr, cc]; pc = prior[rr, cc]
-        imgs.append({"stem": L["stem"], "wp": w["id"], "sol": L["sol"], "x": w["x"], "y": w["y"],
+        imgs.append({"stem": L["stem"], "wp": w["id"], "same_name_in_photos_json": L["same_name_in_photos_json"], "sol": L["sol"], "x": w["x"], "y": w["y"],
                      "photo_sand": float((lab == SAND).sum() / n), "photo_bedrock": float((lab == BEDROCK).sum() / n),
                      "photo_soil": float((lab == 0).sum() / n), "photo_bigrock": float((lab == 3).sum() / n), "labelled_px": n,
                      "geometry": "sector" if view else "circle", "view": view, "n_cells": int(len(rc)),
