@@ -633,3 +633,16 @@ Started 2026-11-14 08:45:18 CST (commit `fda6a06`; program diff vs run 2 = the o
 - 61.8 km; seen after loops 1 / 5 / 10 / 20 / 30: **0.8 / 3.9 / 6.7 / 11.5 / 15.2 %** (version 2: 0.5 / 3.2 / 5.4 / 8.9 / 11.3 %); 2,399 frontier targets selected, 2,369 reached; 7 safety returns, 30 soft turn-backs, 551 replans.
 - p_firm per loop: 0.236, 0.132, 0.232, 0.194, 0.222, 0.191, 0.174, 0.160, 0.189, 0.210, 0.229, 0.252, 0.267, 0.249, 0.252, 0.267, 0.258, 0.260, 0.244, 0.237, 0.242, 0.250, 0.253, 0.251, 0.246, 0.255, 0.264, 0.258, 0.267, 0.263. **p_rough = 0.200 every loop: the rover never saw a cell whose prior class is rough (n_rough = 0), so p_rough stayed at its prior α₀/(α₀+β₀).**
 - Run 2 (defective, `*_run2_defect`) beside it: 64.5 km, 15.5 % — not a result. Downstream steps now run one by one, each after this check.
+
+#### W3 step 3 — B_v3@k, the single run on the rerun (2026-11-14 09:20:24 CST, 3.4 s), reported as computed
+`data_work/jezero/v3/compare_bv3.json`. Same 63 targets as frozen T2 (asserted); A / A+ / REF = frozen values (A actual 194.6, REF 83.5); 0 unreachable. Designed after seeing version 2; round 6 stays the pre-registered main comparison.
+
+| | p_firm (p_rough 0.20) | Planned O2 | Actual O2 | Error | Hazard m | Crossings | Actual ≤ 384 | vs A: O2 / hazard m | vs frozen B@k: O2 / hazard m / error | Share of possible gain O2 / hazard m | Better / worse / same vs A (actual O2) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| B_v3@1 | 0.236 | 103.7 | 181.4 | +77.7 | 1026 | 9.19 | 61 | −13.3 / −130 | −14.3 / −139 / −67.0 | 12 % / 13 % | 39 / 19 / 5 |
+| B_v3@5 | 0.222 | 94.0 | 158.1 | +64.1 | 828 | 8.98 | 63 | −36.6 / −329 | −27.3 / −233 / −69.5 | 33 % / 33 % | 60 / 3 / 0 |
+| B_v3@10 | 0.210 | 90.9 | 159.0 | +68.1 | 844 | 8.75 | 63 | −35.6 / −313 | −16.1 / −143 / −52.9 | 32 % / 31 % | 60 / 3 / 0 |
+| B_v3@20 | 0.237 | 92.9 | 152.6 | +59.8 | 787 | 7.40 | 63 | −42.0 / −370 | −14.2 / −117 / −50.9 | 38 % / 37 % | 61 / 2 / 0 |
+| B_v3@30 | 0.263 | 95.9 | 143.8 | +48.0 | 699 | 7.38 | 63 | −50.8 / −458 | −22.6 / −207 / −60.3 | 46 % / 45 % | 62 / 1 / 0 |
+
+B_v3@30 by band (n; vs A O2 / hazard m; share O2 / hazard m): 300–600 m (8) −15.4 / −138, 77 % / 79 %; 600–1200 m (31) −42.2 / −372, 55 % / 53 %; > 1200 m (24) −73.7 / −674, 40 % / 40 %. For comparison (frozen T2): B@30 actual 166.5, error +108.2, share 25 % / 25 %. Run-2 (defective) B_v3@30: 155.3 / −39.3 / −350 / 35 % / 60–3 — `computed on the defective run; seen before the rerun; not a result`.
