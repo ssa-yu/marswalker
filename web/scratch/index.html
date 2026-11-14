@@ -18,6 +18,7 @@
     <a class="btn" href="../recon.html" data-i18n="nav.recon">Step 1 · Scout rover recon</a>
     <a class="btn" href="../data.html" data-i18n="nav.data">Map data</a>
     <a class="btn demo active" href="./" aria-current="page" data-i18n="nav.demo">Interactive demo</a>
+    <button class="btn" id="open3d" type="button">3D 徒步（第 3 步規劃路線）</button>
   </nav>
 </header>
 <div id="demoBanner" role="note"><span data-i18n="sc.question">Try it yourself: scratch off the orbital map, find places worth a walk, and plan the astronaut's round trip.</span> <b data-i18n="sc.notResult">Demo only, not the analysis results.</b></div>
@@ -103,6 +104,10 @@
     </div>
   </section>
 </main>
+<section id="walk3dShell" hidden aria-label="3D 徒步路線">
+  <div id="walk3dHead"><b>3D 徒步：依第 3 步規劃路線播放</b><button class="btn sm" id="close3d" type="button">返回規劃器</button></div>
+  <iframe id="walk3dFrame" title="依規劃器路線進行 3D 徒步"></iframe>
+</section>
 <canvas id="coverCanvas" hidden></canvas>
 <script src="../i18n.js"></script>
 <script src="../lib/maplibre-gl.js"></script>
