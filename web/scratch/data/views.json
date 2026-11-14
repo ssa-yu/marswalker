@@ -1,4 +1,5 @@
 {
+ "si": "SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md",
  "label": "measured images; class assignment derived; use illustrative",
  "rule": "terrain class = majority HiRISE reference class in the 22 m window around the waypoint; Navcam/Front Hazcam only; picked by eye for a forward view",
  "views": {

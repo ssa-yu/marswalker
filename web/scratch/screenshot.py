@@ -1,3 +1,4 @@
+# SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Headless screenshots of the scratch demo (scratch/index.html).
 Run from app/:  .conda-env/bin/python web/scratch/screenshot.py [--url http://127.0.0.1:8765]
 -> web/scratch/screenshots/{01_scratching,02_analysed,03_playing,04_mobile}.png; prints console errors."""
