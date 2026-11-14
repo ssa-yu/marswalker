@@ -30,11 +30,10 @@ p.lead { color: var(--muted); margin: 0 0 6px; }
 #table th { color: var(--muted); font-weight: 500; }
 #checks td:first-child, #params td:first-child { text-align: left; }
 #table tr.cur td { color: var(--accent2); }
-#hud { position: absolute; left: 12px; top: 44px; background: rgba(20,17,15,.85); border: 1px solid var(--line); border-radius: 7px; padding: 6px 10px; font-size: 12px; z-index: 4; min-width: 220px; }
+#hud { position: absolute; left: 12px; top: 12px; background: rgba(20,17,15,.85); border: 1px solid var(--line); border-radius: 7px; padding: 6px 10px; font-size: 12px; z-index: 4; min-width: 220px; }
 #hud b { font-variant-numeric: tabular-nums; }
 @media (max-width: 760px) {
   main { flex-direction: column; }
   aside#panel { width: auto; height: 46vh; max-height: none; order: 2; }
   #mapwrap { height: 54vh; }
 }
-#ruleSel { display: flex; gap: 4px; margin: 4px 0; }
