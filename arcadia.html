@@ -1,47 +1,6 @@
 <!doctype html>
 <!-- SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md -->
-<html lang="zh-Hant">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Arcadia 腦紋地形</title>
-<link rel="icon" href="data:,">
-<link rel="stylesheet" href="lib/maplibre-gl.css">
-<link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="arcadia.css">
-</head>
-<body class="arc">
-<div id="map" aria-label="地圖"></div>
-<canvas id="veil" hidden></canvas>
-
-<div id="box" class="float">
-  <div class="ttl"><a href="index.html" class="home" title="回首頁">&#9679;</a> Arcadia 平原 · Starship 候選降落點 <span class="muted">腦紋地形</span></div>
-  <div class="steps" role="group" aria-label="步驟">
-    <button class="btn" data-step="1">① 自走車</button>
-    <button class="btn" data-step="2">② 熱度圖與區域</button>
-    <button class="btn" data-step="3">③ 太空人路線</button>
-  </div>
-  <div id="ctl1" class="ctl">
-    <label for="loop">趟數 <b id="loopLbl">10</b> / <span id="loopMax">10</span> · 看過 <b id="seenLbl"></b></label>
-    <input id="loop" type="range" min="0" max="10" step="1" value="10">
-  </div>
-  <div id="ctl3" class="ctl" hidden><button id="home" class="btn">回到基地</button> <button id="walk3d" class="btn">3D 徒步</button></div>
-  <div class="layers" role="group" aria-label="圖層">
-    <label><input type="checkbox" id="lyrImg" checked> HiRISE 影像</label>
-    <label><input type="checkbox" id="lyrCls"> 地形分類</label>
-    <label><input type="checkbox" id="lyrHeat"> 腦紋熱度圖</label>
-    <label><input type="checkbox" id="lyrMask" checked> 未探索遮罩</label>
-  </div>
-</div>
-
-<div id="legend" class="float"></div>
-<div id="card" class="float" hidden></div>
-
-<div id="w3d" hidden><iframe id="w3dFrame" title="3D 徒步"></iframe><button id="w3dClose" class="btn">返回地圖</button></div>
-
-<footer id="foot">資料：NASA/JPL-Caltech/UArizona HiRISE（ESP_061075_2195）；USGS DTM（DTEEC_061075_2195_061141_2195_A01）；周圍底圖：THEMIS 日間紅外線鑲嵌 100 m（Mars Odyssey／ASU），經 NASA JPL Mars Trek；腦紋模型：Pearson et al. 2024（PSJ）；耗能模型：Pandolf 1977，由隊友整理；3D 徒步：隊友 Shooyunn（three.js、geotiff.js）。AI 使用：程式與圖層由 AI（Anthropic Claude）在團隊指示下產生。</footer>
-
-<script src="lib/maplibre-gl.js"></script>
-<script src="arcadia.js"></script>
-</body>
-</html>
+<!-- The Arcadia page moved to index.html (the site root); this file only forwards old links. -->
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=index.html"><title>Arcadia 腦紋地形</title><link rel="icon" href="data:,">
+<script>location.replace('index.html' + location.search + location.hash);</script></head>
+<body style="background:#0d0b0a;color:#efe6dc;font:14px sans-serif"><p><a href="index.html" style="color:#f2b36b">Arcadia 腦紋地形</a></p></body></html>

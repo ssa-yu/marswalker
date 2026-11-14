@@ -1,117 +1,47 @@
 <!doctype html>
 <!-- SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md -->
-<html lang="en">
+<html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Marswalk Recon</title>
+<title>Arcadia 腦紋地形</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="lib/maplibre-gl.css">
 <link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="astronaut.css">
+<link rel="stylesheet" href="arcadia.css">
 </head>
-<body>
-<header id="top">
-  <a class="brand" href="index.html"><span class="logo">&#9679;</span> Marswalk Recon <span class="muted" data-i18n="nav.place">· Jezero Crater</span></a>
-  <nav id="pages" aria-label="Pages">
-    <a class="btn active" href="index.html" aria-current="page" data-i18n="nav.astro">Astronaut map</a>
-    <a class="btn" href="recon.html" data-i18n="nav.recon">Step 1 · Scout rover recon</a>
-    <a class="btn" href="data.html" data-i18n="nav.data">Map data</a>
-    <a class="btn demo" href="scratch/" data-i18n="nav.demo">Interactive demo</a>
-  </nav>
-  <div class="actions">
-    <a class="btn active" href="arcadia.html">Arcadia 腦紋地形 →</a>
-    <button id="tableBtn" class="btn" data-i18n="idx.tableBtn">Full table</button>
-    <button id="aboutBtn" class="btn" data-i18n="common.aboutBtn">About &amp; Limitations</button>
+<body class="arc">
+<div id="map" aria-label="地圖"></div>
+<canvas id="veil" hidden></canvas>
+
+<div id="box" class="float">
+  <div class="ttl">Arcadia 平原 · Starship 候選降落點 <span class="muted">腦紋地形</span></div>
+  <div class="steps" role="group" aria-label="步驟">
+    <button class="btn" data-step="1">① 自走車</button>
+    <button class="btn" data-step="2">② 熱度圖與區域</button>
+    <button class="btn" data-step="3">③ 太空人路線</button>
   </div>
-</header>
-<div id="skelBanner" role="note"><span data-i18n="idx.question">Does a rover recon first make the astronaut's walk safer and cheaper in oxygen?</span> <span class="pending" data-i18n="common.pending">review: pending</span></div>
-<main>
-  <aside id="panel" aria-label="Walk planner">
-    <section>
-      <p class="lead" data-i18n-html="idx.lead">Pick a test point on the map. <b class="cA">Route A</b>: planned from orbital data only. <b class="cB">Route B</b>: planned after the rover's recon. Both are walked on the HiRISE reference terrain.</p>
-    </section>
-    <section>
-      <h3 data-i18n="idx.overallH">All 63 test points</h3>
-      <div id="overall"></div>
-    </section>
-    <section class="ctrl">
-      <h3><span data-i18n="idx.loopsH">Recon loops before route B</span> <span class="badge simulated" data-i18n="badge.simulated">simulated</span></h3>
-      <div class="row" id="kBtns" role="group" aria-label="Recon loops before route B"></div>
-      <p class="hint" id="kInfo"></p>
-    </section>
-    <section class="ctrl">
-      <h3 data-i18n="idx.pointH">Test point</h3>
-      <div class="row"><button id="tPrev" class="btn sm" aria-label="Previous test point">◀</button><select id="tSel" aria-label="Test point"></select><button id="tNext" class="btn sm" aria-label="Next test point">▶</button></div>
-      <p class="hint" id="tInfo"></p>
-    </section>
-    <section>
-      <h3 data-i18n="idx.cmpH">This walk, checked on reference terrain</h3>
-      <div id="cmp"></div>
-    </section>
-    <section class="ctrl">
-      <h3><span data-i18n="idx.o2H">Suit oxygen</span> <span class="badge assumed" data-i18n="badge.assumed">assumed</span></h3>
-      <label for="cap" class="sl"><b id="capLbl"></b> <span class="muted" data-i18n="idx.capUnit">nominal minutes</span> · <span class="muted" id="usableLbl"></span></label>
-      <input id="cap" type="range" min="60" max="480" step="5" value="480">
-    </section>
-    <section class="ctrl">
-      <h3 data-i18n="idx.replayH">Walk replay</h3>
-      <div class="row">
-        <select id="rSel" aria-label="Route to replay"></select>
-        <button id="play" class="btn" aria-label="Play"></button>
-      </div>
-      <label for="scrub" class="sl"><span data-i18n="idx.elapsed">Elapsed</span> <b id="tLbl">0</b> <span data-i18n="common.min">min</span></label>
-      <input id="scrub" type="range" min="0" max="1000" step="1" value="0">
-    </section>
-    <section id="step2" hidden>
-      <h3><span data-i18n="idx.s2H">Step 2 · Where is a walk worth it?</span> <span class="badge derived" data-i18n="badge.derived">derived</span></h3>
-      <div class="row wrap ctrl" id="s2Mode" role="group" aria-label="Which measurements"></div>
-      <div id="s2Info"></div>
-      <div class="row wrap" id="s2Stops" role="group" aria-label="Candidate stops"></div>
-      <div id="s2Card"></div>
-      <div id="s2Samples"></div>
-    </section>
-    <section id="round7" hidden>
-      <h3><span data-i18n="idx.r7H">One walk to all these stops</span> <span class="badge derived" data-i18n="badge.derived">derived</span></h3>
-      <div id="r7Body"></div>
-    </section>
-    <section>
-      <h3 data-i18n="idx.mapH">Map layers</h3>
-      <div class="row wrap ctrl">
-        <label><input type="checkbox" id="showCls" checked> <span data-i18n="idx.lyrCls">Terrain classes (HiRISE)</span></label>
-        <label><input type="checkbox" id="showHaz"> <span data-i18n="idx.lyrHaz">Hazard zones</span></label>
-        <label><input type="checkbox" id="showSeen"> <span data-i18n="idx.lyrSeen">Area the rover saw</span></label>
-        <label><input type="checkbox" id="showHi"> <span data-i18n="idx.lyrHi">HiRISE image</span></label>
-      </div>
-      <div class="legend line">
-        <span><i style="background:#f4b740"></i><span data-i18n="cls.rough">rough</span></span><span><i style="background:#ff5a4e"></i><span data-i18n="cls.sand">sand</span></span><span><i style="background:#8a3fae"></i><span data-i18n="idx.lgBlocked">blocked (≥ 25°)</span></span>
-        <span><i style="background:none;border:2px solid #ff3c28"></i><span data-i18n="idx.lgHaz">hazard zone</span></span><span><i style="background:#58b4ff"></i><span data-i18n="idx.lgSeen">rover saw</span></span>
-      </div>
-    </section>
-  </aside>
-  <div id="mapwrap">
-    <div id="map"></div>
-    <div id="hud" aria-live="polite">
-      <div class="hrow"><span id="hudRoute"></span><b id="hudTerr"></b></div>
-      <div class="hrow"><span data-i18n="idx.hudO2">Oxygen left (actual)</span><b id="o2Val"></b></div>
-      <div class="bar" id="o2Bar"><div class="fill"></div><div class="res"></div></div>
-      <div class="hrow"><span data-i18n="idx.hudPlan">Return margin, as the plan sees it</span><b id="mgVal"></b></div>
-      <div class="bar" id="mgBar"><div class="fill"></div></div>
-      <div class="hrow"><span data-i18n="idx.hudTrue">Return margin, true (reference)</span><b id="mtVal"></b></div>
-      <div class="bar" id="mtBar"><div class="fill"></div></div>
-      <div class="hrow small"><span data-i18n="idx.hudTd">Elapsed / distance</span><b id="tdVal"></b></div>
-      <div id="warn" hidden></div>
-    </div>
-    <div id="scale"><div id="scaleBar"></div><span id="scaleLabel"></span></div>
-    <div id="coords"></div>
+  <div id="ctl1" class="ctl">
+    <label for="loop">趟數 <b id="loopLbl">10</b> / <span id="loopMax">10</span> · 看過 <b id="seenLbl"></b></label>
+    <input id="loop" type="range" min="0" max="10" step="1" value="10">
   </div>
-</main>
-<dialog id="about"><form method="dialog"><button class="btn sm close" aria-label="Close">✕</button></form><div id="aboutBody"></div></dialog>
-<dialog id="table" class="wide"><form method="dialog"><button class="btn sm close" aria-label="Close">✕</button></form><div id="tableBody"></div></dialog>
-<canvas id="seenCanvas" hidden></canvas>
-<script src="i18n.js"></script>
+  <div id="ctl3" class="ctl" hidden><button id="home" class="btn">回到基地</button> <button id="walk3d" class="btn">3D 徒步</button></div>
+  <div class="layers" role="group" aria-label="圖層">
+    <label><input type="checkbox" id="lyrImg" checked> HiRISE 影像</label>
+    <label><input type="checkbox" id="lyrCls"> 地形分類</label>
+    <label><input type="checkbox" id="lyrHeat"> 腦紋熱度圖</label>
+    <label><input type="checkbox" id="lyrMask" checked> 未探索遮罩</label>
+  </div>
+</div>
+
+<div id="legend" class="float"></div>
+<div id="card" class="float" hidden></div>
+
+<div id="w3d" hidden><iframe id="w3dFrame" title="3D 徒步"></iframe><button id="w3dClose" class="btn">返回地圖</button></div>
+
+<footer id="foot">資料：NASA/JPL-Caltech/UArizona HiRISE（ESP_061075_2195）；USGS DTM（DTEEC_061075_2195_061141_2195_A01）；周圍底圖：THEMIS 日間紅外線鑲嵌 100 m（Mars Odyssey／ASU），經 NASA JPL Mars Trek；腦紋模型：Pearson et al. 2024（PSJ）；耗能模型：Pandolf 1977，由隊友整理；3D 徒步：隊友 Shooyunn（three.js、geotiff.js）。AI 使用：程式與圖層由 AI（Anthropic Claude）在團隊指示下產生。</footer>
+
 <script src="lib/maplibre-gl.js"></script>
-<script src="astronaut.js"></script>
-<script src="step2.js"></script>
+<script src="arcadia.js"></script>
 </body>
 </html>

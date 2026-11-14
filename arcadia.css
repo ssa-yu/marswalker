@@ -4,7 +4,6 @@ body.arc #map { position: absolute; inset: 0 0 22px 0; }
 .float { position: absolute; z-index: 5; background: rgba(20, 17, 15, .88); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
 #box { left: 12px; top: 12px; max-width: min(430px, calc(100vw - 24px)); }
 #box .ttl { font-weight: 650; font-size: 14px; margin-bottom: 6px; }
-#box .ttl .home { color: var(--accent); text-decoration: none; }
 .steps, .layers { display: flex; flex-wrap: wrap; gap: 5px; }
 .layers { margin-top: 8px; gap: 4px 12px; font-size: 12px; }
 .ctl { margin-top: 8px; font-size: 12px; }
