@@ -20,13 +20,25 @@ const S = { k: 30, tgt: 0, route: 'A', t: 0, playing: false, cache: {} };
 
 async function getJSON(u) { const r = await fetch(u); if (!r.ok) throw new Error(`${u}: ${r.status}`); return r.json(); }
 async function bitmap(u) { return createImageBitmap(await (await fetch(u)).blob(), { colorSpaceConversion: 'none', premultiplyAlpha: 'none' }); }
-const stateOf = (r) => (r === 'B' ? `B@${S.k}` : r);
-const nameOf = (r) => ({ A: 'Route A · orbital data only', B: `Route B · after ${S.k} recon loop${S.k > 1 ? 's' : ''}`, 'A+': 'A+ · optimistic prior (bracket)', REF: 'Reference upper bound (not a recon result)' }[r]);
+const bKey = (k = S.k) => (S.rule === 'v3' ? `B_v3@${k}` : `B@${k}`);
+const stateOf = (r) => (r === 'B' ? bKey() : r);
+const nameOf = (r) => ({ A: 'Route A · orbital data only', B: `Route B · after ${S.k} recon loop${S.k > 1 ? 's' : ''}${S.rule === 'v3' ? ' (rover v3)' : ''}`, 'A+': 'A+ · optimistic prior (bracket)', REF: 'Reference upper bound (not a recon result)' }[r]);
 function usable() { return +$('#cap').value * (1 - +$('#res').value / 100); }
 
 async function init() {
   const [C, sc, PW] = await Promise.all([getJSON(CB + 'compare.json'), getJSON(BASE + 'scene.json'), getJSON(CB + 'pointwise.json')]);
   S.C = C; S.sc = sc; S.PW = PW;
+  // product = the version-3 chain when its files exist (decided before any v3 number); ?rule=v2 shows the record
+  try { S.V3 = await getJSON(CB + 'compare_v3.json'); } catch (e) { S.V3 = null; }
+  S.rule = S.V3 && new URLSearchParams(location.search).get('rule') !== 'v2' ? 'v3' : 'v2';
+  if (S.V3) {
+    Object.assign(C.summary.all, S.V3.summary_all);
+    C.rows.forEach((r) => Object.assign(r, S.V3.rows[String(r.target)] || {}));
+    $('#ruleBtns').innerHTML = `<a class="btn sm ${S.rule === 'v3' ? 'active' : ''}" href="index.html">Rover v3 (literature)</a><a class="btn sm ${S.rule === 'v2' ? 'active' : ''}" href="index.html?rule=v2">v2 (pre-registered record)</a>`;
+    $('#ruleNote').textContent = S.rule === 'v3'
+      ? 'Route B uses the version-3 rover (frontier targets, expected cost of unseen ground) and prices ground it has not seen at its expected cost (Sofman et al. 2006). Version 3 was designed after seeing version 2; version 2 with "unseen = orbital class" (the freespace assumption, Koenig & Smirnov 1997) is the pre-registered main comparison.'
+      : 'Route B from the version-2 rover, unseen ground = orbital class: the pre-registered main comparison.';
+  }
   S.ks = C.states.filter((s) => s.startsWith('B@')).map((s) => +s.slice(2));
   S.k = S.ks[S.ks.length - 1];
   // default test point: the lattice point at (600, 0) m (the step-3 skeleton's first placeholder rule), else the first
@@ -58,6 +70,13 @@ async function init() {
   const d = x.getImageData(0, 0, c.width, c.height).data, n = c.width * c.height, tt = new Uint32Array(n);
   for (let i = 0; i < n; i++) tt[i] = (d[4 * i] << 16) | (d[4 * i + 1] << 8) | d[4 * i + 2];
   S.revealT = tt; S.tw = c.width; S.th = c.height;
+  if (S.rule === 'v3') {
+    const vImg = await bitmap(CB + S.V3.files.reveal_t);
+    x.clearRect(0, 0, c.width, c.height); x.drawImage(vImg, 0, 0);
+    const d3 = x.getImageData(0, 0, c.width, c.height).data, t3 = new Uint32Array(n);
+    for (let i = 0; i < n; i++) t3[i] = (d3[4 * i] << 16) | (d3[4 * i + 1] << 8) | d3[4 * i + 2];
+    S.revealT = t3;
+  }
   buildMap();
 }
 
@@ -67,7 +86,10 @@ function row() { return S.C.rows[S.tgt]; }
 async function selectTarget(i) {
   stop(); S.tgt = i; $('#tSel').value = i;
   const r = row();
-  if (!S.cache[r.target]) S.cache[r.target] = await getJSON(`${CB}routes/t${r.target}.json`);
+  if (!S.cache[r.target]) {
+    S.cache[r.target] = await getJSON(`${CB}routes/t${r.target}.json`);
+    if (S.rule === 'v3') Object.assign(S.cache[r.target].states, (await getJSON(`${CB}routes_v3/t${r.target}.json`)).states);
+  }
   S.routes = S.cache[r.target];
   $('#tInfo').textContent = `Straight-line distance ${f0(r.dist_m)} m from the habitat (${r.band} m band). Test points are a fixed 300 m grid chosen before step 2 existed, not science targets; the step-2 stops have their own walk above.`;
   refresh();
@@ -75,7 +97,7 @@ async function selectTarget(i) {
 
 function refresh() {
   document.querySelectorAll('#kBtns button').forEach((b) => b.classList.toggle('active', +b.dataset.k === S.k));
-  const of = S.C.observed_frac[`B@${S.k}`];
+  const of = S.rule === 'v3' ? S.V3.observed_frac[String(S.k)] : S.C.observed_frac[`B@${S.k}`];
   $('#kInfo').textContent = `After ${S.k} loop${S.k > 1 ? 's' : ''} the rover had seen ${(100 * of).toFixed(1)}% of the study area. Route B uses the reference terrain only where the rover saw it, orbital data elsewhere.`;
   renderRouteSel(); renderCmp(); renderOverall(); drawSeen(); drawRoutes(); drawTargets(); setT(0);
 }
@@ -110,9 +132,9 @@ function renderCmp() {
 }
 
 function renderOverall() {
-  const s = S.C.summary.all, A = s.A, B = s[`B@${S.k}`], R = s.REF, sh = B.share_of_possible_improvement;
+  const s = S.C.summary.all, A = s.A, B = s[bKey()], R = s.REF, sh = B.share_of_possible_improvement;
   const pc = (v) => v == null ? '–' : Math.round(100 * v) + '%';
-  const pw = S.PW && S.PW.groups.all[`B@${S.k}`] && S.PW.groups.all[`B@${S.k}`].actual_o2;
+  const pw = S.rule === 'v3' ? (B.better_worse_same_vs_A_actual_o2 && { n: B.n, better: B.better_worse_same_vs_A_actual_o2[0], worse: B.better_worse_same_vs_A_actual_o2[1], same: B.better_worse_same_vs_A_actual_o2[2] }) : S.PW && S.PW.groups.all[`B@${S.k}`] && S.PW.groups.all[`B@${S.k}`].actual_o2;
   $('#overall').innerHTML = `<table class="cmp"><thead><tr><th>mean per walk</th><th class="cA">A</th><th class="cB">B@${S.k}</th><th class="cR">ref. bound</th></tr></thead><tbody>
 <tr><td>Metres in hazard zones</td><td>${f0(A.hazard_m.mean)}</td><td><b>${f0(B.hazard_m.mean)}</b></td><td>${f0(R.hazard_m.mean)}</td></tr>
 <tr><td>Hazard crossings <span class="muted">(do not fall steadily with more loops)</span></td><td>${f1(A.crossings.mean)}</td><td>${f1(B.crossings.mean)}</td><td>${f1(R.crossings.mean)}</td></tr>
@@ -202,7 +224,7 @@ function drawRoutes() {
 
 function drawSeen() {
   const c = $('#seenCanvas'); c.width = S.tw; c.height = S.th;
-  const x = c.getContext('2d'), im = x.createImageData(S.tw, S.th), t1 = S.C.recon_t1[String(S.k)];
+  const x = c.getContext('2d'), im = x.createImageData(S.tw, S.th), t1 = (S.rule === 'v3' ? S.V3.recon_t1 : S.C.recon_t1)[String(S.k)];
   for (let i = 0; i < S.revealT.length; i++) if (S.revealT[i] <= t1) { im.data[4 * i] = 88; im.data[4 * i + 1] = 180; im.data[4 * i + 2] = 255; im.data[4 * i + 3] = 200; }
   x.putImageData(im, 0, 0);
   const src = S.map && S.map.getSource('seen'); if (src) { src.play(); src.pause(); }

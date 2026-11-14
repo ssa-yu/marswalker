@@ -4,7 +4,8 @@
    once the replay time passes the step at which the simulated rover first observed it. */
 'use strict';
 const R_MARS = 3396190, DEG = Math.PI / 180;
-const SCENE = 'jezero', BASE = `data/${SCENE}/`, RB = BASE + 'recon/';
+const SCENE = 'jezero', BASE = `data/${SCENE}/`;
+let RB = BASE + 'recon/';
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const abs = (u) => new URL(u, location.href).href;
@@ -17,7 +18,22 @@ async function bitmap(u) {
   return createImageBitmap(b, { colorSpaceConversion: 'none', premultiplyAlpha: 'none' });
 }
 
+async function pickRule() {
+  // product = rover rule version 3 when its output exists (decided before any v3 number); ?rule=v2 shows the record
+  const want = new URLSearchParams(location.search).get('rule');
+  let hasV3 = false;
+  try { hasV3 = (await fetch(BASE + 'recon_v3/recon.json', { method: 'HEAD' })).ok; } catch (e) { hasV3 = false; }
+  S.rule = want === 'v2' || !hasV3 ? 'v2' : 'v3';
+  RB = BASE + (S.rule === 'v3' ? 'recon_v3/' : 'recon/');
+  const box = $('#ruleSel');
+  if (box) {
+    box.innerHTML = hasV3 ? `<a class="btn sm ${S.rule === 'v3' ? 'active' : ''}" href="recon.html">Rover rule v3 (literature methods)</a><a class="btn sm ${S.rule === 'v2' ? 'active' : ''}" href="recon.html?rule=v2">v2 (pre-registered record)</a>` : '';
+    $('#ruleNote').textContent = S.rule === 'v3' ? 'Version 3 picks frontier targets by expected gain per expected cost (Yamauchi 1997; Burgard et al. 2005; Singh et al. 2009; Sofman et al. 2006). It was designed after seeing version 2\'s repeat coverage; version 2 and the main route comparison stay the pre-registered record.' : (hasV3 ? 'Version 2: the rule fixed before the main route comparison (its record).' : '');
+  }
+}
+
 async function init() {
+  await pickRule();
   const [sc, rc] = await Promise.all([getJSON(BASE + 'scene.json'), getJSON(RB + 'recon.json')]);
   S.sc = sc; S.rc = rc; S.N = rc.loops.length;
   const [tImg, hImg, cRef, cPri] = await Promise.all([bitmap(RB + rc.files.reveal_t), bitmap(RB + rc.files.hirise), bitmap(RB + rc.files.class_ref), bitmap(RB + rc.files.class_prior)]);
