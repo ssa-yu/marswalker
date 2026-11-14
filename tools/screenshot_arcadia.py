@@ -1,5 +1,5 @@
 # SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
-"""Headless screenshots of web/arcadia.html steps 1-3 -> qa/arcadia/step{1,2,3}.png
+"""Headless screenshots of web/arcadia.html steps 1-3 (+ zoomed-out context views) -> qa/arcadia/step*.png
 python tools/screenshot_arcadia.py [--url http://127.0.0.1:8765]"""
 import argparse
 from pathlib import Path
@@ -28,7 +28,11 @@ with sync_playwright() as p:
 
     shot("step1_rover", "setStep(1)")
     shot("step2_heat_targets", "setStep(2)")
-    shot("step2b_before_all", "S.when='before'; apply(); frame()")
+    shot("step2c_mask_off", "document.querySelector('#lyrMask').checked = false; apply()")
+    pg.evaluate("document.querySelector('#lyrMask').checked = true")
+    shot("step1_loop3_mask", "setStep(1); S.loop = 3; document.querySelector('#loop').value = 3; apply()")
     shot("step3_route", "setStep(3); showCard('整條路線', S.d.route.total)")
+    shot("step1_zoomed_out", "setStep(1); S.map.jumpTo({ center: S.d.centre, zoom: 10.3 })")
+    shot("step1_regional", "setStep(1); S.map.jumpTo({ center: S.d.centre, zoom: 7.6 })")
     print("errors:", errors)
     br.close()
