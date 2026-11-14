@@ -38,7 +38,7 @@ with sync_playwright() as p:
         const p = planFrom(i), t = S.d.route.total;
         return { js: { ...p.total, visited: p.visited, ms: p.ms }, py: { ...t, visited: S.d.route.order } }; }""")
     print("js vs python from base:", cmp)
-    shot("step3_moved_start", "setStep(3); setStart(toLL(-600, 2600)); "
+    shot("step3_moved_start", "setStep(3); setStart(toLL(-300, 2300)); "
          "S.map.fitBounds([[Math.min(...S.plan.legs.flatMap(L => L.path).map(p => p[0])) - 0.004, Math.min(...S.plan.legs.flatMap(L => L.path).map(p => p[1])) - 0.004], "
          "[Math.max(...S.plan.legs.flatMap(L => L.path).map(p => p[0])) + 0.004, Math.max(...S.plan.legs.flatMap(L => L.path).map(p => p[1])) + 0.004]], { duration: 0 })")
     print("moved start plan ms:", pg.evaluate("window.__lastPlanMs"), pg.evaluate("({ n: S.plan.n_stops, v: S.plan.visited, t: S.plan.total })"))

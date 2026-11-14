@@ -1,10 +1,11 @@
 # SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 """Arcadia scene (SpaceX Starship candidate site, HiRISE ESP_061075_2195): brain-terrain demo pipeline.
 
-python -m pipeline.arcadia grid|terrain|rover|select|astro|export|all
+python -m pipeline.arcadia grid|terrain|square|rover|select|astro|export|all
 
-  Study area v2 (Shan 2026-11-15 evening): largest rectangle with valid DTM and ortho, 3.72 x 11.04 km
-  (config aoi; the earlier 2.4 km square is aoi_v1, its outputs in data_work/arcadia/v1_2p4km/).
+  Study area v3 (Shan 2026-11-15): north-up 3.72 km square cut from the v2 rectangle (3.72 x 11.04 km, config aoi_v2,
+  its products in data_work/arcadia/v2_strip/) by `square`; the brain model and terrain rules are not re-run.
+  The earlier 2.4 km square is aoi_v1, its outputs in data_work/arcadia/v1_2p4km/.
   grid     ortho 0.5 m (RED_A COG overview level 1), DTM 1 m (padded 30 m), prior DTM = HiRISE DTM averaged to 20 m
   terrain  existing rules (pipeline/terrain.py) on 2 m cells, sand = sandfield v2 (0.5 m features, computed in row
            chunks), brain score >= 0.5 is never sand; rough threshold = this scene's P85 of the roughness (the
@@ -194,12 +195,142 @@ def run_terrain():
     return meta
 
 
+# -------------------------------------------------------------------------------------------------- square
+# Study area v3 (Shan 2026-11-15): a north-up square inside the v2 rectangle, cut from the v2 products (no re-run of
+# the brain model or the terrain rules; rough threshold stays the v2 P85 = 0.196 m).
+SQUARE_M = 3720.0                 # = v2 width (the largest square that fits)
+SQUARE_STEP_M = 120.0             # candidate positions slide by 120 m (keeps 2 / 4 / 8 m rows and 60 m blocks aligned)
+SQUARE_BRAIN = (0.35, 0.65)       # brain (score >= 0.5) fraction of the square
+BASE_RULE = {"brain_free_m": 100.0, "slope_radius_m": 30.0, "slope_max_deg": 5.5, "edge_min_m": 400.0,
+             "max_from_centre_m": 300.0, "class": "firm (4 m terrain grid)"}
+V2_DIR = "v2_strip"
+V2_FILES = ("grid.json", "terrain_2m.npz", "terrain_2m.json", "terrain_4m.npz", "brain_score_2m.npy", "cost_8m.npz",
+            "recon_loops.json", "recon_state.npz", "targets.json", "astro.json", "ortho_05.tif")
+
+
+def disk(r_cells):
+    k = int(math.ceil(r_cells))
+    yy, xx = np.mgrid[-k:k + 1, -k:k + 1]
+    return (yy * yy + xx * xx <= r_cells * r_cells).astype(np.float32)
+
+
+def base_candidates(T4, brain2, res=GRID_RES):
+    """Base rule (as before, on the 4 m grid): firm, no brain cell (2 m score >= 0.5) within 100 m, mean slope
+    within 30 m < 5.5 deg. Edge distance and the distance to the square centre are applied per square."""
+    from scipy.ndimage import convolve, distance_transform_edt
+    from .terrain import block
+    is_brain4 = block((np.nan_to_num(brain2) >= BRAIN_SAND_EXCLUDE).astype(np.uint8), int(res / RES), "max") > 0
+    far_brain = distance_transform_edt(~is_brain4) * res >= BASE_RULE["brain_free_m"]
+    k = disk(BASE_RULE["slope_radius_m"] / res); k /= k.sum()
+    flat = convolve(np.nan_to_num(T4["slope_mean"], nan=90.0), k, mode="nearest") < BASE_RULE["slope_max_deg"]
+    return (T4["class_ref"] == 0) & far_brain & flat
+
+
+def run_square():
+    import shutil
+    import rasterio
+    from rasterio.windows import Window
+    from .terrain import CLASSES
+    sc = sc_()
+    cfg_path = APP / "config" / "scenes" / f"{SCENE}.json"
+    cfg = read_json(cfg_path)
+    v2 = cfg.get("aoi_v2") or dict(cfg["aoi"])
+    src = sc.work / V2_DIR
+    if not src.exists():
+        src.mkdir()
+        for f in V2_FILES:
+            if (sc.work / f).exists():
+                shutil.move(str(sc.work / f), str(src / f))
+    T4 = dict(np.load(src / "terrain_4m.npz"))
+    brain2 = np.load(src / "brain_score_2m.npy")
+    ok_base = base_candidates(T4, brain2)
+    xmin, xmax, ymax0, ymin0 = v2["xmin"], v2["xmax"], v2["ymax"], v2["ymin"]
+    assert abs((xmax - xmin) - SQUARE_M) < 1e-6
+    hab0 = cfg.get("habitat_v2") or cfg["habitat"]
+    n_pos = int(round((ymax0 - ymin0 - SQUARE_M) / SQUARE_STEP_M)) + 1
+    n4 = int(SQUARE_M / GRID_RES)
+    rows = []
+    for k in range(n_pos):
+        ymax = ymax0 - k * SQUARE_STEP_M; ymin = ymax - SQUARE_M
+        r2 = int(k * SQUARE_STEP_M / RES); r4 = int(k * SQUARE_STEP_M / GRID_RES)
+        b = brain2[r2:r2 + int(SQUARE_M / RES)]
+        bf = float(np.mean(np.nan_to_num(b) >= BRAIN_SAND_EXCLUDE))
+        cand = ok_base[r4:r4 + n4]
+        rr, cc = np.nonzero(cand)
+        x = xmin + (cc + 0.5) * GRID_RES; y = ymax - (rr + 0.5) * GRID_RES
+        edge = np.minimum.reduce([x - xmin, xmax - x, y - ymin, ymax - y])
+        cx, cy = (xmin + xmax) / 2, (ymin + ymax) / 2
+        dc = np.hypot(x - cx, y - cy)
+        sel = (edge >= BASE_RULE["edge_min_m"]) & (dc <= BASE_RULE["max_from_centre_m"])
+        base = None
+        if sel.any():
+            i = np.flatnonzero(sel)[np.argmin(dc[sel])]
+            base = {"x": round(float(x[i]), 1), "y": round(float(y[i]), 1), "from_centre_m": round(float(dc[i]), 1)}
+        okk = SQUARE_BRAIN[0] <= bf <= SQUARE_BRAIN[1] and base is not None
+        rows.append({"k": k, "ymin": ymin, "ymax": ymax, "brain_frac": round(bf, 4), "base": base, "ok": okk,
+                     "centre_to_old_base_m": round(float(math.hypot(cx - hab0["x"], cy - hab0["y"])), 1)})
+    good = [r for r in rows if r["ok"]]
+    if not good:
+        raise SystemExit("no square position meets the rule")
+    pick = min(good, key=lambda r: r["centre_to_old_base_m"])
+    k = pick["k"]
+    log(SCENE, "square", f"{len(good)}/{len(rows)} positions qualify; pick y {pick['ymin']}..{pick['ymax']} "
+        f"brain {pick['brain_frac']:.1%} base {pick['base']}")
+    # ---- cut the v2 products -------------------------------------------------------------------------------
+    r2, r4, r8 = (int(k * SQUARE_STEP_M / r) for r in (RES, GRID_RES, 8.0))
+    n2, n8 = int(SQUARE_M / RES), int(SQUARE_M / 8.0)
+    np.save(sc.work / "brain_score_2m.npy", brain2[r2:r2 + n2])
+    del brain2
+    T2 = np.load(src / "terrain_2m.npz")
+    T2c = {kk: T2[kk][r2:r2 + n2] for kk in T2.files}
+    np.savez_compressed(sc.work / "terrain_2m.npz", **T2c)
+    T4c = {kk: v[r4:r4 + n4] for kk, v in T4.items()}
+    np.savez_compressed(sc.work / "terrain_4m.npz", **T4c)
+    C = np.load(src / "cost_8m.npz")
+    np.savez_compressed(sc.work / "cost_8m.npz", **{kk: C[kk][r8:r8 + n8] for kk in C.files})
+    with rasterio.open(src / "ortho_05.tif") as s:
+        w = Window(0, int(k * SQUARE_STEP_M / 0.5), s.width, int(SQUARE_M / 0.5))
+        a = s.read(1, window=w)
+        prof = s.profile.copy(); prof.update(height=a.shape[0], transform=s.window_transform(w))
+    with rasterio.open(sc.work / "ortho_05.tif", "w", **prof) as d:
+        d.write(a, 1)
+    del a
+    # ---- terrain stats of the square (thresholds unchanged) --------------------------------------------------
+    tm = read_json(src / "terrain_2m.json")
+    frac = lambda c: {CLASSES[q]: round(float(np.mean(c == q)) * 100, 2) for q in range(4)}
+    aoi = [xmin, pick["ymin"], xmax, pick["ymax"]]
+    tm.update({"extent_local_m": aoi, "shape": list(T2c["class_ref"].shape), "shape_4m": list(T4c["class_ref"].shape),
+               "brain_frac": pick["brain_frac"], "area_percent_ref": frac(T2c["class_ref"]),
+               "area_percent_ref_4m": frac(T4c["class_ref"]), "area_percent_prior": frac(T2c["class_prior"]),
+               "cut_from": "v2 products (data_work/arcadia/v2_strip), rows cut, thresholds unchanged"})
+    for kk in ("rough_cells_at_jezero_threshold_frac", "sand_rule_hit_on_brain_frac", "seconds"):
+        tm.pop(kk, None)
+    write_json(sc.work / "terrain_2m.json", tm)
+    write_json(sc.work / "square.json", {"rule": {"side_m": SQUARE_M, "step_m": SQUARE_STEP_M,
+               "brain_frac": SQUARE_BRAIN, "base": BASE_RULE, "pick": "closest square centre to the v2 base"},
+               "pick": pick, "positions": rows})
+    # ---- config ----------------------------------------------------------------------------------------------
+    cfg["aoi_v2"] = v2
+    cfg["habitat_v2"] = hab0
+    cfg["aoi"] = {"xmin": xmin, "ymin": pick["ymin"], "xmax": xmax, "ymax": pick["ymax"], "label": "derived",
+                  "rule": (f"Study area v3 (Shan 2026-11-15): north-up {SQUARE_M / 1000:.2f} km square inside aoi_v2, "
+                           f"positions every {SQUARE_STEP_M:.0f} m in y; brain fraction {SQUARE_BRAIN[0]:.0%}-"
+                           f"{SQUARE_BRAIN[1]:.0%} and a base within {BASE_RULE['max_from_centre_m']:.0f} m of the "
+                           f"centre; closest to the v2 base. Products cut from v2 (no re-run).")}
+    cfg["habitat"] = {"x": pick["base"]["x"], "y": pick["base"]["y"], "label": "derived",
+                      "rule": ("firm 4 m cell, no brain cell (score >= 0.5) within 100 m, mean slope within 30 m "
+                               "< 5.5 deg, >= 400 m from the edge; closest to the square centre")}
+    write_json(cfg_path, cfg)
+    log(SCENE, "square", f"aoi {aoi}, terrain 4 m {tm['area_percent_ref_4m']}")
+    return pick
+
+
 # --------------------------------------------------------------------------------------------------- rover
 ROVER_RES = GRID_RES
 ROVER_PLAN_WINDOW_M = 400.0       # point-to-point plans search start/goal box + 400 m (speed; whole grid if no path)
-ROVER_OVERRIDES = {        # study area v2 (3.72 x 11.04 km): same rule, larger budget / reach
-    "n_loops": 24, "loop_budget": 4000.0 * 7, "sense_radius_m": 30.0,
-    "bands_m": {"near": [500.0, 2000.0], "mid": [2000.0, 3500.0], "far": [3500.0, 1e9]},
+ROVER_OVERRIDES = {        # study area v3 (3.72 km square, base near the centre): v2 rule, budget and bands scaled down
+    "n_loops": 24, "loop_budget": 4000.0 * 5, "sense_radius_m": 30.0,
+    "bands_m": {"near": [300.0, 1000.0], "mid": [1000.0, 1600.0], "far": [1600.0, 1e9]},
     "goal_lattice_m": 100.0, "goal_gain_radius_m": 300.0, "base_free_radius_m": 60.0,
 }
 
@@ -447,7 +578,7 @@ def run_astro():
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("step", choices=["grid", "terrain", "rover", "select", "astro", "export", "all"])
+    ap.add_argument("step", choices=["grid", "terrain", "square", "rover", "select", "astro", "export", "all"])
     a = ap.parse_args()
     steps = ["grid", "terrain", "rover", "select", "astro", "export"] if a.step == "all" else [a.step]
     for s in steps:

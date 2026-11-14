@@ -28,8 +28,8 @@ async function init() {
 
 function buildMap() {
   const d = S.d, c = d.aoi_corners;
-  // outer extent the user can pan/zoom out to: the Mars Trek context image (else the HiRISE strip, else the AOI)
-  const outer = S.ctx ? (S.ctx.trek || S.ctx.strip).coordinates : c;
+  // outer extent the user can pan/zoom out to: the Mars Trek context image (else the AOI)
+  const outer = S.ctx && S.ctx.trek ? S.ctx.trek.coordinates : c;
   const map = new maplibregl.Map({
     container: 'map', bounds: [[c[0][0], c[2][1]], [c[1][0], c[0][1]]], fitBoundsOptions: { padding: 40 },
     maxZoom: 20, minZoom: S.ctx ? 6 : 10, renderWorldCopies: false,
@@ -45,14 +45,10 @@ function buildMap() {
       map.addSource(id, { type: 'image', url: abs(D + f), coordinates: c });
       map.addLayer({ id, type: 'raster', source: id, paint: { 'raster-fade-duration': 0, ...paint } });
     };
-    // context basemaps under the study area (display only): Mars Trek THEMIS Day IR, then the whole HiRISE strip at 3 m
+    // context basemap under the study area (display only): Mars Trek THEMIS Day IR; HiRISE only inside the square
     if (S.ctx && S.ctx.trek) {
       map.addSource('trek', { type: 'image', url: abs(D + S.ctx.trek.file), coordinates: S.ctx.trek.coordinates });
       map.addLayer({ id: 'trek', type: 'raster', source: 'trek', paint: { 'raster-fade-duration': 0, 'raster-brightness-max': 0.8 } });
-    }
-    if (S.ctx && S.ctx.strip) {
-      map.addSource('strip', { type: 'image', url: abs(D + S.ctx.strip.file), coordinates: S.ctx.strip.coordinates });
-      map.addLayer({ id: 'strip', type: 'raster', source: 'strip', paint: { 'raster-fade-duration': 0 } });
     }
     map.addSource('ortho', { type: 'raster', tiles: [abs(D) + d.tiles.url], tileSize: 256, minzoom: d.tiles.minzoom, maxzoom: d.tiles.maxzoom, bounds: d.tiles.bounds });
     map.addLayer({ id: 'ortho', type: 'raster', source: 'ortho', paint: { 'raster-fade-duration': 0 } });
@@ -70,8 +66,8 @@ function buildMap() {
     map.addLayer({ id: 'rover', type: 'line', source: 'rover', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': C_ROVER, 'line-width': 2 } });
     map.addSource('tgt', { type: 'geojson', data: gj([]) });
     map.addLayer({ id: 'tgt-hit', type: 'fill', source: 'tgt', paint: { 'fill-color': '#000', 'fill-opacity': 0.01 } });
-    map.addLayer({ id: 'tgt', type: 'line', source: 'tgt', filter: ['==', ['get', 'reach'], true], paint: { 'line-color': C_TGT, 'line-width': 2.5 } });
-    map.addLayer({ id: 'tgt-far', type: 'line', source: 'tgt', filter: ['!=', ['get', 'reach'], true], paint: { 'line-color': C_TGT, 'line-width': 2, 'line-dasharray': [2, 1.5] } });
+    map.addLayer({ id: 'tgt', type: 'line', source: 'tgt', filter: ['==', ['get', 'onroute'], true], paint: { 'line-color': C_TGT, 'line-width': 2.5 } });
+    map.addLayer({ id: 'tgt-far', type: 'line', source: 'tgt', filter: ['!=', ['get', 'onroute'], true], paint: { 'line-color': C_TGT, 'line-width': 2, 'line-dasharray': [2, 1.5] } });
     map.addSource('route', { type: 'geojson', data: gj([]) });
     map.addLayer({ id: 'route-casing', type: 'line', source: 'route', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '#000', 'line-width': 6, 'line-opacity': 0.6 } });
     map.addLayer({ id: 'route', type: 'line', source: 'route', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': C_ROUTE, 'line-width': 3 } });
@@ -129,7 +125,6 @@ function apply() {
   $('#ctl1').hidden = n !== 1; $('#ctl3').hidden = n !== 3 || !S.start;
   const heat = $('#lyrHeat').checked;
   vis('ortho', $('#lyrImg').checked);
-  if (m.getLayer('strip')) vis('strip', $('#lyrImg').checked);
   vis('classes', $('#lyrCls').checked);
   vis('brain_all', heat);
   // unexplored mask: ground the rover has not seen yet (up to the slider's loop in ①, all loops in ② and ③), black at 50 %
@@ -144,7 +139,7 @@ function apply() {
   m.setPaintProperty('rover', 'line-opacity', n === 1 ? 1 : 0.45);
   m.setPaintProperty('rover', 'line-width', n === 1 ? 2 : 1.2);
   vis('tgt', n >= 2); vis('tgt-hit', n === 3); vis('tgt-far', n === 3);
-  S.map.setFilter('tgt', n === 3 ? ['==', ['get', 'reach'], true] : null);
+  S.map.setFilter('tgt', n === 3 ? ['==', ['get', 'onroute'], true] : null);
   vis('route', n === 3); vis('route-casing', n === 3);
   $('#loopLbl').textContent = k;
   if (n === 1) {
@@ -353,7 +348,7 @@ function showPlan(p) {
   S.plan = p || pyPlan();
   const gj = (features) => ({ type: 'FeatureCollection', features });
   S.map.getSource('route').setData(gj(S.plan.legs.map((L, i) => ({ type: 'Feature', properties: { i }, geometry: { type: 'LineString', coordinates: L.path } }))));
-  S.map.getSource('tgt').setData(gj(d.targets.after.map((t) => ({ type: 'Feature', properties: { id: t.id, reach: S.plan.visited.includes(t.id) || S.plan.rt[t.id] <= d.planner.usable_kcal }, geometry: { type: 'Polygon', coordinates: [t.block] } }))));
+  S.map.getSource('tgt').setData(gj(d.targets.after.map((t) => ({ type: 'Feature', properties: { id: t.id, onroute: S.plan.visited.includes(t.id) }, geometry: { type: 'Polygon', coordinates: [t.block] } }))));
 }
 
 function stopCard(i) {
@@ -367,8 +362,8 @@ function onMapClick(e) {
   if (hit.length) {
     const id = hit[0].properties.id, i = S.plan.legs.findIndex((L) => L.to === id);
     if (i >= 0) { stopCard(i); return; }
-    const x = S.plan.rt[id], far = !(x <= S.d.planner.usable_kcal);
-    $('#card').innerHTML = `<h4><span>${far ? '超出步行範圍：' : ''}往返需 ${isFinite(x) ? Math.round(x).toLocaleString('en-US') : '—'} kcal</span><button aria-label="關閉" onclick="this.closest('#card').hidden=true">×</button></h4>`;
+    const x = S.plan.rt[id];
+    $('#card').innerHTML = `<h4><span>往返需 ${isFinite(x) ? Math.round(x).toLocaleString('en-US') : '—'} kcal</span><button aria-label="關閉" onclick="this.closest('#card').hidden=true">×</button></h4>`;
     $('#card').hidden = false;
     return;
   }

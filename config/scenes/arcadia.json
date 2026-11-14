@@ -1,4 +1,5 @@
 {
+ "si": "computed by AI-written code (Anthropic Claude via Claude Code, under the team's direction); inputs are NASA data; see docs/AI_USE.md",
  "scene": "arcadia",
  "title": "Arcadia Planitia (SpaceX Starship candidate site)",
  "base": {
@@ -9,11 +10,11 @@
  },
  "aoi": {
   "xmin": -3060,
-  "ymin": -3060,
+  "ymin": -780.0,
   "xmax": 660,
-  "ymax": 7980,
-  "rule": "Largest axis-aligned rectangle where the HiRISE DTM and the 1 m ortho are both valid (20 m min-resampled masks, x -3140..740, y -3160..8080), shrunk to 60 m multiples with >= 60 m margin: 3.72 x 11.04 km. Habitat kept (>= 400 m from every edge). Previous 2.4 km square kept as aoi_v1.",
-  "label": "derived"
+  "ymax": 2940.0,
+  "label": "derived",
+  "rule": "Study area v3 (Shan 2026-11-15): north-up 3.72 km square inside aoi_v2, positions every 120 m in y; brain fraction 35%-65% and a base within 300 m of the centre; closest to the v2 base. Products cut from v2 (no re-run)."
  },
  "fetch_margin_m": 40,
  "grid": {
@@ -55,10 +56,10 @@
  "status": "active",
  "order": 2,
  "habitat": {
-  "x": 21.0,
-  "y": -57.0,
+  "x": -1122.0,
+  "y": 1322.0,
   "label": "derived",
-  "rule": "nearest firm 2 m cell (reference classes) to the grid origin above; brain score 0.013"
+  "rule": "firm 4 m cell, no brain cell (score >= 0.5) within 100 m, mean slope within 30 m < 5.5 deg, >= 400 m from the edge; closest to the square centre"
  },
  "aoi_v1": {
   "xmin": -1200,
@@ -67,5 +68,19 @@
   "ymax": 1200,
   "rule": "2.4 km square fully inside valid DTM and ortho; Pearson et al. 2024 classifier scan of the whole strip (128 m windows, 32 m step, RED_C 1 m ortho); squares with brain fraction (window prob >= 0.5) 20-60 %, chosen 40.2 % with brain and non-brain areas side by side.",
   "label": "derived"
+ },
+ "aoi_v2": {
+  "xmin": -3060,
+  "ymin": -3060,
+  "xmax": 660,
+  "ymax": 7980,
+  "rule": "Largest axis-aligned rectangle where the HiRISE DTM and the 1 m ortho are both valid (20 m min-resampled masks, x -3140..740, y -3160..8080), shrunk to 60 m multiples with >= 60 m margin: 3.72 x 11.04 km. Habitat kept (>= 400 m from every edge). Previous 2.4 km square kept as aoi_v1.",
+  "label": "derived"
+ },
+ "habitat_v2": {
+  "x": 21.0,
+  "y": -57.0,
+  "label": "derived",
+  "rule": "nearest firm 2 m cell (reference classes) to the grid origin above; brain score 0.013"
  }
 }

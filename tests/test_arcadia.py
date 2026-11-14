@@ -54,3 +54,18 @@ def test_cost_grid_8m():
     k = np.array([[1.0, 3.0, np.inf, np.inf], [np.inf, 2.0, np.inf, 5.0]])
     k8, m8 = cost_grid_8m(k, k)
     assert k8[0, 0] == 2.0 and math.isinf(k8[0, 1])
+
+
+def test_base_candidates_rule():
+    from pipeline.arcadia import base_candidates
+    H = W = 100                                     # 4 m grid, 400 m
+    T4 = {"class_ref": np.zeros((H, W), np.uint8), "slope_mean": np.full((H, W), 2.0, np.float32)}
+    T4["class_ref"][50, 50] = 1                     # rough cell is never a base
+    T4["slope_mean"][:, 80:] = 12.0                 # steep east strip
+    brain2 = np.zeros((2 * H, 2 * W), np.float32)
+    brain2[0:4, 0:4] = 0.9                          # brain patch in the north-west corner
+    ok = base_candidates(T4, brain2)
+    assert not ok[50, 50]
+    assert not ok[2, 2] and not ok[15, 15]          # within 100 m of the brain patch
+    assert ok[60, 40]
+    assert not ok[60, 90]                           # mean slope within 30 m >= 5.5 deg

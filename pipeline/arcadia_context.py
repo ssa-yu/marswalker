@@ -2,8 +2,7 @@
 """Arcadia context basemaps for web/arcadia.html (display only, no analysis uses them).
 
 python -m pipeline.arcadia_context
-  1. whole HiRISE strip: RED_C 1 m ortho (same USGS item as the DTM) averaged to ~3 m -> web/data/arcadia/strip.webp
-     (grey stretch matched to hirise.jpg inside the study area; no-data is transparent)
+  1. (no longer exported, study area v3) whole HiRISE strip: RED_C 1 m ortho averaged to ~3 m -> strip.webp
   2. NASA JPL Mars Trek THEMIS Day IR mosaic around the site (pipeline.trek, zoom 9, +-75 km) -> trek_themis_day.jpg
 Output: web/data/arcadia/context.json (image files + lon/lat corners + credits).
 """
@@ -72,8 +71,9 @@ def themis(sc: Scene, out):
 def run():
     sc = Scene(SCENE)
     out = sc.web
-    doc = {"note": "display-only context basemaps; no computed result uses them",
-           "strip": strip(sc, out), "trek": themis(sc, out)}
+    # the whole-strip HiRISE image (strip()) is no longer shown (study area v3: HiRISE only inside the square)
+    (out / "strip.webp").unlink(missing_ok=True)
+    doc = {"note": "display-only context basemaps; no computed result uses them", "trek": themis(sc, out)}
     write_json(out / "context.json", doc)
     log(SCENE, "context", f"wrote {out / 'context.json'}")
 
