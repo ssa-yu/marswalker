@@ -1,3 +1,4 @@
+// SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 /* Marswalk Recon — Step 1 scout-rover recon replay. Plain JS, no build step.
    Data: data/jezero/scene.json (map layers) + data/jezero/recon/recon.json (simulation output).
    The reveal ("scratch-off") is computed in the browser from reveal_t.png: a 2 m cell is shown in HiRISE

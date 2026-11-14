@@ -1,4 +1,5 @@
 {
+ "si": "computed by AI-written code (Anthropic Claude via Claude Code, under the team's direction); inputs are NASA data; see docs/AI_USE.md",
  "label": "derived (simulated recon + assumed parameters + Perseverance SuperCam locations); heuristic, not yet reviewed",
  "disclosure": "designed after seeing round 6; round 6 is the pre-registered main comparison",
  "computed_at": "2026-11-14 05:46:22 CST",

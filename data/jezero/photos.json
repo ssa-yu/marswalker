@@ -1,4 +1,5 @@
 {
+ "si": "computed by AI-written code (Anthropic Claude via Claude Code, under the team's direction); inputs are NASA data; see docs/AI_USE.md",
  "label": "measured",
  "location_rule": "site/drive equality with waypoint (exact)",
  "azimuth_confidence": "Navcam: derived from the camera model rotated by the rover attitude (checked on 3 images against the CTX horizon, <= 1.0 deg). Front Hazcam and Mastcam-Z: not verified, no direction drawn. mast_az_rover_frame is relative to the rover body, not a compass bearing.",

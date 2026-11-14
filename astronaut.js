@@ -1,3 +1,4 @@
+// SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 /* Marswalk Recon — astronaut map: route A (orbital data only) vs route B (after the simulated rover recon),
    both walked on the HiRISE reference terrain. Plain JS, no build step.
    Data: data/jezero/compare/compare.json (definitions + summary tables) and compare/routes/t<i>.json (per test point:

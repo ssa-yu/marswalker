@@ -1,3 +1,4 @@
+// SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
 /* Marswalk Recon — checkpoint 1 viewer. Plain JS, no build step. Data: data/<scene>/scene.json.
    MapLibre only draws: Mars lon/lat are fed in as map coordinates; all distances use the Mars sphere. */
 'use strict';
