@@ -4,7 +4,7 @@
    ③: click the map to move the astronaut's start; the multi-stop plan is recomputed in the browser on the 8 m
    per-metre kcal / minute grid (cost8.bin.gz, Shooyunn's Pandolf model) with the same order rule as Python. */
 'use strict';
-const D = 'data/arcadia/';
+let D = (window.ASSET || '') + 'data/arcadia/';   // asset host: see assets.js
 const $ = (s) => document.querySelector(s);
 const abs = (u) => new URL(u, location.href).href;
 const S = { step: 1, loop: 10, markers: [], start: null, plan: null, mode: 'rover', dirty: true, myT: [] };
@@ -33,9 +33,13 @@ const C_ROVER = '#3987e5', C_ROVER_NOW = '#f2b36b', C_ROUTE = '#38e1ff', C_TGT =
 // S.pSeen (27 KB, what the rover saw) is needed before the mask and the controls appear; S.heavy (score, classes,
 // cost grid: about 1 MB) loads in parallel behind the visible map and unlocks "scout it yourself" and the start-point move.
 async function init() {
-  [S.d, S.ctx] = await Promise.all([
-    fetch(D + 'arcadia.json').then((r) => r.json()),
+  const scene = () => Promise.all([
+    fetch(D + 'arcadia.json', { signal: AbortSignal.timeout(D.startsWith('http') ? 8000 : 60000) }).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); }),
     fetch(D + 'context.json').then((r) => (r.ok ? r.json() : null)).catch(() => null)]);
+  try { [S.d, S.ctx] = await scene(); } catch (e) {
+    if (!D.startsWith('http')) throw e;
+    D = 'data/arcadia/'; [S.d, S.ctx] = await scene();     // asset host not reachable: same origin
+  }
   const N = S.d.rover.loops.length;
   $('#loop').max = N; $('#loop').value = N; $('#loopMax').textContent = N; S.loop = N;
   S.pSeen = loadSeen();
@@ -73,7 +77,7 @@ async function loadHeavy() {
 }
 
 async function pixels(url) {
-  const im = new Image(); im.src = url; await im.decode();
+  const im = new Image(); im.crossOrigin = 'anonymous'; im.src = url; await im.decode();
   const c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
   const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(im, 0, 0);
   return x.getImageData(0, 0, c.width, c.height);
@@ -597,7 +601,7 @@ function pickBlocks(seen) {
 const LEVEL = ['low', 'medium', 'high', 'blocked'];
 async function classGrid() {
   if (S.cls) return S.cls;
-  const im = new Image(); im.src = D + S.d.files.classes; await im.decode();
+  const im = new Image(); im.crossOrigin = 'anonymous'; im.src = D + S.d.files.classes; await im.decode();
   const c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
   const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(im, 0, 0);
   const px = x.getImageData(0, 0, c.width, c.height).data, rgb = S.d.classes.map((k) => [1, 3, 5].map((j) => parseInt(k.color.slice(j, j + 2), 16)));
@@ -664,7 +668,7 @@ async function open3d() {
   });
   localStorage.setItem('marswalker-arcadia-route', JSON.stringify({ coords, levels, waypoints, cum, total, kcal_per_l_o2, created: Date.now() }));
   $('#w3d').hidden = false;
-  $('#w3dFrame').src = `arcadia3d.html?route=${Date.now()}`;
+  $('#w3dFrame').src = `arcadia3d.html?route=${Date.now()}&${D.startsWith('http') ? 'cdn' : 'nocdn'}`;   // same asset host as this page
 }
 
 init();
