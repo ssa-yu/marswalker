@@ -61,7 +61,7 @@ cd web && python3 -m http.server 8000
 #      http://localhost:8000/recon.html   step 1: rover recon replay
 #      http://localhost:8000/data.html    map data and positioning checks
 ```
-**示範影片頁** `http://localhost:8000/film.html`（錄影用，首頁沒有入口）：自動播放約 28.5 秒（開場 0–8 s、自走車 8–14 s、熱度圖 14–20 s、太空人 20–28.5 s，結尾停格）。空白鍵暫停／繼續、`R` 重播、`F` 全螢幕；`?act=1` 跳過開場、`?t=秒` 從指定時間開始、`?captions=0` 關字幕、`?dpr=1` 降低解析度（卡頓時）。截圖：`python tools/screenshot_film.py` → `qa/film/`。
+**示範影片頁** `http://localhost:8000/film.html`（錄影用，首頁沒有入口）：15.0 秒程式 demo，無字幕（開場／結尾影片與字幕後製另加）：0–2.2 s 由 T1 近景拉高到整個分析區、2.2–5 s 自走車 24 趟同時探路、5–9 s 腦紋熱度圖與 12 個高分區域後俯衝 T1、9–15 s 太空人路線 T4→T2→T10→T7→T8 與 ENERGY／O₂ HUD（1,316 / 1,440 kcal、263 L、3.66 km · 197 min），最後 0.6 s 漸暗。空白鍵暫停／繼續、`R` 重播、`F` 全螢幕；`?t=秒` 從指定時間開始、`?pause=1` 停在該格、`?dpr=1` 降低解析度。逐格擷取：等 `film.ready` 後呼叫 `film.seek(t)`（畫面只由 t 決定），長度 `film.duration`（15）。截圖：`python tools/screenshot_film.py` → `qa/film/`；熱度圖／探路圖層：`python tools/film_layers.py`。
 
 No build step and no backend: any static file server works (`file://` cannot load the JSON).
 

@@ -1,5 +1,5 @@
 # SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
-"""Headless stills of web/film.html at chosen times -> qa/film/t<sec>.jpg (1920x1080), prints console errors and the HUD.
+"""Headless stills (15 s demo film) of web/film.html at chosen times -> qa/film/t<sec>.jpg (1920x1080), prints console errors and the HUD.
 python tools/screenshot_film.py [--url http://127.0.0.1:8765] [--times 1 2.5 ...]"""
 import argparse
 from pathlib import Path
@@ -9,9 +9,11 @@ from playwright.sync_api import sync_playwright
 APP = Path(__file__).resolve().parents[1]
 ap = argparse.ArgumentParser()
 ap.add_argument("--url", default="http://127.0.0.1:8765")
-ap.add_argument("--times", type=float, nargs="*", default=[0.4, 1.8, 3.2, 5.0, 6.4, 7.6, 8.3, 10.5, 13.6, 15.8, 18.4, 19.6, 21.0, 23.5, 26.0, 28.5])
+ap.add_argument("--times", type=float, nargs="*", default=[0.0, 1.0, 2.2, 3.5, 5.0, 6.5, 8.0, 8.9, 9.8, 11.5, 13.0, 13.8, 15.0])
 a = ap.parse_args()
 out = APP / "qa" / "film"; out.mkdir(parents=True, exist_ok=True)
+for f in out.glob("t*.jpg"):
+    f.unlink()
 with sync_playwright() as p:
     br = p.chromium.launch(channel="chrome", headless=True, args=["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist"])
     pg = br.new_page(viewport={"width": 1920, "height": 1080}, device_scale_factor=1)
@@ -27,7 +29,7 @@ with sync_playwright() as p:
         pg.wait_for_timeout(500)
         name = f"t{t:05.1f}".replace(".", "_") + ".jpg"
         pg.screenshot(path=str(out / name), quality=88)
-        hud = pg.evaluate("['hd','ht','hk','ho'].map(id => document.getElementById(id).textContent)")
-        print("saved", name, "HUD", hud if t >= 21.3 else "-")
+        hud = pg.evaluate("['hk','ho','sub','be'].map(id => id == 'be' ? document.getElementById(id).style.width : document.getElementById(id).textContent)")
+        print("saved", name, "HUD", hud if t >= 9.6 else "-")
     print("errors:", len(errors), errors[:8])
     br.close()
