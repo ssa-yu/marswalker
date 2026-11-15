@@ -9,7 +9,7 @@ from playwright.sync_api import sync_playwright
 APP = Path(__file__).resolve().parents[1]
 ap = argparse.ArgumentParser()
 ap.add_argument("--url", default="http://127.0.0.1:8765")
-ap.add_argument("--times", type=float, nargs="*", default=[0.0, 1.0, 2.2, 3.5, 5.0, 6.5, 8.0, 8.9, 9.8, 11.5, 13.0, 13.8, 15.0])
+ap.add_argument("--times", type=float, nargs="*", default=[0.0, 1.0, 2.2, 3.5, 5.0, 6.5, 8.0, 8.9, 9.0, 9.8, 10.6, 10.9, 11.2, 11.5, 12.0, 13.0, 14.0, 14.4, 15.0])
 a = ap.parse_args()
 out = APP / "qa" / "film"; out.mkdir(parents=True, exist_ok=True)
 for f in out.glob("t*.jpg"):
@@ -29,7 +29,7 @@ with sync_playwright() as p:
         pg.wait_for_timeout(500)
         name = f"t{t:05.1f}".replace(".", "_") + ".jpg"
         pg.screenshot(path=str(out / name), quality=88)
-        hud = pg.evaluate("['hk','ho','sub','be'].map(id => id == 'be' ? document.getElementById(id).style.width : document.getElementById(id).textContent)")
+        hud = pg.evaluate("['tag','hk','ho','sub','be','next'].map(id => id == 'be' ? document.getElementById(id).style.width : document.getElementById(id).textContent)")
         print("saved", name, "HUD", hud if t >= 9.6 else "-")
     print("errors:", len(errors), errors[:8])
     br.close()
