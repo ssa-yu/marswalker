@@ -62,6 +62,8 @@ def heat_png(score, path):
     cols = [(0, 0, 0, 0)] + [tuple(int(v * 255) for v in cm(i / 254)[:3]) + (199,) for i in range(255)]
     idx = np.where(np.isfinite(score), 1 + np.round(np.clip(np.nan_to_num(score), 0, 1) * 254), 0)
     palette_png(idx, cols, path)
+    # same indices as an 8-bit grey image: the page reads the score from it (in-browser area selection, "scout it yourself")
+    Image.fromarray(idx.astype(np.uint8), "L").save(path.with_name("brain_score.png"), optimize=True)
 
 
 def tiles(sc, out):
@@ -178,7 +180,7 @@ def run(do_tiles=True):
         "centre": pt(sc, (aoi[0] + aoi[2]) / 2, (aoi[1] + aoi[3]) / 2), "base": pt(sc, h["x"], h["y"]),
         "base_xy": [h["x"], h["y"]],
         "geo": {"lon0": sc.grid.lon0, "lat0": sc.grid.lat0, "R": 3396190.0},
-        "files": {"classes": "classes.png", "brain_all": "brain_all.png",
+        "files": {"classes": "classes.png", "brain_all": "brain_all.png", "brain_score": "brain_score.png",
                   "seen_loop": "seen_loop.png", "cost": "cost8.bin.gz"},
         "tiles": tl,
         "classes": [{"zh": z, "color": "#%02x%02x%02x" % tuple(c_[:3])} for z, c_ in zip(CLASS_ZH, CLASS_RGBA)],

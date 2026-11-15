@@ -16,7 +16,7 @@ with sync_playwright() as p:
     pg.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
     pg.on("pageerror", lambda e: errors.append(str(e)))
     pg.on("response", lambda r: errors.append(f"HTTP {r.status} {r.url}") if r.status >= 400 else None)
-    pg.goto(a.url + "/")
+    pg.goto(a.url + "/?noguide")
     pg.wait_for_function("window.__mapIdle === true", timeout=120000)
 
     def shot(name, js):

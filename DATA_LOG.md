@@ -855,3 +855,8 @@ Role: **consistency with the Mars 2020 Science Team photogeologic map (Stack et 
 - `web/arcadia3d.html`＝他的 `web/scratch/3d first point view.html` 複本，只改：原點＝Arcadia 局部格原點、正射與分類圖改讀 Arcadia、DTM、localStorage key `marswalker-arcadia-route`、分類名稱對齊圖例；單獨開啟時改用 arcadia.json 的基地路線。
 - 真實資料：HiRISE 正射（正方形，1.5 m、2480 px，`walk3d_ortho.jpg`）、HiRISE DTM（USGS 1 m 平均到 4 m，`walk3d_dtm.tif`，局部公尺座標）、我們的 4 m 地形分類（`classes.png`）、③ 的路線與每段分類（路段中點的 4 m 分類）。程序生成（未改）：岩石、地表細部噪聲（DTM 上加 ±0.07 m）、天空與霧、心率／氧氣 HUD 的數字（他的簡化公式，不是我們的 Pandolf 結果）。
 - three.js r128、geotiff.js 2.1.3 走 CDN，離線載不到。
+
+#### 2026-11-15 night: "Scout it yourself" on the Arcadia page (interactive, Shan's request)
+- Step ① has a second mode: the visitor drags on the map and uncovers ground (4 m cells, 100 m brush radius), up to the same area the rover saw (223,929 cells, 25.9 %). Uncovered ground shows the heat map's own pixels. The rover's precomputed result is unchanged and stays one click away ("Scouted by: The rover / You").
+- ② in that mode: `pickBlocks()` in `web/arcadia.js`, the rule of `pipeline/arcadia.py pick_blocks` (60 m blocks, >= 50 % seen, top 12 by mean score, >= 300 m apart, stop = highest-score passable cell), on the score read from `web/data/arcadia/brain_score.png` = the palette indices of `brain_all.png` as a grey image (score in 1/254 steps; no new model output). Check against the page's own areas with the rover's seen ground: the same 12 blocks, mean scores within 0.0002; in 6 of 12 the stop cell is a different cell of the same block (ties after the 1/254 rounding).
+- ③ in that mode: the page's existing in-browser planner (`planFrom`, 8 m grid) from the base or the moved start.

@@ -69,3 +69,12 @@ def test_base_candidates_rule():
     assert not ok[2, 2] and not ok[15, 15]          # within 100 m of the brain patch
     assert ok[60, 40]
     assert not ok[60, 90]                           # mean slope within 30 m >= 5.5 deg
+
+
+def test_brain_score_png_matches_heat_indices():
+    """web brain_score.png (read by the page's in-browser area selection) = the palette indices of brain_all.png."""
+    from PIL import Image
+    d = APP / "web" / "data" / "arcadia"
+    heat, score = Image.open(d / "brain_all.png"), Image.open(d / "brain_score.png")
+    assert heat.mode == "P" and score.mode == "L"
+    assert (np.array(heat) == np.array(score)).all()
