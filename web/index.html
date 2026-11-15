@@ -13,6 +13,7 @@
 <body class="arc">
 <div id="map" aria-label="Map"></div>
 <canvas id="veil" hidden></canvas>
+<div id="loading">Loading Mars…</div>
 
 <div id="box" class="float">
   <div class="ttl"><span>Arcadia Planitia · candidate Starship landing site <span class="muted">brain terrain</span></span><button id="help" class="btn" aria-label="How it works">?</button></div>
@@ -23,7 +24,7 @@
   </div>
   <div id="who" class="who" role="group" aria-label="Scouted by"><span>Scouted by</span>
     <button class="btn sm" data-mode="rover">The rover</button>
-    <button class="btn sm" data-mode="self">You <i class="dot"></i></button>
+    <button class="btn sm" data-mode="self" disabled>You <i class="dot"></i></button>
   </div>
   <div id="hint" class="hint"></div>
   <div id="ctl1" class="ctl">
@@ -60,7 +61,7 @@
       <li><b>2</b><div><strong>Brain-terrain map</strong><span>A published model scores how brain-like the surface looks. The highest-scoring areas in the scouted ground become targets.</span></div></li>
       <li><b>3</b><div><strong>Astronaut route</strong><span>A walking route to the targets within the suit's energy budget. Click the map to move the start, then walk it in 3D.</span></div></li>
     </ol>
-    <button id="guideSelf" class="btn active">Scout it yourself</button>
+    <button id="guideSelf" class="btn active" disabled>Scout it yourself (loading…)</button>
     <button id="guideGo" class="btn link">See the rover's result</button>
   </div>
 </div>
