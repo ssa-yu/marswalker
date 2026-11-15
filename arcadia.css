@@ -76,3 +76,8 @@ body.s3 #card { top: 76px; }
 #loading[hidden] { display: none; }
 body.arc:not(.up) #box .steps, body.arc:not(.up) #who, body.arc:not(.up) .ctl, body.arc:not(.up) .layers, body.arc:not(.up) #legend { visibility: hidden; }
 .btn:disabled { opacity: .55; cursor: default; }
+/* phone: last in the file so it wins over the desktop rules above (the 3D button was stretched from top to bottom) */
+@media (max-width: 760px) {
+  #walk3d { top: auto; bottom: 150px; right: 8px; font-size: 15px; padding: 10px 16px; }
+  #card, body.s3 #card { top: auto; bottom: 204px; right: 8px; }
+}
