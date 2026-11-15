@@ -71,7 +71,15 @@
 
 <footer id="foot">Data: NASA/JPL-Caltech/UArizona HiRISE (ESP_061075_2195); USGS DTM (DTEEC_061075_2195_061141_2195_A01); surrounding basemap: THEMIS Day IR 100 m mosaic (Mars Odyssey / ASU) via NASA JPL Mars Trek; brain-terrain model: Pearson et al. 2024 (PSJ); energy model: Pandolf 1977, compiled by a teammate; 3D walk: teammate Shooyunn (three.js, geotiff.js). AI use: code and layers were produced by AI (Anthropic Claude) under the team's direction.</footer>
 
-<script src="lib/maplibre-gl.js"></script>
-<script src="arcadia.js"></script>
+<script src="assets.js"></script>
+<script>
+// map library from the asset host (see assets.js), same origin if that fails; then the page script
+(function boot(base) {
+  var s = document.createElement('script'); s.src = base + 'lib/maplibre-gl.js';
+  s.onload = function () { var a = document.createElement('script'); a.src = 'arcadia.js'; document.body.appendChild(a); };
+  s.onerror = function () { if (base) { window.ASSET = ''; boot(''); } };
+  document.body.appendChild(s);
+})(window.ASSET);
+</script>
 </body>
 </html>
