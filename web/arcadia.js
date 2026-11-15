@@ -39,7 +39,7 @@ async function init() {
   const N = S.d.rover.loops.length;
   $('#loop').max = N; $('#loop').value = N; $('#loopMax').textContent = N; S.loop = N;
   S.pSeen = loadSeen();
-  S.heavy = loadHeavy();
+  S.heavy = S.pSeen.then(loadHeavy);     // after the small seen grid, so it does not compete with it
   S.heavy.catch(() => {});
   buildMap();
 }
@@ -52,14 +52,24 @@ async function loadSeen() {
   S.capCells = 0; for (let i = 0; i < S.seenLoop.length; i++) if (S.seenLoop[i] > 0) S.capCells++;
   S.mySeen = new Uint8Array(S.seenLoop.length);
   S.score = new Uint8Array(S.seenLoop.length);
+  const h = $('#heat'); h.width = c.width; h.height = c.height;
   const v = $('#veil'); v.width = c.width; v.height = c.height; S.veilCtx = v.getContext('2d'); S.veilImg = S.veilCtx.createImageData(c.width, c.height);
 }
 
 // "scout it yourself" + start-point move: brain score index (0 = none, 1..255 = 0..1), class grid, 8 m cost grid
 async function loadHeavy() {
-  const [sp, cost] = await Promise.all([pixels(D + (S.d.files.brain_score || 'brain_score.png')), loadCost(S.d), classGrid(), S.pSeen]);
+  const [sp, cost] = await Promise.all([pixels(D + (S.d.files.brain_score || 'brain_score.png')), loadCost(S.d), classGrid()]);
   for (let i = 0; i < S.score.length; i++) S.score[i] = sp.data[4 * i];
+  // the heat map layer, drawn from the score with the palette of brain_all.png (same pixels, one download less)
+  const h = $('#heat'), hx = h.getContext('2d'), im = hx.createImageData(S.GW, S.GH), px = im.data;
+  for (let i = 0; i < S.score.length; i++) {
+    const v = S.score[i]; if (!v) continue;
+    const k = 3 * (v - 1), j = 4 * i; px[j] = LUT[k]; px[j + 1] = LUT[k + 1]; px[j + 2] = LUT[k + 2]; px[j + 3] = 199;
+  }
+  hx.putImageData(im, 0, 0);
+  const src = S.map && S.map.getSource('brain_all'); if (src) { src.play(); src.pause(); }
   S.cost = cost; S.ready = true; performance.mark('data-ready');
+  if (S.up) apply();
 }
 
 async function pixels(url) {
@@ -98,8 +108,8 @@ function buildMap() {
     $('#loading').hidden = true; performance.mark('map-shown');
     S.pSeen.then(() => {
     img('classes', d.files.classes, { 'raster-resampling': 'nearest' });
-    img('brain_all', d.files.brain_all, { 'raster-resampling': 'nearest' });
-    void img;
+    map.addSource('brain_all', { type: 'canvas', canvas: 'heat', coordinates: c, animate: false });
+    map.addLayer({ id: 'brain_all', type: 'raster', source: 'brain_all', paint: { 'raster-fade-duration': 0, 'raster-resampling': 'nearest' } });
     map.addSource('veil', { type: 'canvas', canvas: 'veil', coordinates: c, animate: false });
     map.addLayer({ id: 'veil', type: 'raster', source: 'veil', paint: { 'raster-fade-duration': 0, 'raster-resampling': 'nearest' } });
     const gj = (features) => ({ type: 'FeatureCollection', features });
@@ -123,7 +133,7 @@ function buildMap() {
     resetMine();
     showPlan(null);
     setStep(1);
-    document.body.classList.add('up'); performance.mark('ui-up');
+    document.body.classList.add('up'); S.up = true; performance.mark('ui-up');
     map.once('idle', () => { window.__mapIdle = true; });
     map.triggerRepaint();
     });

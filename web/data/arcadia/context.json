@@ -21,7 +21,7 @@
     37.869873046875
    ]
   ],
-  "res_m": 81,
+  "res_m": 122,
   "title": "THEMIS Day IR controlled mosaic 100 m (via Mars Trek)",
   "mission": "Mars Odyssey / THEMIS (ASU); served by NASA JPL Mars Trek",
   "url": "https://trek.nasa.gov/tiles/Mars/EQ/THEMIS_DayIR_ControlledMosaics_100m_v2_oct2018/1.0.0/default/default028mm/{z}/{row}/{col}.png",

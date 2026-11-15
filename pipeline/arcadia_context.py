@@ -61,10 +61,11 @@ def themis(sc: Scene, out):
     if not raw.exists():
         trek.fetch_layer(sc, TREK_KEY, TREK_ZOOM, TREK_HALF_M)
     info = read_json(sc.raw / f"trek_{TREK_KEY}.json")
-    Image.open(raw).convert("RGB").save(out / f"trek_{TREK_KEY}.jpg", quality=80)
+    im = Image.open(raw).convert("L")      # backdrop only: grey, 2/3 size, progressive JPEG (page load time)
+    im.resize((im.width * 2 // 3, im.height * 2 // 3), Image.LANCZOS).save(out / f"trek_{TREK_KEY}.jpg", quality=72, optimize=True, progressive=True)
     W, S, E, N = info["bounds_lonlat"]
     return {"file": f"trek_{TREK_KEY}.jpg", "coordinates": [[W, N], [E, N], [E, S], [W, S]],
-            "res_m": round(info["deg_per_px"] * math.pi / 180 * R_MARS), "title": info["title"],
+            "res_m": round(1.5 * info["deg_per_px"] * math.pi / 180 * R_MARS), "title": info["title"],
             "mission": info["mission"], "url": info["url_template"], "zoom": info["zoom"]}
 
 
