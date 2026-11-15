@@ -31,7 +31,7 @@ with sync_playwright() as p:
     shot("step2c_mask_off", "document.querySelector('#lyrMask').checked = false; apply()")
     pg.evaluate("document.querySelector('#lyrMask').checked = true")
     shot("step1_loop3_mask", "setStep(1); S.loop = 3; document.querySelector('#loop').value = 3; apply()")
-    shot("step3_route", "setStep(3); showCard('整條路線', S.d.route.total)")
+    shot("step3_route", "setStep(3); showCard('Whole route', S.d.route.total)")
     # in-browser plan from the habitat vs the Python plan (same rule, 8 m vs 4 m grid)
     cmp = pg.evaluate("""() => { const b = toXY(S.d.base); let i = xyToIdx(b[0], b[1]);
         if (!isFinite(S.cost.K[i])) i = nearestPassable(b[0], b[1]);
