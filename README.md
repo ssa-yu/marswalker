@@ -61,6 +61,8 @@ cd web && python3 -m http.server 8000
 #      http://localhost:8000/recon.html   step 1: rover recon replay
 #      http://localhost:8000/data.html    map data and positioning checks
 ```
+**示範影片頁** `http://localhost:8000/film.html`（錄影用，首頁沒有入口）：15.0 秒程式 demo，無字幕（開場／結尾影片與字幕後製另加，畫面文字都在上方）：0–2.2 s 由 T1 近景拉高到整個分析區、2.2–5 s 自走車 24 趟同時探路、5–9 s 腦紋熱度圖與 12 個高分區域後俯衝 T1、9–10.8 s 俯瞰太空人路線 T4→T2→T10→T7→T8 與計畫總結（1,316 / 1,440 kcal、263 L、3.66 km · 197 min、RETURN OK）、10.8–11.5 s 往基地俯衝並閃白切換、11.5–15 s 第一人稱實景導航（沿用 `arcadia3d.html` 的天空、地形、岩石與導引帶，HUD 為實際走到位置的累積值），最後 0.6 s 漸暗。空白鍵暫停／繼續、`R` 重播、`F` 全螢幕；`?t=秒` 從指定時間開始、`?pause=1` 停在該格、`?dpr=1` 降低解析度。逐格擷取：等 `film.ready` 後呼叫 `film.seek(t)`（畫面只由 t 決定），長度 `film.duration`（15）。截圖：`python tools/screenshot_film.py` → `qa/film/`；熱度圖／探路圖層：`python tools/film_layers.py`。
+
 No build step and no backend: any static file server works (`file://` cannot load the JSON).
 
 ## Rebuild
