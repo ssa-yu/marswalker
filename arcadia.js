@@ -24,29 +24,42 @@ function hint(n) {
   if (self && !S.myT.length) return 'No target yet. Go back to step 1 and scout more ground.';
   return 'Click a numbered stop for details, or click anywhere on the map to move the astronaut\'s start.';
 }
+// the palette of brain_all.png (pipeline/arcadia_export.py heat_png: magma, 255 steps), index 1..255
+const LUT = Uint8Array.from('00000300000400000601000701010901010b02020d02020f03031104031304041505041706051907051b08061d09071f0a07220b08240c09260d0a280e0a2a0f0b2c100c2f110c31120d33140d35150e38160e3a170f3c180f3f1a10411b10441c10461e10491f114b20114d2211502311522511552611572811592a115c2b115e2d10602f1062301065321067341068350f6a370f6c390f6e3b0f6f3c0f713e0f72400f73420f74430f75450f76470f774810784a10794b10794d117a4f117b50127b52127c53137c55137d57147d58157e5a157e5b167e5d177e5e177f60187f61187f63197f651a80661a80681b80691c806b1c806c1d806e1e816f1e81711f81731f817420817621817721817922817a22817c23817e24817f24818125818225818426818526818727818928818a28818c29808d29808f2a80912a80922b80942b80952c80972c7f992d7f9a2d7f9c2e7f9e2e7e9f2f7ea12f7ea3307ea4307da6317da7317da9327cab337cac337bae347bb0347bb1357ab3357ab63679b83778b93778bb3877bd3977be3976c03a75c23a75c33b74c53c74c63c73c83d72ca3e72cb3e71cd3f70ce4070d0416fd1426ed3426dd4436dd6446cd7456bd9466ada4769dc4869dd4968de4a67e04b66e14c66e24d65e44e64e55063e65162e75262e85461ea5560eb5660ec585fed595fee5b5eee5d5def5e5df0605df1615cf2635cf3655cf3675bf4685bf56a5bf56c5bf66e5bf6705bf7715bf7735cf8755cf8775cf9795cf97b5df97d5dfa7f5efa805efa825ffb8460fb8660fb8861fb8a62fc8c63fc8e63fc9064fc9265fc9366fd9567fd9768fd9969fd9b6afd9d6bfd9f6cfda16efda26ffda470fea671fea873feaa74feac75feae76feaf78feb179feb37bfeb57cfeb77dfeb97ffebb80febc82febe83fec085fec286fec488fec689fec78bfec98dfecb8efdcd90fdcf92fdd193fdd295fdd497fdd698fdd89afdda9cfddc9dfddd9ffddfa1fde1a3fce3a5fce5a6fce6a8fce8aafceaacfcecaefceeb0fcf0b1fcf1b3fcf3b5fcf5b7fbf7b9fbf9bbfbfabdfbfcbf'.match(/../g), (h) => parseInt(h, 16));
 const VEIL = 128, VEIL_SCRATCH = 170;   // mask alpha: 50 % as before; darker while scratching
 const C_ROVER = '#3987e5', C_ROVER_NOW = '#f2b36b', C_ROUTE = '#38e1ff', C_TGT = '#ffd23f';
 
+// Start-up order: the two small JSON files, then the map straight away (basemap + HiRISE tiles show first).
+// S.pSeen (27 KB, what the rover saw) is needed before the mask and the controls appear; S.heavy (score, classes,
+// cost grid: about 1 MB) loads in parallel behind the visible map and unlocks "scout it yourself" and the start-point move.
 async function init() {
-  S.d = await (await fetch(D + 'arcadia.json')).json();
-  S.ctx = await fetch(D + 'context.json').then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  [S.d, S.ctx] = await Promise.all([
+    fetch(D + 'arcadia.json').then((r) => r.json()),
+    fetch(D + 'context.json').then((r) => (r.ok ? r.json() : null)).catch(() => null)]);
+  const N = S.d.rover.loops.length;
+  $('#loop').max = N; $('#loop').value = N; $('#loopMax').textContent = N; S.loop = N;
+  S.pSeen = loadSeen();
+  S.heavy = loadHeavy();
+  S.heavy.catch(() => {});
+  buildMap();
+}
+
+async function loadSeen() {
   const c = await pixels(D + S.d.files.seen_loop), px = c.data;
   S.seenLoop = new Uint8Array(c.width * c.height);
   for (let i = 0; i < S.seenLoop.length; i++) S.seenLoop[i] = px[4 * i];
-  // "scout it yourself": brain score index (0 = none, 1..255 = 0..1), the heat map's own pixels, the class grid
-  const sp = (await pixels(D + (S.d.files.brain_score || 'brain_score.png'))).data;
-  S.score = new Uint8Array(S.seenLoop.length);
-  for (let i = 0; i < S.score.length; i++) S.score[i] = sp[4 * i];
-  S.heatPx = (await pixels(D + S.d.files.brain_all)).data;
-  await classGrid();
   S.GW = c.width; S.GH = c.height; S.gres = (S.d.aoi_local_m[2] - S.d.aoi_local_m[0]) / c.width;
   S.capCells = 0; for (let i = 0; i < S.seenLoop.length; i++) if (S.seenLoop[i] > 0) S.capCells++;
   S.mySeen = new Uint8Array(S.seenLoop.length);
+  S.score = new Uint8Array(S.seenLoop.length);
   const v = $('#veil'); v.width = c.width; v.height = c.height; S.veilCtx = v.getContext('2d'); S.veilImg = S.veilCtx.createImageData(c.width, c.height);
-  S.cost = await loadCost(S.d);
-  const N = S.d.rover.loops.length;
-  $('#loop').max = N; $('#loop').value = N; $('#loopMax').textContent = N; S.loop = N;
-  buildMap();
+}
+
+// "scout it yourself" + start-point move: brain score index (0 = none, 1..255 = 0..1), class grid, 8 m cost grid
+async function loadHeavy() {
+  const [sp, cost] = await Promise.all([pixels(D + (S.d.files.brain_score || 'brain_score.png')), loadCost(S.d), classGrid(), S.pSeen]);
+  for (let i = 0; i < S.score.length; i++) S.score[i] = sp.data[4 * i];
+  S.cost = cost; S.ready = true; performance.mark('data-ready');
 }
 
 async function pixels(url) {
@@ -82,6 +95,8 @@ function buildMap() {
     }
     map.addSource('ortho', { type: 'raster', tiles: [abs(D) + d.tiles.url], tileSize: 256, minzoom: d.tiles.minzoom, maxzoom: d.tiles.maxzoom, bounds: d.tiles.bounds });
     map.addLayer({ id: 'ortho', type: 'raster', source: 'ortho', paint: { 'raster-fade-duration': 0 } });
+    $('#loading').hidden = true; performance.mark('map-shown');
+    S.pSeen.then(() => {
     img('classes', d.files.classes, { 'raster-resampling': 'nearest' });
     img('brain_all', d.files.brain_all, { 'raster-resampling': 'nearest' });
     void img;
@@ -108,7 +123,10 @@ function buildMap() {
     resetMine();
     showPlan(null);
     setStep(1);
+    document.body.classList.add('up'); performance.mark('ui-up');
     map.once('idle', () => { window.__mapIdle = true; });
+    map.triggerRepaint();
+    });
   });
 }
 
@@ -129,6 +147,10 @@ function wire() {
   $('#mineGo').onclick = $('#doneGo').onclick = () => setStep(2);
   $('#roverLbl').textContent = (100 * S.capCells / S.seenLoop.length).toFixed(1) + '%';
   wireScratch();
+  S.heavy.then(() => {
+    $('#guideSelf').disabled = false; $('#guideSelf').textContent = 'Scout it yourself';
+    document.querySelector('#who [data-mode=self]').disabled = false;
+  }, () => { $('#guideSelf').textContent = 'Scout it yourself (data did not load)'; });
   if (!seen() && !new URLSearchParams(location.search).has('noguide')) $('#guide').hidden = false;
 }
 
@@ -145,6 +167,7 @@ function setStep(n) {
 
 // who scouted: the rover (the page's precomputed result) or the visitor (their own scratched ground, same rules)
 function setMode(m) {
+  if (m === 'self' && !S.ready) return;
   S.mode = m; S.start = null; S.dirty = true;
   if (m === 'self') $('#who').classList.add('used');
   if (m === 'rover') showPlan(null);
@@ -172,7 +195,7 @@ const scratching = () => S.mode === 'self' && S.step === 1;
 // brain score lights up where the visitor scouts.
 function veilPx(i, seen, alpha, heat) {
   const px = S.veilImg.data, j = 4 * i;
-  if (seen && heat) { const h = S.heatPx; px[j] = h[j]; px[j + 1] = h[j + 1]; px[j + 2] = h[j + 2]; px[j + 3] = h[j + 3]; }
+  if (seen && heat) { const v = S.score[i], k = 3 * (v - 1); px[j] = v ? LUT[k] : 0; px[j + 1] = v ? LUT[k + 1] : 0; px[j + 2] = v ? LUT[k + 2] : 0; px[j + 3] = v ? 199 : 0; }
   else { px[j] = 0; px[j + 1] = 0; px[j + 2] = 0; px[j + 3] = seen ? 0 : alpha; }
 }
 function flushVeil() {
@@ -449,6 +472,7 @@ function onMapClick(e) {
 }
 
 function setStart(ll) {
+  if (!S.ready) return;
   const xy = toXY(ll); let i = xyToIdx(xy[0], xy[1]);
   if (i < 0 || !isFinite(S.cost.K[i])) i = nearestPassable(xy[0], xy[1]);
   if (i < 0) return;
@@ -621,7 +645,7 @@ function routeCum() {
 }
 
 async function open3d() {
-  await classGrid();
+  await S.heavy;
   const { coords, cum, total, kcal_per_l_o2 } = routeCum();
   const levels = coords.slice(0, -1).map((p, i) => levelAt([(p[0] + coords[i + 1][0]) / 2, (p[1] + coords[i + 1][1]) / 2]));
   const waypoints = S.plan.legs.slice(0, -1).map((L, i) => {
