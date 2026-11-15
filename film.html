@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<!-- SI: written by an AI coding agent (Anthropic Claude via Claude Code) under the team's direction; see docs/AI_USE.md
+     Self-playing 15.0 s program demo for frame capture (opening/ending videos and subtitles are added in post).
+     Terrain/route loading follows web/arcadia3d.html; the first-person part (B4c) reuses the look of
+     teammate Shooyunn's 3D walk (web/arcadia3d.html): sky + fog, DTM with ortho + class overlay, seeded rocks, ground guide ribbon. Keys: Space pause/resume, R replay, F fullscreen.
+     URL: ?t=<s> start time, ?pause=1, ?dpr=1. Frame capture: film.seek(t) after film.ready; film.duration = 15. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marswalker Demo Film</title>
+<link rel="icon" href="data:,">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/geotiff@2.1.3/dist-browser/geotiff.js"></script>
+<style>
+html,body{margin:0;height:100%;background:#000;overflow:hidden;cursor:none}
+#stage{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(100vw,177.778vh);height:min(100vh,56.25vw);overflow:hidden;background:#000;--u:10.8px;
+  font-family:"Barlow Semi Condensed",system-ui,sans-serif;color:#fff}
+#c{position:absolute;inset:0;width:100%;height:100%;display:block}
+#dim{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none}
+#place{position:absolute;left:3.6%;top:6%;font-weight:500;font-size:calc(var(--u)*2.6);letter-spacing:.12em;opacity:0;
+  text-shadow:0 0 calc(var(--u)*.6) rgba(0,0,0,.9),0 0 calc(var(--u)*1.6) rgba(0,0,0,.5)}
+#hud{position:absolute;left:3.6%;top:6.5%;opacity:0;text-shadow:0 0 calc(var(--u)*.6) rgba(0,0,0,.9)}
+#hud::before{content:"";position:absolute;left:-30%;right:-25%;top:-35%;bottom:-40%;z-index:-1;
+  background:radial-gradient(ellipse 60% 60% at 40% 55%,rgba(10,4,2,.55),rgba(10,4,2,0) 100%)}
+.row{display:flex;align-items:center;height:calc(var(--u)*8.2)}
+.lab{width:calc(var(--u)*11);font-weight:600;font-size:calc(var(--u)*2.5);letter-spacing:.14em;opacity:.85}
+.bar{position:relative;width:calc(var(--u)*30);height:calc(var(--u)*1.6);background:rgba(255,255,255,.16);border-radius:calc(var(--u)*.3);overflow:hidden;
+  box-shadow:0 0 calc(var(--u)*.6) rgba(0,0,0,.6)}
+.bar i{position:absolute;left:0;top:0;bottom:0;width:100%;background:linear-gradient(90deg,#ff8a2a,#ffc65a)}
+.bar.o2 i{background:linear-gradient(90deg,#2aa8ff,#7fe8ff)}
+.row b{margin-left:calc(var(--u)*2.6);font-weight:600;font-size:calc(var(--u)*6.6);line-height:1;font-variant-numeric:tabular-nums;min-width:calc(var(--u)*15);text-align:right}
+.row em{font-style:normal;font-weight:500;font-size:calc(var(--u)*3);margin-left:calc(var(--u)*.9);opacity:.85;white-space:nowrap}
+#ok{margin-left:calc(var(--u)*2.6);font-weight:600;font-size:calc(var(--u)*3.2);letter-spacing:.1em;color:#47e08a;opacity:0;white-space:nowrap;
+  text-shadow:0 0 calc(var(--u)*1) rgba(40,220,120,.55),0 0 calc(var(--u)*.5) rgba(0,0,0,.9)}
+#fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#flash{position:absolute;inset:0;background:#fff8ee;opacity:0;pointer-events:none}
+#tag{font-weight:600;font-size:calc(var(--u)*2.3);letter-spacing:.16em;color:#ffd27a;margin-bottom:calc(var(--u)*.2)}
+#hud.fp #tag,#hud.fp .lab{color:#c8ffe2}
+#nav{position:absolute;right:3.6%;top:6%;width:calc(var(--u)*44);opacity:0;color:#c8ffe2;text-shadow:0 0 calc(var(--u)*.3) #000,0 0 calc(var(--u)*.8) rgba(0,0,0,.85)}
+.compass{position:relative;height:calc(var(--u)*5.2);overflow:hidden;border-bottom:2px solid rgba(200,255,226,.6);
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 18%,#000 82%,transparent);mask-image:linear-gradient(90deg,transparent,#000 18%,#000 82%,transparent)}
+.tape{position:absolute;top:0;left:50%;height:100%}
+.tick{position:absolute;bottom:0;width:2px;height:calc(var(--u)*.7);background:currentColor}
+.tick.m{height:calc(var(--u)*1.3)}
+.tick span{position:absolute;bottom:calc(var(--u)*1.7);left:50%;transform:translateX(-50%);font-size:calc(var(--u)*1.7);font-weight:600}
+.tick.k span{font-size:calc(var(--u)*2.2);color:#fff}
+#wpm{position:absolute;bottom:0;margin-left:calc(var(--u)*-.7);border-left:calc(var(--u)*.7) solid transparent;border-right:calc(var(--u)*.7) solid transparent;border-bottom:calc(var(--u)*1.1) solid #f08bd0}
+#hdg{margin:calc(var(--u)*1) auto 0;width:max-content;font-size:calc(var(--u)*2.8);font-weight:600;padding:0 calc(var(--u)*.8);border:2px solid rgba(200,255,226,.6);border-radius:4px;font-variant-numeric:tabular-nums}
+#next{text-align:center;margin-top:calc(var(--u)*.8);font-size:calc(var(--u)*2.6);font-weight:500;letter-spacing:.06em;font-variant-numeric:tabular-nums}
+#next b{color:#f08bd0;font-weight:600}
+#sub{margin-left:calc(var(--u)*11);margin-top:calc(var(--u)*.6);font-weight:500;font-size:calc(var(--u)*3);letter-spacing:.06em;opacity:.88;font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="c"></canvas>
+  <canvas id="fx"></canvas>
+  <div id="flash"></div>
+  <div id="dim"></div>
+  <div id="place">Arcadia Planitia · 39°N</div>
+  <div id="hud"><div id="tag"></div>
+    <div class="row"><span class="lab">ENERGY</span><div class="bar"><i id="be"></i></div><b id="hk">0</b><em>/ 1,440 kcal</em><span id="ok">RETURN OK</span></div>
+    <div class="row"><span class="lab">O₂</span><div class="bar o2"><i id="bo"></i></div><b id="ho">0</b><em>L</em></div>
+    <div id="sub">0.00 km · 0 min</div>
+  </div>
+  <div id="nav"><div class="compass"><div class="tape" id="tape"></div></div><div id="hdg">000°</div><div id="next"></div></div>
+</div>
+<script>
+'use strict';
+const $=id=>document.getElementById(id),D2R=Math.PI/180;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t;
+const sstep=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t)};
+const ramp=(a,b,x)=>clamp((x-a)/(b-a),0,1);
+const inOut=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
+
+/* ---------- 時間軸（秒）：B1 0–2.2 拉高 · B2 2.2–5 自走車 · B3 5–9 熱度圖 · B4a 9–10.8 路線計畫 · B4b 10.8–11.5 俯衝切換 · B4c 11.5–15 第一人稱導航 ---------- */
+const Q=new URLSearchParams(location.search);
+const T_END=15;
+let T=Q.has('t')?clamp(+Q.get('t')||0,0,T_END):0,playing=Q.get('pause')!=='1',ready=false;
+
+/* ---------- renderer / 版面 ---------- */
+const stage=$('stage'),renderer=new THREE.WebGLRenderer({canvas:$('c'),antialias:true});
+renderer.setPixelRatio(Math.min(+(Q.get('dpr')||devicePixelRatio),2));
+const cam=new THREE.PerspectiveCamera(40,16/9,1,500000);
+const fx=$('fx'),fxc=fx.getContext('2d');
+function resize(){const r=stage.getBoundingClientRect();stage.style.setProperty('--u',r.height/100+'px');renderer.setSize(r.width,r.height,false);cam.aspect=r.width/r.height;cam.updateProjectionMatrix();
+  fx.width=Math.round(r.width);fx.height=Math.round(r.height)}
+addEventListener('resize',resize);
+
+/* =====================================================================
+   Arcadia 真實地形（HiRISE DTM＋正射影像，與 arcadia3d.html 同一份資料）
+   ===================================================================== */
+const scene=new THREE.Scene();
+let ARC,GEO,X0,Y0,WD,GN=373,GS,HGRID,EX=1.5,Cw,T1w,BASEw,RC,ROUTE,TOTD,CUM,TOT,HEAD;
+const toXY=([lo,la])=>[(lo-GEO.lon0)*D2R*GEO.R*Math.cos(GEO.lat0*D2R),(la-GEO.lat0)*D2R*GEO.R];
+function gridY(x,y){ // 地形網格高度（世界 y），x 東、y 北（區域公尺）
+  const u=clamp((x-X0)/GS,0,GN-1.001),v=clamp((y-Y0)/GS,0,GN-1.001),i=Math.floor(u),j=Math.floor(v),fu=u-i,fv=v-j,k=j*GN+i,H=HGRID;
+  return (H[k]*(1-fu)+H[k+1]*fu)*(1-fv)+(H[k+GN]*(1-fu)+H[k+GN+1]*fu)*fv;
+}
+const W3=(x,y,lift=0)=>V3(x,gridY(x,y)+lift,-y);
+
+/* 時間與耗能：與 arcadia3d.html 相同（地圖頁卡片的 Pandolf 結果，沿路線每個頂點的累積值） */
+function cumFromLegs(legs,stop,P){
+  const c={d:[0],tA:[0],tD:[0],kA:[0],kD:[0]};let D0=0,T0=0,K0=0,j=0;
+  legs.forEach((L,li)=>{
+    const dw=li<legs.length-1?stop.min:0,dk=dw*stop.kcal_per_min,n=L.path.length-1;let s=0;const len=[];
+    for(let q=0;q<n;q++){len.push(Math.hypot(P[j+q+1].x-P[j+q].x,P[j+q+1].z-P[j+q].z));s+=len[q]}
+    let a=0;for(let q=0;q<n;q++){a+=len[q];const f=s?a/s:1,t=T0+f*(L.min-dw),k=K0+f*(L.kcal-dk);c.d.push(D0+f*L.distance_m);c.tA.push(t);c.tD.push(t);c.kA.push(k);c.kD.push(k)}
+    j+=n;D0+=L.distance_m;T0+=L.min;K0+=L.kcal;c.tD[j]=T0;c.kD[j]=K0;
+  });
+  return c;
+}
+function routeAt(dd){ // 沿路線距離（卡片的 d）→ 頂點索引內插：位置與累積值
+  const C=CUM;dd=clamp(dd,0,TOTD);let i=0;while(i<C.d.length-2&&C.d[i+1]<dd)i++;
+  const f=C.d[i+1]>C.d[i]?clamp((dd-C.d[i])/(C.d[i+1]-C.d[i]),0,1):1,a=ROUTE[i],b=ROUTE[i+1];
+  return{x:lerp(a[0],b[0],f),y:lerp(a[1],b[1],f),d:dd,min:C.tD[i]+(C.tA[i+1]-C.tD[i])*f,kcal:C.kD[i]+(C.kA[i+1]-C.kD[i])*f};
+}
+
+const termVS='varying vec2 vUv;varying vec3 vN;varying float vDist;void main(){vUv=uv;vN=normal;vec4 mv=modelViewMatrix*vec4(position,1.);vDist=length(mv.xyz);gl_Position=projectionMatrix*mv;}';
+const FOG='uniform vec3 uFogC;uniform float uFogD;vec3 fogit(vec3 c,float d){return mix(c,uFogC,1.-exp(-uFogD*d));}';
+const fogU=()=>({uFogC:{value:new THREE.Color(.86,.62,.44)},uFogD:{value:1/70000}});
+let terrMat,roverMat,astroAll,aoiLine,tgtObjs=[],baseGlow;
+
+function ribbonGeo(paths,width,lift){ // paths: [{pts:[[x,y]..], s:[0..1]}]
+  const pos=[],aS=[],idx=[];let base=0;
+  for(const p of paths){
+    const n=p.pts.length;
+    for(let k=0;k<n;k++){
+      const a=p.pts[Math.max(0,k-1)],b=p.pts[Math.min(n-1,k+1)];let tx=b[0]-a[0],ty=b[1]-a[1];const l=Math.hypot(tx,ty)||1;tx/=l;ty/=l;
+      const nx=-ty*width/2,ny=tx*width/2,[x,y]=p.pts[k];
+      for(const sg of [-1,1]){const xx=x+nx*sg,yy=y+ny*sg;pos.push(xx,Math.max(gridY(xx,yy),gridY(x,y))+lift,-yy);aS.push(p.s[k])}
+      if(k<n-1){const q=base+k*2;idx.push(q,q+1,q+2,q+1,q+3,q+2)}
+    }
+    base+=n*2;
+  }
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+  g.setAttribute('aS',new THREE.Float32BufferAttribute(aS,1));g.setIndex(idx);return g;
+}
+function ribbonMat(col,head){ // uT = 0..1 生長進度（所有路徑同時）
+  return new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4,
+    uniforms:{uT:{value:0},uOp:{value:0},uC:{value:new THREE.Color(col)},uH:{value:new THREE.Color(head)},uGlow:{value:0}},
+    vertexShader:'attribute float aS;varying float vS;void main(){vS=aS;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+    fragmentShader:`uniform float uT,uOp,uGlow;uniform vec3 uC,uH;varying float vS;
+    void main(){float p=uT;if(vS>p||p<=0.)discard;float h=(p<1.)?smoothstep(p-.1,p,vS):0.;vec3 c=mix(uC,uH,h)*(1.+h*.6);c=mix(c,vec3(.75,1.,1.),uGlow*.45)*(1.+uGlow*.35);gl_FragColor=vec4(c,uOp);}`});
+}
+function glowTex(r,g,b){const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d'),gr=x.createRadialGradient(64,64,0,64,64,64);
+  gr.addColorStop(0,`rgba(255,255,255,1)`);gr.addColorStop(.2,`rgba(${r},${g},${b},.9)`);gr.addColorStop(.5,`rgba(${r},${g},${b},.22)`);gr.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=gr;x.fillRect(0,0,128,128);return new THREE.CanvasTexture(c)}
+const imgData=img=>{const c=document.createElement('canvas');c.width=img.width;c.height=img.height;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(img,0,0);return x.getImageData(0,0,c.width,c.height)};
+const loadImg=u=>new Promise((ok,bad)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=bad;i.src=u});
+
+async function loadTerrain(){
+  const tl=new THREE.TextureLoader(),tex=u=>new Promise((ok,bad)=>tl.load(u,ok,undefined,bad));
+  ARC=await (await fetch('data/arcadia/arcadia.json')).json();
+  const ctx=await fetch('data/arcadia/context.json').then(r=>r.ok?r.json():null).catch(()=>null);
+  GEO=ARC.geo;[X0,Y0]=[ARC.aoi_local_m[0],ARC.aoi_local_m[1]];WD=ARC.aoi_local_m[2]-X0;GS=WD/(GN-1);
+  const [tif,ortho,layImg,clsImg,themis]=await Promise.all([
+    fetch('data/arcadia/walk3d_dtm.tif').then(r=>r.arrayBuffer()),tex('data/arcadia/walk3d_ortho.jpg'),loadImg('data/film/film_layers.png'),loadImg('data/arcadia/classes.png'),
+    ctx?.trek?tex('data/arcadia/'+ctx.trek.file):Promise.resolve(null),
+    ...['500','600'].map(w=>document.fonts.load(w+' 40px "Barlow Semi Condensed"').catch(()=>null))]);
+  // DTM（同 arcadia3d.html：缺值往前補）
+  const im=await(await GeoTIFF.fromArrayBuffer(tif)).getImage(),[minX,,maxX,maxY]=im.getBoundingBox(),nx=im.getWidth(),ny=im.getHeight(),nd=im.getGDALNoData();
+  const raw=await im.readRasters({interleave:true,samples:[0]}),dem=new Float32Array(nx*ny),ok=v=>Number.isFinite(v)&&v!==nd&&v>-1e5;
+  let sum=0,cnt=0;for(let i=0;i<dem.length;i++)if(ok(raw[i])){sum+=raw[i];cnt++}
+  const mean=cnt?sum/cnt:0;let last=mean;for(let i=0;i<dem.length;i++){if(ok(raw[i]))last=raw[i];dem[i]=last}
+  const rx=(maxX-minX)/nx;
+  const demAt=(x,y)=>{const u=clamp((x-minX)/rx-.5,0,nx-1.001),v=clamp((maxY-y)/rx-.5,0,ny-1.001),i=Math.floor(u),j=Math.floor(v),fu=u-i,fv=v-j,k=j*nx+i;
+    return (dem[k]*(1-fu)+dem[k+1]*fu)*(1-fv)+(dem[k+nx]*(1-fu)+dem[k+nx+1]*fu)*fv};
+  DEMAT=demAt;DMEAN=mean;
+  HGRID=new Float32Array(GN*GN);
+  const pos=new Float32Array(GN*GN*3),uv=new Float32Array(GN*GN*2),idx=[];
+  for(let j=0;j<GN;j++)for(let i=0;i<GN;i++){
+    const x=X0+i*GS,y=Y0+j*GS,e=Math.min(x-X0,X0+WD-x,y-Y0,Y0+WD-y),w=sstep(0,160,e),h=(demAt(x,y)-mean)*EX*w,k=j*GN+i;
+    HGRID[k]=h;pos.set([x,h,-y],k*3);uv.set([i/(GN-1),j/(GN-1)],k*2);
+    if(i<GN-1&&j<GN-1)idx.push(k,k+1,k+GN,k+1,k+GN+1,k+GN);
+  }
+  const tg=new THREE.BufferGeometry();tg.setAttribute('position',new THREE.BufferAttribute(pos,3));tg.setAttribute('uv',new THREE.BufferAttribute(uv,2));tg.setIndex(idx);tg.computeVertexNormals();
+  // 影片用圖層（tools/film_layers.py）：R＝腦紋分數、G＝自走車看到該格的路徑進度（255＝沒看過）；列 0＝北
+  const ld=imgData(layImg),lay=new THREE.DataTexture(new Uint8Array(ld.data.buffer),ld.width,ld.height,THREE.RGBAFormat);
+  lay.magFilter=lay.minFilter=THREE.LinearFilter;lay.generateMipmaps=false;lay.needsUpdate=true;
+  ortho.anisotropy=renderer.capabilities.getMaxAnisotropy();
+  const bxy=ARC.base_xy;
+  terrMat=new THREE.ShaderMaterial({uniforms:{tO:{value:ortho},tL:{value:lay},uRev:{value:0},uVeil:{value:0},uHeat:{value:0},uFront:{value:0},
+      uBase:{value:new THREE.Vector2((bxy[0]-X0)/WD,(bxy[1]-Y0)/WD)},uWD:{value:WD},uSun:{value:V3(-.55,.62,-.35).normalize()},...fogU()},
+    vertexShader:termVS,fragmentShader:FOG+`uniform sampler2D tO,tL;uniform float uRev,uVeil,uHeat,uFront,uWD;uniform vec2 uBase;uniform vec3 uSun;varying vec2 vUv;varying vec3 vN;varying float vDist;
+    vec3 heatC(float v){ // 暗紅 → 橘 → 亮黃白
+      vec3 c=mix(vec3(.28,.02,.02),vec3(.78,.09,.03),smoothstep(0.,.45,v));
+      c=mix(c,vec3(1.,.45,.05),smoothstep(.4,.78,v));return mix(c,vec3(1.,.94,.72),smoothstep(.8,1.,v));}
+    void main(){float g=texture2D(tO,vUv).r;vec3 c=vec3(1.,.72,.52)*(.22+1.05*g);c*=.62+.55*max(dot(normalize(vN),uSun),0.);
+      vec4 L=texture2D(tL,vec2(vUv.x,1.-vUv.y));
+      float rv=L.g*255.,P=uRev*250.,seen=1.-smoothstep(P-8.,P,rv);
+      c*=1.-uVeil*(1.-seen)*.62;
+      float sc=(L.r*255.-1.)/254.,v=clamp((sc-.45)/.5,0.,1.),has=step(.5/255.,L.r);
+      float r=length(vUv-uBase)*uWD,fr=1.-smoothstep(uFront-350.,uFront,r);
+      float a=has*uHeat*fr*mix(.18,.9,smoothstep(0.,.7,v));
+      vec3 hc=heatC(v)*(1.+.25*smoothstep(.85,1.,v));
+      c=mix(c,hc,a);gl_FragColor=vec4(fogit(c,vDist),1.);}`});
+  scene.add(new THREE.Mesh(tg,terrMat));
+  // 外圍：Mars Trek THEMIS 日間紅外線鑲嵌圖（同首頁）
+  if(themis&&ctx?.trek){
+    const cs=ctx.trek.coordinates.map(toXY),xa=cs[0][0],xb=cs[1][0],ya=cs[2][1],yb=cs[0][1];
+    const pg=new THREE.PlaneGeometry(xb-xa,yb-ya,1,1);pg.rotateX(-Math.PI/2);
+    const cm=new THREE.ShaderMaterial({depthWrite:false,uniforms:{t:{value:themis},...fogU()},vertexShader:termVS,
+      fragmentShader:FOG+'uniform sampler2D t;varying vec2 vUv;varying vec3 vN;varying float vDist;void main(){float g=texture2D(t,vUv).r;gl_FragColor=vec4(fogit(vec3(1.,.7,.5)*(.02+1.05*g),vDist),1.);}'});
+    const m=new THREE.Mesh(pg,cm);m.renderOrder=-1;m.position.set((xa+xb)/2,-1.5,-(ya+yb)/2);scene.add(m);
+  }
+  Cw=W3(X0+WD/2,Y0+WD/2);BASEw=W3(bxy[0],bxy[1]);
+  // 分析區外框
+  const sq=[[X0,Y0],[X0+WD,Y0],[X0+WD,Y0+WD],[X0,Y0+WD],[X0,Y0]];
+  aoiLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints(sq.map(([x,y])=>W3(x,y,6))),new THREE.LineBasicMaterial({color:0xf2b36b,transparent:true,opacity:0}));scene.add(aoiLine);
+  // 自走車 24 趟（同時生長）
+  const rp=ARC.rover.loops.map(L=>{const pts=L.path.map(toXY);let a=0;const s=[0];for(let k=1;k<pts.length;k++){a+=Math.hypot(pts[k][0]-pts[k-1][0],pts[k][1]-pts[k-1][1]);s.push(a)}
+    return{pts,s:s.map(v=>v/(a||1))}});
+  roverMat=ribbonMat(0x3d8dff,0xe8f4ff);scene.add(new THREE.Mesh(ribbonGeo(rp,15,3),roverMat));
+  baseGlow=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex(225,240,255),blending:THREE.AdditiveBlending,depthWrite:false,depthTest:false,transparent:true,opacity:0}));
+  baseGlow.position.copy(W3(bxy[0],bxy[1],12));baseGlow.renderOrder=10;scene.add(baseGlow);
+  // 12 個高分區域：細光柱＋圓環（選中的 5 個另有實心圓）
+  const pillarMat=()=>new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,uniforms:{uOp:{value:0}},
+    vertexShader:'varying float vY;void main(){vY=uv.y;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+    fragmentShader:'uniform float uOp;varying float vY;void main(){gl_FragColor=vec4(vec3(1.,.85,.35)*pow(1.-vY,1.6)*uOp,1.);}'});
+  const order=ARC.route.order;
+  ARC.targets.after.forEach(t=>{
+    const p=W3(t.xy[0],t.xy[1]),pm=pillarMat(),pl=new THREE.Mesh(new THREE.CylinderGeometry(9,9,650,16,1,true),pm);pl.position.set(p.x,p.y+325,p.z);
+    const mk=()=>new THREE.MeshBasicMaterial({color:0xffd23f,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide});
+    const rm=mk(),ring=new THREE.Mesh(new THREE.RingGeometry(58,74,48),rm);ring.rotation.x=-Math.PI/2;ring.position.set(p.x,p.y+5,p.z);
+    const dm=mk(),disc=new THREE.Mesh(new THREE.CircleGeometry(58,48),dm);disc.rotation.x=-Math.PI/2;disc.position.set(p.x,p.y+4,p.z);
+    scene.add(pl,ring,disc);tgtObjs.push({pm,rm,dm,ring,onRoute:order.includes(t.id)});
+  });
+  const t1=ARC.targets.after.find(t=>t.id==='T1');T1w=W3(t1.xy[0],t1.xy[1]);
+  // 太空人路線（arcadia.json 的基地路線：T4→T2→T10→T7→T8，與首頁卡片同一筆）
+  const LL=ARC.route.legs.flatMap((L,i)=>i?L.path.slice(1):L.path);
+  ROUTE=LL.map(toXY);
+  CUM=cumFromLegs(ARC.route.legs,{min:ARC.planner.dwell_min,kcal_per_min:ARC.planner.stand_kcal_per_min},ROUTE.map(([x,y])=>({x,z:-y})));
+  TOTD=CUM.d[CUM.d.length-1];
+  TOT={...ARC.route.total,o2_l:ARC.route.total.kcal/ARC.planner.kcal_per_l_o2,usable:ARC.planner.usable_kcal,kpl:ARC.planner.kcal_per_l_o2};
+  const rs=CUM.d.map(v=>v/TOTD);
+  astroAll=ribbonMat(0x2fe0ff,0xffffff);scene.add(new THREE.Mesh(ribbonGeo([{pts:ROUTE,s:rs}],12,4),astroAll));
+  const xs=ROUTE.map(p=>p[0]),ys=ROUTE.map(p=>p[1]);RC=W3((Math.min(...xs)+Math.max(...xs))/2,(Math.min(...ys)+Math.max(...ys))/2);
+  // 前進方向（每 5 m 一筆，展開成連續角度後做 60 m 高斯平滑）；鏡頭再依時間做低通
+  const N=Math.ceil(TOTD/5)+1,hr=new Float64Array(N);let prev=0;
+  for(let k=0;k<N;k++){const a=routeAt(k*5-30),b=routeAt(k*5+30);let h=Math.atan2(b.x-a.x,b.y-a.y);if(k){while(h-prev>Math.PI)h-=2*Math.PI;while(h-prev<-Math.PI)h+=2*Math.PI}hr[k]=prev=h}
+  HEAD=new Float64Array(N);const sg=12;
+  for(let k=0;k<N;k++){let s=0,w=0;for(let o=-3*sg;o<=3*sg;o++){const q=clamp(k+o,0,N-1),ww=Math.exp(-o*o/(2*sg*sg));s+=hr[q]*ww;w+=ww}HEAD[k]=s/w}
+  buildFP(ortho.image,clsImg);
+}
+const headAt=d=>{const u=clamp(d/5,0,HEAD.length-1.001),i=Math.floor(u);return lerp(HEAD[i],HEAD[i+1],u-i)};
+
+/* =====================================================================
+   B4c 第一人稱實景導航：沿用 arcadia3d.html（Shooyunn 的 3D 徒步）的做法與外觀
+   天空球＋霧、DTM 地形貼 HiRISE 正射影像＋地形分類、程序生成岩石（固定種子）、貼地綠色導引帶
+   ===================================================================== */
+const sF=new THREE.Scene();sF.fog=new THREE.FogExp2(0xd3a47c,.008);
+let DEMAT,DMEAN,HOFF=0,SPX,SPY,fpSky,FR,T4XY,LEG0;
+const hash=(i,j)=>{const s=Math.sin(i*127.1+j*311.7)*43758.5453;return s-Math.floor(s)};
+function vnoise(x,z){const i=Math.floor(x),j=Math.floor(z),fx=x-i,fz=z-j,u=fx*fx*(3-2*fx),v=fz*fz*(3-2*fz);
+  return hash(i,j)*(1-u)*(1-v)+hash(i+1,j)*u*(1-v)+hash(i,j+1)*(1-u)*v+hash(i+1,j+1)*u*v}
+const hFP=(x,y)=>DEMAT(x,y)-DMEAN+HOFF+(vnoise(x/3,y/3)-.5)*.14;          // 不誇張的 DTM；基地處與俯瞰地形同高
+const pathAt=d=>{const u=clamp(d,0,SPX.length-1.001),i=Math.floor(u),f=u-i;return[lerp(SPX[i],SPX[i+1],f),lerp(SPY[i],SPY[i+1],f)]};
+const norm180=a=>(((a%360)+540)%360)-180;
+function buildFP(orthoImg,clsImg){
+  const [bx,by]=ARC.base_xy;HOFF=gridY(bx,by)-(DEMAT(bx,by)-DMEAN);
+  const t4=ARC.targets.after.find(q=>q.id===ARC.route.order[0]);T4XY=t4.xy;LEG0=ARC.route.legs[0].distance_m;
+  // 步行路徑（每 1 m，σ 10 m 平滑，避免 8 m 格點路線的左右抖動）
+  const n=900,rx=[],ry=[];for(let k=0;k<n;k++){const r=routeAt(k);rx.push(r.x);ry.push(r.y)}
+  SPX=new Float64Array(n);SPY=new Float64Array(n);const sg=10;
+  for(let k=0;k<n;k++){let sx=0,sy=0,w=0;for(let o=-3*sg;o<=3*sg;o++){const q=clamp(k+o,0,n-1),ww=Math.exp(-o*o/(2*sg*sg));sx+=rx[q]*ww;sy+=ry[q]*ww;w+=ww}SPX[k]=sx/w;SPY[k]=sy/w}
+  sF.add(new THREE.HemisphereLight(0xffe3c4,0x6b4330,.75));
+  const sun=new THREE.DirectionalLight(0xfff0dc,1.05);sun.position.set(-60,45,-30);sF.add(sun);
+  fpSky=new THREE.Mesh(new THREE.SphereGeometry(1500,24,12),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,fog:false,
+    vertexShader:'varying vec3 vP;void main(){vP=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+    fragmentShader:'varying vec3 vP;void main(){float h=max(vP.y,0.0);vec3 hor=vec3(.827,.643,.486),top=vec3(.49,.36,.31);vec3 c=mix(hor,top,pow(h,.55));float s=max(dot(vP,normalize(vec3(-.6,.45,-.3))),0.0);c+=vec3(1.,.85,.6)*(pow(s,40.)*.5+pow(s,6.)*.12);gl_FragColor=vec4(c,1.);}'}));
+  fpSky.renderOrder=-1;fpSky.frustumCulled=false;sF.add(fpSky);
+  // 地表：正射影像疊地形分類（同 arcadia3d.html）
+  const w=orthoImg.width,h=orthoImg.height,cv=document.createElement('canvas');cv.width=w;cv.height=h;const cx=cv.getContext('2d');cx.drawImage(orthoImg,0,0,w,h);
+  const ov=document.createElement('canvas');ov.width=w;ov.height=h;const ox=ov.getContext('2d');ox.drawImage(clsImg,0,0,w,h);
+  const px=ox.getImageData(0,0,w,h);for(let i=3;i<px.data.length;i+=4)if(px.data[i])px.data[i]=225;ox.putImageData(px,0,0);
+  cx.globalCompositeOperation='multiply';cx.fillStyle='#f0a874';cx.fillRect(0,0,w,h);cx.globalCompositeOperation='source-over';   // 灰階 HiRISE 染成火星色
+  cx.globalAlpha=.32;cx.drawImage(ov,0,0);cx.globalAlpha=1;
+  const tex=new THREE.CanvasTexture(cv);tex.anisotropy=renderer.capabilities.getMaxAnisotropy();
+  const S=900,NN=360,[c0x,c0y]=pathAt(80),g=new THREE.PlaneGeometry(S,S,NN,NN);g.rotateX(-Math.PI/2);
+  const gp=g.attributes.position,gu=g.attributes.uv;
+  const gc=new Float32Array(gp.count*3);
+  for(let k=0;k<gp.count;k++){const x=gp.getX(k)+c0x,y=c0y-gp.getZ(k);gp.setXYZ(k,x,hFP(x,y),-y);gu.setXY(k,(x-X0)/WD,(y-Y0)/WD);
+    const n=1+(vnoise(x/2.1,y/2.1)-.5)*.3+(vnoise(x/11+5,y/11)-.5)*.3;gc.set([n,n*.97,n*.94],k*3)}     // 細部明暗（同 arcadia3d.html 的 grain）
+  g.setAttribute('color',new THREE.BufferAttribute(gc,3));g.computeVertexNormals();
+  const tm=new THREE.Mesh(g,new THREE.MeshLambertMaterial({map:tex,vertexColors:true}));tm.frustumCulled=false;sF.add(tm);
+  // 岩石：沿路線兩側散布（固定種子）
+  const RN=700,rocks=new THREE.InstancedMesh(new THREE.DodecahedronGeometry(1,0),new THREE.MeshLambertMaterial(),RN),o3=new THREE.Object3D();
+  let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  for(let k=0;k<RN;k++){
+    const d=rnd()*700,r=routeAt(d),hh=headAt(d),side=rnd()<.5?-1:1,off=5+Math.pow(rnd(),2)*90,x=r.x+side*off*Math.cos(hh),y=r.y-side*off*Math.sin(hh),s=.12+Math.pow(rnd(),3)*1.7;
+    o3.position.set(x,hFP(x,y)+s*.15,-y);o3.rotation.set(rnd()*3,rnd()*3,rnd()*3);o3.scale.set(s*(1+rnd()*.5),s*.6,s*(1+rnd()*.5));o3.updateMatrix();
+    rocks.setMatrixAt(k,o3.matrix);const c=.75+rnd()*.5;rocks.setColorAt(k,new THREE.Color(.5*c,.3*c,.2*c));
+  }
+  sF.add(rocks);
+  // 近處碎石：讓貼地前進有速度感（同一個固定種子序列）
+  const PN=2500,peb=new THREE.InstancedMesh(new THREE.DodecahedronGeometry(1,0),new THREE.MeshLambertMaterial(),PN);
+  for(let k=0;k<PN;k++){
+    const d=rnd()*220,r=routeAt(d),hh=headAt(d),side=rnd()<.5?-1:1,off=1.2+Math.pow(rnd(),1.5)*35,x=r.x+side*off*Math.cos(hh),y=r.y-side*off*Math.sin(hh),s=.04+Math.pow(rnd(),3)*.35;
+    o3.position.set(x,hFP(x,y)+s*.1,-y);o3.rotation.set(rnd()*3,rnd()*3,rnd()*3);o3.scale.set(s*(1+rnd()*.6),s*.5,s*(1+rnd()*.6));o3.updateMatrix();
+    peb.setMatrixAt(k,o3.matrix);const c=.6+rnd()*.5;peb.setColorAt(k,new THREE.Color(.52*c,.32*c,.22*c));
+  }
+  sF.add(peb);
+  // 航點光柱與避難所圓頂
+  const pil=(x,y,c)=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(.4,.4,70,12,1,true),new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.5,blending:THREE.AdditiveBlending,depthWrite:false,fog:false,side:THREE.DoubleSide}));m.position.set(x,hFP(x,y)+35,-y);sF.add(m)};
+  pil(bx,by,0x8cc8e8);ARC.route.order.forEach(id=>{const t=ARC.targets.after.find(q=>q.id===id);pil(t.xy[0],t.xy[1],0x62d6a4)});
+  const dome=new THREE.Mesh(new THREE.SphereGeometry(4,20,10,0,Math.PI*2,0,Math.PI/2),new THREE.MeshLambertMaterial({color:0xe8e4de}));dome.position.set(bx+8,hFP(bx+8,by)-.3,-by);sF.add(dome);
+  // 綠色導引帶：貼地、漸隱、箭頭往前流動
+  const SN=44,LOOK=66,rg=new THREE.BufferGeometry(),rp=new Float32Array(SN*6),rs=new Float32Array(SN*2),ru=new Float32Array(SN*2),ri=[];
+  for(let i=0;i<SN;i++){rs[i*2]=rs[i*2+1]=2+i*(LOOK-2)/(SN-1);ru[i*2]=-1;ru[i*2+1]=1;if(i<SN-1){const a=i*2;ri.push(a,a+1,a+2,a+1,a+3,a+2)}}
+  rg.setAttribute('position',new THREE.BufferAttribute(rp,3));rg.setAttribute('aS',new THREE.BufferAttribute(rs,1));rg.setAttribute('aU',new THREE.BufferAttribute(ru,1));rg.setIndex(ri);
+  const rmat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2,
+    uniforms:{uTime:{value:0},uLook:{value:LOOK},uC:{value:new THREE.Color(.25,1,.6)}},
+    vertexShader:'attribute float aS;attribute float aU;varying float vS;varying float vU;void main(){vS=aS;vU=aU;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+    fragmentShader:'uniform float uTime;uniform float uLook;uniform vec3 uC;varying float vS;varying float vU;void main(){float f=fract((vS-uTime*3.0)/4.0+abs(vU)*0.5);float chev=smoothstep(0.0,0.06,f)*(1.0-smoothstep(0.32,0.42,f));float edge=smoothstep(0.78,1.0,abs(vU));float fade=(1.0-smoothstep(0.35,1.0,vS/uLook))*smoothstep(2.0,6.0,vS);float a=(0.22+0.65*chev+0.55*edge)*fade;gl_FragColor=vec4(uC*(0.85+0.5*chev),a);}'});
+  const rib=new THREE.Mesh(rg,rmat);rib.frustumCulled=false;rib.renderOrder=3;sF.add(rib);
+  FR={SN,rg,rp,rs,rmat};
+}
+function updateRibbon(d){
+  const {SN,rg,rp,rs}=FR;
+  for(let i=0;i<SN;i++){
+    const dd=d+rs[i*2],p=routeAt(dd),p1=routeAt(dd-1.5),p2=routeAt(dd+1.5);let ux=p2.x-p1.x,uy=p2.y-p1.y;const l=Math.hypot(ux,uy)||1;ux/=l;uy/=l;
+    for(let k=0;k<2;k++){const sg=k?1:-1,x=p.x-uy*.65*sg,y=p.y+ux*.65*sg,o=(i*2+k)*3;rp[o]=x;rp[o+1]=hFP(x,y)+.12;rp[o+2]=-y}
+  }
+  rg.attributes.position.needsUpdate=true;
+}
+
+/* ---------- B4 時間點 ---------- */
+const DIVE0=10.8,T_SW=11.32,FP_T0=11.5,FP_V=30;                     // 俯衝開始、切換場景（閃白最亮）、開始步行、步行速度 m/s（加速播放）
+const walkD=t=>{const u=Math.max(0,t-FP_T0);return FP_V*(u-.35*(1-Math.exp(-u/.35)))};
+
+/* ---------- 鏡頭：參數 {q 注視點, az 方位, pit 俯角, dist 視距}；交界用參數混合（方位走最短角、距離取對數） ---------- */
+const P=(q,az,pit,dist)=>({q,az,pit,dist});
+function mixP(A,B,s){
+  let da=B.az-A.az;while(da>Math.PI)da-=2*Math.PI;while(da<-Math.PI)da+=2*Math.PI;
+  return P(A.q.clone().lerp(B.q,s),A.az+da*s,lerp(A.pit,B.pit,s),Math.exp(lerp(Math.log(A.dist),Math.log(B.dist),s)));
+}
+function applyP(c){const ch=Math.cos(c.pit)*c.dist;cam.position.set(c.q.x+Math.sin(c.az)*ch,c.q.y+Math.sin(c.pit)*c.dist,c.q.z+Math.cos(c.az)*ch);cam.lookAt(c.q)}
+// B1–B3：T1 近景（往右前方漂移）→ 拉高看整區 → 順時針環繞 → 俯衝回 T1
+const D_NEAR=430,D_FULL=5800,D_T1=300/Math.sin(62*D2R);
+function poseA(t){
+  const u=ramp(0,2.2,t),s1=.05*u+.95*inOut(u);                         // 起始帶一點前進速度
+  let q=T1w.clone().lerp(Cw,s1);
+  q.lerp(T1w,inOut(ramp(7.0,8.3,t)));q.z-=220*Math.sin(Math.PI*ramp(7,9,t));   // 俯衝途中注視點略偏北，畫面不露出分析區南緣
+  const az=-.02-.31*sstep(1.6,6.0,t)-.4*sstep(6.4,8.8,t);              // 方位遞減＝由上往下看順時針
+  let ld=lerp(Math.log(D_NEAR),Math.log(D_FULL),inOut(u));
+  ld=lerp(ld,Math.log(D_T1),inOut(ramp(7.0,9.0,t)));
+  return P(q,az,lerp(45,62,sstep(7,8.1,t))*D2R,Math.exp(ld));
+}
+// B4a：約 2 km 高俯瞰路線；方位朝第一段路的前進方向
+function overP(t){return P(RC.clone().lerp(BASEw,.3),-headAt(0)-.35+.04*(t-9),45*D2R,2000/Math.sin(45*D2R))}
+// B4c：人眼高度 1.7 m、略往下看（同 arcadia3d.html 的 -0.16 rad），方位＝平滑後的前進方向；以注視點參數表示，俯衝可直接混合過來
+function fpP(t){
+  const d=walkD(t),[x,y]=pathAt(d),h=headAt(d),pit=.16,L=12,bob=.05*Math.sin(2*Math.PI*2*(t-FP_T0))*sstep(FP_T0,FP_T0+.5,t);
+  const cy=hFP(x,y)+1.7+bob,fx=Math.sin(h),fy=Math.cos(h),ch=Math.cos(pit)*L;
+  return P(V3(x+fx*ch,cy-Math.sin(pit)*L,-(y+fy*ch)),-h,pit,L);
+}
+function camAt(t){
+  let c=poseA(Math.min(t,9));
+  if(t>9)c=mixP(c,overP(t),inOut(ramp(9,9.9,t)));
+  if(t>DIVE0)c=mixP(c,fpP(t),sstep(DIVE0,FP_T0,t));                   // B4b：2 km → 人眼高度，終點即第一人稱第一格
+  return c;
+}
+
+const fmtN=n=>Math.round(n).toLocaleString('en-US'),PXU=.45;          // 羅盤：每度 0.45u
+(function(){const card={0:'N',45:'NE',90:'E',135:'SE',180:'S',225:'SW',270:'W',315:'NW'};let h='';
+  for(let d=-360;d<=720;d+=5){const n=((d%360)+360)%360,lb=card[n]??(n%30===0?String(n):'');
+    h+=`<div class="tick${n%15===0?' m':''}${card[n]?' k':''}" style="left:calc(var(--u)*${(d*PXU).toFixed(2)})">${lb?`<span>${lb}</span>`:''}</div>`}
+  $('tape').innerHTML=h+'<div id="wpm"></div>'})();
+function setHud(t){
+  const el=$('hud'),fp=t>=T_SW;el.classList.toggle('fp',fp);
+  if(!fp){ // B4a 計畫總結：靜態計畫值，橫條 0.6 s 填到 1,316/1,440
+    const f=sstep(9.6,10.2,t);
+    $('tag').textContent='ROUTE PLAN · T4 → T2 → T10 → T7 → T8';
+    $('hk').textContent=fmtN(TOT.kcal);$('ho').textContent=fmtN(TOT.o2_l);
+    $('be').style.width=$('bo').style.width=(clamp(TOT.kcal/TOT.usable,0,1)*f*100).toFixed(2)+'%';
+    $('sub').textContent=(TOT.distance_m/1000).toFixed(2)+' km · '+Math.round(TOT.min)+' min';
+    $('ok').style.opacity=sstep(10.0,10.3,t);el.style.opacity=sstep(9.6,9.9,t)*(1-sstep(DIVE0,DIVE0+.3,t));
+  }else{   // B4c 實際走到的位置的累積值（同一個 cumFromLegs）；橫條＝剩餘額度
+    const r=routeAt(walkD(t)),used=clamp(r.kcal/TOT.usable,0,1);
+    $('tag').textContent='EVA NAV · FIRST-PERSON';
+    $('hk').textContent=fmtN(r.kcal);$('ho').textContent=fmtN(r.kcal/TOT.kpl);
+    $('be').style.width=$('bo').style.width=((1-used)*100).toFixed(2)+'%';
+    $('sub').textContent=(r.d<1000?Math.round(r.d)+' m':(r.d/1000).toFixed(2)+' km')+' · '+Math.round(r.min)+' min';
+    $('ok').style.opacity=0;el.style.opacity=sstep(11.45,11.75,t);
+  }
+}
+function setNav(t){
+  const on=t>=T_SW;$('nav').style.opacity=on?sstep(11.45,11.75,t):0;if(!on)return;
+  const d=walkD(t),hd=((headAt(d)/D2R)%360+360)%360,[x,y]=pathAt(d);
+  $('tape').style.transform=`translateX(calc(var(--u)*${(-hd*PXU).toFixed(3)}))`;
+  $('hdg').textContent=String(Math.round(hd)%360).padStart(3,'0')+'°';
+  const rel=norm180(Math.atan2(T4XY[0]-x,T4XY[1]-y)/D2R-hd);$('wpm').style.left=`calc(var(--u)*${((hd+clamp(rel,-45,45))*PXU).toFixed(3)})`;
+  $('next').innerHTML=`NEXT <b>${ARC.route.order[0]}</b> · ${Math.round(Math.max(0,LEG0-d))} m`;
+}
+function drawFx(t){ // 俯衝的放射狀速度線（只由 t 決定）
+  const W=fx.width,H=fx.height,k=sstep(10.85,11.1,t)*(1-sstep(11.3,11.42,t));fxc.clearRect(0,0,W,H);if(k<=0)return;
+  const cx=W/2,cy=H/2,Rr=Math.hypot(W,H)/2;fxc.lineCap='round';
+  for(let i=0;i<140;i++){
+    const a=hash(i,1)*Math.PI*2,sp=.7+hash(i,2)*.8,p=(hash(i,3)+(t-DIVE0)*1.8*sp)%1,r0=Rr*(.18+.85*p),len=Rr*(.04+.22*p)*k;
+    fxc.strokeStyle=`rgba(255,240,222,${(k*(.12+.5*p)).toFixed(3)})`;fxc.lineWidth=(1+2.5*p)*H/1080;
+    fxc.beginPath();fxc.moveTo(cx+Math.cos(a)*r0,cy+Math.sin(a)*r0);fxc.lineTo(cx+Math.cos(a)*(r0+len),cy+Math.sin(a)*(r0+len));fxc.stroke();
+  }
+}
+function render(t){
+  const fp=t>=T_SW,c=camAt(t);applyP(c);
+  cam.fov=lerp(40,64,sstep(10.9,FP_T0,t));
+  if(fp){cam.near=.1;cam.far=3000}else{const h=cam.position.y-c.q.y;cam.near=clamp(h*.02,.5,200);cam.far=400000}
+  cam.updateProjectionMatrix();
+  if(!fp){
+    const U=terrMat.uniforms;
+    // B1：未探索遮罩淡入；B2：自走車同時生長、遮罩跟著打開；B3：遮罩淡出
+    const rev=sstep(2.4,4.6,t);
+    U.uVeil.value=sstep(.5,2.0,t)*(1-sstep(5,6,t));U.uRev.value=rev;
+    roverMat.uniforms.uT.value=rev;roverMat.uniforms.uOp.value=sstep(2.35,2.6,t)*lerp(1,.25,sstep(5,6,t))*(1-sstep(9,9.4,t));
+    aoiLine.material.opacity=.7*sstep(1.1,2.0,t)*(1-sstep(5,6,t));
+    // B3：熱度圖以基地為中心擴散 → 8.2–9.0 淡出
+    U.uHeat.value=t<5?0:1-sstep(8.2,9.0,t);U.uFront.value=lerp(0,3600,ramp(5,6,t));
+    const pop=sstep(6,6.6,t),dimR=1-.55*sstep(8.2,9,t);
+    for(const o of tgtObjs){
+      const sel=sstep(9.1,9.6,t),on=o.onRoute;
+      let ro=.95*pop*dimR;if(t>9)ro=lerp(ro,on?1:.25,sel);
+      o.rm.opacity=ro;o.ring.scale.setScalar(1+.5*(1-pop));
+      o.dm.opacity=on?.55*sel:0;
+      o.pm.uniforms.uOp.value=.85*sstep(6,6.5,t)*(1-sstep(7,7.6,t));
+    }
+    // B4a：路線從基地畫出
+    astroAll.uniforms.uT.value=inOut(ramp(9.1,9.9,t));astroAll.uniforms.uOp.value=sstep(9,9.2,t)*(1-.6*sstep(10.95,11.25,t));
+    baseGlow.scale.setScalar(cam.position.distanceTo(baseGlow.position)*.05);baseGlow.material.opacity=sstep(2.2,2.5,t);
+  }else{fpSky.position.copy(cam.position);FR.rmat.uniforms.uTime.value=t;updateRibbon(walkD(t))}
+  // 畫面文字與轉場
+  $('place').style.opacity=sstep(0,.3,t)*(1-sstep(1.6,2.0,t));
+  setHud(t);setNav(t);drawFx(t);
+  $('flash').style.opacity=(.92*Math.exp(-Math.pow((t-T_SW)/.07,2))).toFixed(3);
+  $('dim').style.opacity=.65*sstep(14.4,15,t);
+  renderer.render(fp?sF:scene,cam);
+}
+let last=performance.now();
+function frame(now){
+  const dt=Math.min(.25,(now-last)/1000);last=now;
+  if(playing)T=Math.min(T_END,T+dt);
+  render(T);
+  requestAnimationFrame(frame);
+}
+addEventListener('keydown',e=>{
+  if(e.code==='Space'){playing=!playing;e.preventDefault()}
+  else if(e.key==='r'||e.key==='R'){T=0;playing=true;last=performance.now()}
+  else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen().catch(()=>{})}
+});
+window.film={duration:T_END,get T(){return T},seek(t){T=clamp(t,0,T_END);if(ready)render(T)},pause(){playing=false},play(){playing=true},get ready(){return ready}};
+resize();
+renderer.setClearColor(0xd3a47c,1);   // 低角度俯衝時看到的遠方＝第一人稱天空的地平線色
+loadTerrain().then(()=>{render(12);render(10);render(T);ready=true;last=performance.now();requestAnimationFrame(frame)}).catch(err=>{console.error('film: data load failed',err)});
+</script>
+</body>
+</html>
