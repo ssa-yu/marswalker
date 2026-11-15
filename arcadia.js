@@ -8,6 +8,13 @@ const D = 'data/arcadia/';
 const $ = (s) => document.querySelector(s);
 const abs = (u) => new URL(u, location.href).href;
 const S = { step: 1, loop: 10, markers: [], start: null, plan: null };
+const GUIDE_KEY = 'marswalker-guide-seen';
+const CLASS_EN = ['Firm ground', 'Rough ground', 'Sand', 'Impassable'];
+const HINT = {
+  1: 'Drag the slider to replay the rover\'s trips out from the base.',
+  2: 'Brighter = more brain-like. Yellow boxes are the areas picked from what the rover has seen.',
+  3: 'Click a numbered stop for details, or click anywhere on the map to move the astronaut\'s start.',
+};
 const C_ROVER = '#3987e5', C_ROVER_NOW = '#f2b36b', C_ROUTE = '#38e1ff', C_TGT = '#ffd23f';
 
 async function init() {
@@ -88,6 +95,10 @@ function wire() {
   $('#home').onclick = () => { S.start = null; showPlan(null); $('#card').hidden = true; apply(); };
   $('#walk3d').onclick = open3d;
   $('#w3dClose').onclick = () => { $('#w3d').hidden = true; $('#w3dFrame').src = 'about:blank'; };
+  const seen = () => { try { return localStorage.getItem(GUIDE_KEY); } catch { return '1'; } };
+  $('#help').onclick = () => { $('#guide').hidden = false; };
+  $('#guideGo').onclick = () => { $('#guide').hidden = true; try { localStorage.setItem(GUIDE_KEY, '1'); } catch { /* private mode */ } };
+  if (!seen() && !new URLSearchParams(location.search).has('noguide')) $('#guide').hidden = false;
 }
 
 function setStep(n) {
@@ -124,7 +135,9 @@ function vis(id, on) { S.map.setLayoutProperty(id, 'visibility', on ? 'visible' 
 function apply() {
   const d = S.d, m = S.map, n = S.step;
   document.querySelectorAll('.steps .btn').forEach((b) => b.classList.toggle('active', +b.dataset.step === n));
-  $('#ctl1').hidden = n !== 1; $('#ctl3').hidden = n !== 3; $('#home').hidden = !S.start;
+  $('#ctl1').hidden = n !== 1; $('#ctl3').hidden = n !== 3 || !S.start; $('#walk3d').hidden = n !== 3;
+  document.body.classList.toggle('s3', n === 3);
+  $('#hint').textContent = HINT[n];
   const heat = $('#lyrHeat').checked;
   vis('ortho', $('#lyrImg').checked);
   vis('classes', $('#lyrCls').checked);
@@ -162,8 +175,8 @@ function mk(ll, cls, text, onclick) {
 function markers() {
   S.markers.forEach((m) => m.remove()); S.markers = [];
   const d = S.d, n = S.step;
-  mk(d.base, 'base', '基地');
-  if (n === 3 && S.start) mk(S.start.ll, 'start', '太空人出發點');
+  mk(d.base, 'base', 'Base');
+  if (n === 3 && S.start) mk(S.start.ll, 'start', 'Astronaut start');
   if (n === 2) {
     d.targets.after.forEach((t) => mk(t.stop, 'tgt', `${t.id} ${t.score.toFixed(2)}`));
   }
@@ -178,27 +191,27 @@ function markers() {
 
 function showCard(title, v) {
   const h = Math.floor(v.min / 60), mi = Math.round(v.min % 60);
-  $('#card').innerHTML = `<h4><span>${title}</span><button aria-label="關閉" onclick="this.closest('#card').hidden=true">×</button></h4>
-    <div class="kv"><span>距離</span><span>${(v.distance_m / 1000).toFixed(2)} km</span>
-    <span>時間</span><span>${h ? h + ' 小時 ' : ''}${mi} 分</span>
-    <span>耗能</span><span>${Math.round(v.kcal)} kcal</span>
-    <span>氧氣</span><span>${Math.round(v.o2_l)} L</span></div>`;
+  $('#card').innerHTML = `<h4><span>${title}</span><button aria-label="Close" onclick="this.closest('#card').hidden=true">×</button></h4>
+    <div class="kv"><span>Distance</span><span>${(v.distance_m / 1000).toFixed(2)} km</span>
+    <span>Time</span><span>${h ? h + ' h ' : ''}${mi} min</span>
+    <span>Energy</span><span>${Math.round(v.kcal)} kcal</span>
+    <span>Oxygen</span><span>${Math.round(v.o2_l)} L</span></div>`;
   $('#card').hidden = false;
 }
 
 function legend() {
   const d = S.d, n = S.step, it = (sw, t) => `<div class="it">${sw}<span>${t}</span></div>`;
   let h = '';
-  if ($('#lyrCls').checked) h += d.classes.map((c) => it(`<i style="background:${c.color}"></i>`, c.zh)).join('');
-  if ($('#lyrHeat').checked) h += `<div class="it"><span>腦紋分數</span></div><div class="ramp"></div><div class="rl"><span>0</span><span>0.5</span><span>1</span></div>`;
-  if ($('#lyrMask').checked) h += it('<i style="background:#000;opacity:.5"></i>', '未探索（自走車還沒看過）');
-  if (n === 1) h += it(`<i class="ln" style="background:${C_ROVER}"></i>`, '自走車路徑') + it(`<i class="ln" style="background:${C_ROVER_NOW}"></i>`, '這一趟');
-  if (n === 2) h += it(`<i style="border:2px solid ${C_TGT}"></i>`, `偵察後選的 ${d.targets.after.length} 區（60 m）`);
+  if ($('#lyrCls').checked) h += d.classes.map((c, i) => it(`<i style="background:${c.color}"></i>`, CLASS_EN[i] || c.zh)).join('');
+  if ($('#lyrHeat').checked) h += `<div class="it"><span>Brain-terrain score</span></div><div class="ramp"></div><div class="rl"><span>0</span><span>0.5</span><span>1</span></div>`;
+  if ($('#lyrMask').checked) h += it('<i style="background:#000;opacity:.5"></i>', 'Unexplored (not yet seen by the rover)');
+  if (n === 1) h += it(`<i class="ln" style="background:${C_ROVER}"></i>`, 'Rover path') + it(`<i class="ln" style="background:${C_ROVER_NOW}"></i>`, 'Current trip');
+  if (n === 2) h += it(`<i style="border:2px solid ${C_TGT}"></i>`, `${d.targets.after.length} areas picked after scouting (60 m)`);
   if (n === 3) {
     const t = S.plan.total;
-    h += it(`<i class="ln" style="background:${C_ROUTE}"></i>`, `太空人路線：${S.plan.n_stops} 站，${(t.distance_m / 1000).toFixed(2)} km，${Math.round(t.kcal)} kcal`);
+    h += it(`<i class="ln" style="background:${C_ROUTE}"></i>`, `Astronaut route: ${S.plan.n_stops} stops, ${(t.distance_m / 1000).toFixed(2)} km, ${Math.round(t.kcal)} kcal`);
   }
-  h += it('<i class="pt" style="background:#fff"></i>', '基地');
+  h += it('<i class="pt" style="background:#fff"></i>', 'Base');
   $('#legend').innerHTML = h;
 }
 
@@ -354,8 +367,8 @@ function showPlan(p) {
 }
 
 function stopCard(i) {
-  const L = S.plan.legs[i], from = S.start ? '出發點' : '基地';
-  showCard(`第 ${i + 1} 站（${L.to}）：從${from}到這裡，含停留`, { distance_m: L.cum.distance_m, min: L.cum.min, kcal: L.cum.kcal, o2_l: L.cum.kcal / S.d.planner.kcal_per_l_o2 });
+  const L = S.plan.legs[i], from = S.start ? 'the start' : 'the base';
+  showCard(`Stop ${i + 1} (${L.to}): from ${from} to here, incl. time on site`, { distance_m: L.cum.distance_m, min: L.cum.min, kcal: L.cum.kcal, o2_l: L.cum.kcal / S.d.planner.kcal_per_l_o2 });
 }
 
 function onMapClick(e) {
@@ -365,11 +378,11 @@ function onMapClick(e) {
     const id = hit[0].properties.id, i = S.plan.legs.findIndex((L) => L.to === id);
     if (i >= 0) { stopCard(i); return; }
     const x = S.plan.rt[id];
-    $('#card').innerHTML = `<h4><span>往返需 ${isFinite(x) ? Math.round(x).toLocaleString('en-US') : '—'} kcal</span><button aria-label="關閉" onclick="this.closest('#card').hidden=true">×</button></h4>`;
+    $('#card').innerHTML = `<h4><span>Round trip needs ${isFinite(x) ? Math.round(x).toLocaleString('en-US') : '—'} kcal</span><button aria-label="Close" onclick="this.closest('#card').hidden=true">×</button></h4>`;
     $('#card').hidden = false;
     return;
   }
-  if (S.map.queryRenderedFeatures(e.point, { layers: ['route'] }).length) { showCard('整條路線', S.plan.total); return; }
+  if (S.map.queryRenderedFeatures(e.point, { layers: ['route'] }).length) { showCard('Whole route', S.plan.total); return; }
   setStart([e.lngLat.lng, e.lngLat.lat]);
 }
 
@@ -382,7 +395,7 @@ function setStart(ll) {
   window.__lastPlanMs = p.ms;
   showPlan(p);
   apply();
-  showCard('整條路線', S.plan.total);
+  showCard('Whole route', S.plan.total);
 }
 
 // ---------------------------------------------------------------------------------------------- ③ 3D walk
@@ -454,7 +467,7 @@ async function open3d() {
   const levels = coords.slice(0, -1).map((p, i) => levelAt([(p[0] + coords[i + 1][0]) / 2, (p[1] + coords[i + 1][1]) / 2]));
   const waypoints = S.plan.legs.slice(0, -1).map((L, i) => {
     const t = S.d.targets.after.find((x) => x.id === L.to);
-    return { n: `第 ${i + 1} 站 ${t.id}`, coords: t.stop, cls: levelAt(t.stop) };
+    return { n: `Stop ${i + 1} ${t.id}`, coords: t.stop, cls: levelAt(t.stop) };
   });
   localStorage.setItem('marswalker-arcadia-route', JSON.stringify({ coords, levels, waypoints, cum, total, kcal_per_l_o2, created: Date.now() }));
   $('#w3d').hidden = false;

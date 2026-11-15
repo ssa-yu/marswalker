@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <!-- Adapted from teammate Shooyunn's web/scratch/3d first point view.html for Arcadia (origin, textures, DTM, route key, class labels); edits by an AI coding agent (Anthropic Claude), see docs/AI_USE.md -->
-<html lang="zh-Hant">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>火星徒步 3D 第一人稱導航</title>
+<title>Mars walk · 3D first-person navigation</title>
 <link rel="icon" href="data:,">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -53,7 +53,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 </head>
 <body>
 <canvas id="c"></canvas>
-<div class="groundLegend" aria-label="與規劃器相同的地形分類圖例"><b>地形分類</b>　<span><i style="background:#62d6a4"></i>硬地</span><span><i style="background:#f4b740"></i>崎嶇</span><span><i style="background:#ff5a4e"></i>沙地</span><span><i style="background:#5a2a6e"></i>不可通行</span></div>
+<div class="groundLegend" aria-label="Terrain classes, same as the planner"><b>Terrain</b>　<span><i style="background:#62d6a4"></i>Firm</span><span><i style="background:#f4b740"></i>Rough</span><span><i style="background:#ff5a4e"></i>Sand</span><span><i style="background:#5a2a6e"></i>Impassable</span></div>
 <div id="labels"></div>
 <div id="hud" aria-live="polite">
   <div class="compass" id="cmp"><div class="tape" id="tape"></div></div>
@@ -63,14 +63,14 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
     <div class="turn" id="turn">--</div><div class="wp" id="wp">--</div>
   </div>
   <div class="warn" id="warn"></div>
-  <div class="side l"><div>已走距離<b id="dn">--</b><span id="dnL"></span></div><div>已用時間<b id="tn">--</b><span id="tnL"></span></div></div>
-  <div class="side r"><div>已耗能量<b id="kn">--</b><span id="knL"></span></div><div>已用氧氣<b id="on">--</b><span id="onL"></span></div><div>地形<b id="tr">--</b></div></div>
+  <div class="side l"><div>Distance<b id="dn">--</b><span id="dnL"></span></div><div>Time<b id="tn">--</b><span id="tnL"></span></div></div>
+  <div class="side r"><div>Energy<b id="kn">--</b><span id="knL"></span></div><div>Oxygen<b id="on">--</b><span id="onL"></span></div><div>Terrain<b id="tr">--</b></div></div>
 </div>
 <div id="bar">
-  <button id="play" aria-label="暫停">❚❚</button>
-  <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="路線進度">
-  <select id="spd" aria-label="播放速度"><option value="1">1×</option><option value="10" selected>10×</option><option value="60">60×</option><option value="300">300×</option></select>
-  <div class="r2"><button id="col" aria-pressed="false">依地形變色</button><button id="gy" aria-pressed="false">陀螺儀</button><button id="rc">歸位視角</button></div>
+  <button id="play" aria-label="Pause">❚❚</button>
+  <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Route progress">
+  <select id="spd" aria-label="Playback speed"><option value="1">1×</option><option value="10" selected>10×</option><option value="60">60×</option><option value="300">300×</option></select>
+  <div class="r2"><button id="col" aria-pressed="false">Colour by terrain</button><button id="gy" aria-pressed="false">Gyro</button><button id="rc">Recentre view</button></div>
 </div>
 
 <script>
@@ -78,7 +78,7 @@ const $=id=>document.getElementById(id),R=3396190,D2R=Math.PI/180;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),sstep=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t)};
 const norm180=a=>(((a%360)+540)%360)-180;
 const fmtM=m=>m>=1000?(m/1000).toFixed(2)+' km':Math.round(m)+' m';
-const fmtMin=m=>m>=60?Math.floor(m/60)+' 小時 '+Math.round(m%60)+' 分':Math.round(m)+' 分';
+const fmtMin=m=>m>=60?Math.floor(m/60)+' h '+Math.round(m%60)+' min':Math.round(m)+' min';
 
 /* ---------- 路線（與地圖版相同的示範資料，轉成以起點為原點的公尺座標） ---------- */
 // Arcadia：路線由 index.html（Arcadia）第 ③ 步寫入 localStorage（marswalker-arcadia-route）；單獨開啟時改用 arcadia.json 的基地路線。
@@ -87,7 +87,7 @@ const savedWalk=(()=>{try{const w=JSON.parse(localStorage.getItem('marswalker-ar
 const FALLBACK=ARC.route.legs.flatMap((L,i)=>i?L.path.slice(1):L.path);
 const LL=savedWalk?.coords?.length>1?savedWalk.coords:FALLBACK;
 const LVL=savedWalk?.levels?.length===LL.length-1?savedWalk.levels:LL.slice(1).map(()=>'low');
-const NAME={low:'硬地',medium:'崎嶇',high:'沙地',blocked:'不可通行'},CSS={low:'#62d6a4',medium:'#f4b740',high:'#ff5a4e',blocked:'#5a2a6e'};
+const NAME={low:'Firm',medium:'Rough',high:'Sand',blocked:'Impassable'},CSS={low:'#62d6a4',medium:'#f4b740',high:'#ff5a4e',blocked:'#5a2a6e'};
 const COL={low:[.25,1,.6],medium:[1,.8,.25],high:[1,.35,.3],blocked:[.35,.16,.43]};
 const BASE_LON=ARC.geo.lon0,BASE_LAT=ARC.geo.lat0,AOI=ARC.aoi_local_m;   // Arcadia local-grid origin and study square (local m)
 const P=LL.map(([lo,la])=>({x:(lo-BASE_LON)*D2R*R*Math.cos(BASE_LAT*D2R),z:-(la-BASE_LAT)*D2R*R}));
@@ -207,7 +207,7 @@ placeRocks();scene.add(rocks);
 /* 航點光柱與避難所圓頂 */
 function routeDistance(ll){const x=(ll[0]-BASE_LON)*D2R*R*Math.cos(BASE_LAT*D2R),z=-(ll[1]-BASE_LAT)*D2R*R;let bi=0,bd=Infinity;for(let i=0;i<P.length;i++){const d=Math.hypot(P[i].x-x,P[i].z-z);if(d<bd){bd=d;bi=i}}return bi===P.length-1?TM:edges[bi].d0}
 const plannedPois=(savedWalk?.waypoints||[]).map(p=>({n:p.n,a:routeDistance(p.coords),c:p.cls==='medium'?0xf4b740:p.cls==='high'?0xff5a4e:p.cls==='blocked'?0x5a2a6e:0x62d6a4}));
-const POIS=[{n:'基地起點',a:0,c:0x8cc8e8},...plannedPois].map(p=>{const q=posAt(p.a);return{...p,x:q.x,z:q.z,y:height(q.x,q.z)}});
+const POIS=[{n:'Base',a:0,c:0x8cc8e8},...plannedPois].map(p=>{const q=posAt(p.a);return{...p,x:q.x,z:q.z,y:height(q.x,q.z)}});
 POIS.forEach(p=>{
   const m=new THREE.Mesh(new THREE.CylinderGeometry(.4,.4,70,12,1,true),new THREE.MeshBasicMaterial({color:p.c,transparent:true,opacity:.5,blending:THREE.AdditiveBlending,depthWrite:false,fog:false,side:THREE.DoubleSide}));
   m.position.set(p.x,p.y+35,p.z);scene.add(m);p.m=m;
@@ -254,15 +254,15 @@ function onOri(e){
 }
 async function setGyro(on){
   const b=$('gy');
-  if(!on){gyro=false;removeEventListener('deviceorientation',onOri);b.setAttribute('aria-pressed',false);b.textContent='陀螺儀';return}
+  if(!on){gyro=false;removeEventListener('deviceorientation',onOri);b.setAttribute('aria-pressed',false);b.textContent='Gyro';return}
   try{
     if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){
-      if(await DeviceOrientationEvent.requestPermission()!=='granted'){b.textContent='未授權感測器';return}
+      if(await DeviceOrientationEvent.requestPermission()!=='granted'){b.textContent='Sensor not allowed';return}
     }
-  }catch(err){b.textContent='無法啟用感測器';return}
+  }catch(err){b.textContent='Sensor unavailable';return}
   qDev=qRef=null;gSeen=false;addEventListener('deviceorientation',onOri);
-  gyro=true;lookY=lookP=0;b.setAttribute('aria-pressed',true);b.textContent='陀螺儀：開';
-  setTimeout(()=>{if(gyro&&!gSeen){setGyro(false);b.textContent='沒有感測器資料，請用瀏覽器開啟'}},1500);
+  gyro=true;lookY=lookP=0;b.setAttribute('aria-pressed',true);b.textContent='Gyro: on';
+  setTimeout(()=>{if(gyro&&!gSeen){setGyro(false);b.textContent='No sensor data'}},1500);
 }
 $('gy').onclick=()=>setGyro(!gyro);
 $('rc').onclick=()=>{if(qDev)qRef=qDev.clone();lookY=lookP=0};
@@ -270,7 +270,7 @@ $('rc').onclick=()=>{if(qDev)qRef=qDev.clone();lookY=lookP=0};
    從專案根目錄以本機 HTTP server 開啟時自動載入；資料只在瀏覽器本機讀取。 */
 async function loadSharedTerrain(){
   try{
-    const root=new URL('.',location.href),get=async p=>{const r=await fetch(new URL(p,root));if(!r.ok)throw new Error(`找不到 ${p}（${r.status}）`);return r};
+    const root=new URL('.',location.href),get=async p=>{const r=await fetch(new URL(p,root));if(!r.ok)throw new Error(`Missing ${p} (${r.status})`);return r};
     const [of,cf]=await Promise.all([get('data/arcadia/walk3d_ortho.jpg'),get('data/arcadia/classes.png')]);
     let tf=null;try{tf=await get('data/arcadia/walk3d_dtm.tif')}catch{}
     if(tf){
@@ -311,7 +311,7 @@ const PX=4;
 
 /* ---------- 模擬狀態與 HUD（數字＝地圖頁卡片的 Pandolf 結果） ---------- */
 let simT=0,playing=!matchMedia('(prefers-reduced-motion: reduce)').matches,speed=10,hdg=null,camY=null,last=performance.now(),time=0;
-function setPlaying(v){playing=v;if(v&&simT>=TS)simT=0;$('play').textContent=v?'❚❚':'▶';$('play').setAttribute('aria-label',v?'暫停':'播放')}
+function setPlaying(v){playing=v;if(v&&simT>=TS)simT=0;$('play').textContent=v?'❚❚':'▶';$('play').setAttribute('aria-label',v?'Pause':'Play')}
 $('play').onclick=()=>setPlaying(!playing);setPlaying(playing);
 $('scrub').oninput=e=>{simT=e.target.value/1000*TS};
 $('spd').onchange=e=>{speed=+e.target.value};
@@ -340,29 +340,29 @@ function update(dt){
   $('hd').textContent=String(Math.round(hdg)%360).padStart(3,'0')+'°';
   $('tape').style.transform=`translateX(${-hdg*PX}px)`;
   const next=edges[st.idx+1],toV=e.d0+e.d-st.d,arr=st.d>=TM-.5;let txt,rot=0;
-  if(arr)txt='已抵達';
-  else if(!next)txt=`${fmtM(toV)} 後抵達`;
-  else{const tn=norm180(next.brg-e.brg);rot=Math.abs(tn)<10?0:tn;txt=Math.abs(tn)<10?`直行 ${fmtM(toV)}`:`${fmtM(toV)} 後${tn>0?'右':'左'}轉 ${Math.abs(Math.round(tn))}°`}
+  if(arr)txt='Arrived';
+  else if(!next)txt=`Arrive in ${fmtM(toV)}`;
+  else{const tn=norm180(next.brg-e.brg);rot=Math.abs(tn)<10?0:tn;txt=Math.abs(tn)<10?`Straight ${fmtM(toV)}`:`In ${fmtM(toV)} turn ${tn>0?'right':'left'} ${Math.abs(Math.round(tn))}°`}
   $('turn').textContent=txt;$('arrow').style.transform=`rotate(${rot}deg)`;
   const wp=POIS.find(p=>p.a>st.d+1),mk=$('wpm');
   if(wp){
-    $('wp').innerHTML=`下一航點：${wp.n}　<b>${fmtM(wp.a-st.d)}</b>　約 <b>${Math.ceil(Math.max(0,(timeAt(wp.a)-simT)/60))}</b> 分鐘`;
+    $('wp').innerHTML=`Next: ${wp.n}　<b>${fmtM(wp.a-st.d)}</b>　about <b>${Math.ceil(Math.max(0,(timeAt(wp.a)-simT)/60))}</b> min`;
     const rel=norm180(Math.atan2(wp.x-st.x,-(wp.z-st.z))/D2R-hdg),lim=$('cmp').clientWidth/2/PX-3;
     mk.style.display='';mk.style.left=(hdg+clamp(rel,-lim,lim))*PX+'px';
-  }else{$('wp').textContent='路線完成';mk.style.display='none'}
+  }else{$('wp').textContent='Route complete';mk.style.display='none'}
 
   const w=[];let sev=0;
   const ch=edges.slice(st.idx+1).find(x=>x.lvl!==e.lvl);
-  if(ch&&ch.lvl!=='low'&&ch.d0-st.d<250)w.push(`前方 ${fmtM(ch.d0-st.d)} 進入${NAME[ch.lvl]}路段`);
-  if(e.lvl==='high'){w.push('軟沙路段：縮小步幅，保持前進');sev=1}
-  if(e.lvl==='blocked'){w.push('路線碰到不可通行坡面，請回規劃器檢查');sev=1}
+  if(ch&&ch.lvl!=='low'&&ch.d0-st.d<250)w.push(`${NAME[ch.lvl]} ground in ${fmtM(ch.d0-st.d)}`);
+  if(e.lvl==='high'){w.push('Soft sand: shorten your stride and keep moving');sev=1}
+  if(e.lvl==='blocked'){w.push('Route touches an impassable slope: check the planner');sev=1}
   const wn=$('warn');wn.textContent=w.join('　／　');wn.classList.toggle('show',w.length>0);wn.classList.toggle('caution',!sev);
 
   const km=m=>(m/1000).toFixed(2)+' km';
-  setV('dn',km(cu.d));setV('dnL','剩 '+km(Math.max(0,TOT.distance_m-cu.d)));
-  setV('tn',fmtMin(cu.min));setV('tnL','剩 '+fmtMin(Math.max(0,TOT.min-cu.min)));
-  setV('kn',Math.round(cu.kcal)+' kcal');setV('knL','剩 '+Math.round(Math.max(0,TOT.kcal-cu.kcal))+' kcal');
-  setV('on',Math.round(o2)+' L');setV('onL','剩 '+Math.round(Math.max(0,TOT.o2_l-o2))+' L');
+  setV('dn',km(cu.d));setV('dnL','left '+km(Math.max(0,TOT.distance_m-cu.d)));
+  setV('tn',fmtMin(cu.min));setV('tnL','left '+fmtMin(Math.max(0,TOT.min-cu.min)));
+  setV('kn',Math.round(cu.kcal)+' kcal');setV('knL','left '+Math.round(Math.max(0,TOT.kcal-cu.kcal))+' kcal');
+  setV('on',Math.round(o2)+' L');setV('onL','left '+Math.round(Math.max(0,TOT.o2_l-o2))+' L');
   setV('tr',NAME[e.lvl]);$('tr').style.color=CSS[e.lvl];
   $('scrub').value=Math.round(simT/TS*1000);
 
