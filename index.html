@@ -21,10 +21,19 @@
     <button class="btn" data-step="2"><b>2</b><span>Brain-terrain map</span></button>
     <button class="btn" data-step="3"><b>3</b><span>Astronaut route</span></button>
   </div>
+  <div id="who" class="who" role="group" aria-label="Scouted by"><span>Scouted by</span>
+    <button class="btn sm" data-mode="rover">The rover</button>
+    <button class="btn sm" data-mode="self">You <i class="dot"></i></button>
+  </div>
   <div id="hint" class="hint"></div>
   <div id="ctl1" class="ctl">
-    <label for="loop">Trips <b id="loopLbl">10</b> / <span id="loopMax">10</span> · area seen <b id="seenLbl"></b></label>
-    <input id="loop" type="range" min="0" max="10" step="1" value="10">
+    <div id="ctlSelf" hidden>
+      <div>You've uncovered <b id="mineLbl">0%</b> of the area · the rover saw <b id="roverLbl"></b></div>
+      <div class="meter"><i id="mineBar"></i></div>
+      <div class="row"><button id="mineReset" class="btn sm">Start over</button><button id="mineGo" class="btn sm go">See what you found →</button></div>
+    </div>
+    <label id="ctlRover" for="loop">Trips <b id="loopLbl">10</b> / <span id="loopMax">10</span> · area seen <b id="seenLbl"></b></label>
+    <input id="loop" type="range" min="0" max="10" step="1" value="10" aria-label="Rover trips">
   </div>
   <div id="ctl3" class="ctl" hidden><button id="home" class="btn">Reset start to base</button></div>
   <div class="layers" role="group" aria-label="Layers">
@@ -36,6 +45,9 @@
 </div>
 
 <div id="legend" class="float"></div>
+<div id="brush" hidden></div>
+<div id="ghost" hidden><i></i><span>Drag to scout</span></div>
+<div id="done" class="float" hidden>You've uncovered as much ground as the rover's trips. <button id="doneGo" class="btn sm go">See what you found →</button></div>
 <button id="walk3d" class="btn" hidden>▶ Walk it in 3D</button>
 <div id="card" class="float" hidden></div>
 
@@ -44,11 +56,12 @@
     <h2>Scouting Mars brain terrain before the crew walks out</h2>
     <p class="muted">Arcadia Planitia, a candidate Starship landing site. Real HiRISE imagery and elevation.</p>
     <ol>
-      <li><b>1</b><div><strong>Rover scouting</strong><span>A rover leaves the base and maps the ground around it. Drag the slider to replay its trips.</span></div></li>
-      <li><b>2</b><div><strong>Brain-terrain map</strong><span>A published model scores how brain-like the surface looks. The highest-scoring areas the rover has seen become targets.</span></div></li>
+      <li><b>1</b><div><strong>Rover scouting</strong><span>A rover leaves the base and maps the ground around it. Replay its trips, or scout the ground yourself.</span></div></li>
+      <li><b>2</b><div><strong>Brain-terrain map</strong><span>A published model scores how brain-like the surface looks. The highest-scoring areas in the scouted ground become targets.</span></div></li>
       <li><b>3</b><div><strong>Astronaut route</strong><span>A walking route to the targets within the suit's energy budget. Click the map to move the start, then walk it in 3D.</span></div></li>
     </ol>
-    <button id="guideGo" class="btn active">Start exploring</button>
+    <button id="guideSelf" class="btn active">Scout it yourself</button>
+    <button id="guideGo" class="btn link">See the rover's result</button>
   </div>
 </div>
 

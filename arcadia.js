@@ -7,30 +7,53 @@
 const D = 'data/arcadia/';
 const $ = (s) => document.querySelector(s);
 const abs = (u) => new URL(u, location.href).href;
-const S = { step: 1, loop: 10, markers: [], start: null, plan: null };
+const S = { step: 1, loop: 10, markers: [], start: null, plan: null, mode: 'rover', dirty: true, myT: [] };
+const BRUSH_M = 100, FREE_M = 20;   // "scout it yourself": brush radius, and the ground already known around the base
 const GUIDE_KEY = 'marswalker-guide-seen';
 const CLASS_EN = ['Firm ground', 'Rough ground', 'Sand', 'Impassable'];
-const HINT = {
-  1: 'Drag the slider to replay the rover\'s trips out from the base.',
-  2: 'Brighter = more brain-like. Yellow boxes are the areas picked from what the rover has seen.',
-  3: 'Click a numbered stop for details, or click anywhere on the map to move the astronaut\'s start.',
-};
+const avg = (ts) => (ts.length ? (ts.reduce((s, t) => s + t.score, 0) / ts.length).toFixed(2) : '–');
+function hint(n) {
+  const self = S.mode === 'self', R = S.d.targets.after;
+  if (n === 1) return self ? 'Drag on the map to scout. Colour shows how brain-like the ground is: chase the bright areas. You can uncover as much ground as the rover did.'
+    : 'Drag the slider to replay the rover\'s trips out from the base.';
+  if (n === 2) {
+    if (!self) return 'Brighter = more brain-like. Yellow boxes are the areas picked from what the rover has seen.';
+    return S.myT.length ? `Yellow boxes: the ${S.myT.length} best areas in the ground you scouted, average score ${avg(S.myT)}. The rover's ${R.length} areas average ${avg(R)}.`
+      : 'No area is at least half uncovered yet. Go back to step 1 and scout more ground.';
+  }
+  if (self && !S.myT.length) return 'No target yet. Go back to step 1 and scout more ground.';
+  return 'Click a numbered stop for details, or click anywhere on the map to move the astronaut\'s start.';
+}
+const VEIL = 128, VEIL_SCRATCH = 170;   // mask alpha: 50 % as before; darker while scratching
 const C_ROVER = '#3987e5', C_ROVER_NOW = '#f2b36b', C_ROUTE = '#38e1ff', C_TGT = '#ffd23f';
 
 async function init() {
   S.d = await (await fetch(D + 'arcadia.json')).json();
   S.ctx = await fetch(D + 'context.json').then((r) => (r.ok ? r.json() : null)).catch(() => null);
-  const im = new Image(); im.src = D + S.d.files.seen_loop; await im.decode();
-  const c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
-  const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(im, 0, 0);
-  const px = x.getImageData(0, 0, c.width, c.height).data;
+  const c = await pixels(D + S.d.files.seen_loop), px = c.data;
   S.seenLoop = new Uint8Array(c.width * c.height);
   for (let i = 0; i < S.seenLoop.length; i++) S.seenLoop[i] = px[4 * i];
+  // "scout it yourself": brain score index (0 = none, 1..255 = 0..1), the heat map's own pixels, the class grid
+  const sp = (await pixels(D + (S.d.files.brain_score || 'brain_score.png'))).data;
+  S.score = new Uint8Array(S.seenLoop.length);
+  for (let i = 0; i < S.score.length; i++) S.score[i] = sp[4 * i];
+  S.heatPx = (await pixels(D + S.d.files.brain_all)).data;
+  await classGrid();
+  S.GW = c.width; S.GH = c.height; S.gres = (S.d.aoi_local_m[2] - S.d.aoi_local_m[0]) / c.width;
+  S.capCells = 0; for (let i = 0; i < S.seenLoop.length; i++) if (S.seenLoop[i] > 0) S.capCells++;
+  S.mySeen = new Uint8Array(S.seenLoop.length);
   const v = $('#veil'); v.width = c.width; v.height = c.height; S.veilCtx = v.getContext('2d'); S.veilImg = S.veilCtx.createImageData(c.width, c.height);
   S.cost = await loadCost(S.d);
   const N = S.d.rover.loops.length;
   $('#loop').max = N; $('#loop').value = N; $('#loopMax').textContent = N; S.loop = N;
   buildMap();
+}
+
+async function pixels(url) {
+  const im = new Image(); im.src = url; await im.decode();
+  const c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
+  const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(im, 0, 0);
+  return x.getImageData(0, 0, c.width, c.height);
 }
 
 function buildMap() {
@@ -82,6 +105,7 @@ function buildMap() {
     map.on('mouseenter', 'route', () => { map.getCanvas().style.cursor = 'pointer'; });
     map.on('mouseleave', 'route', () => { map.getCanvas().style.cursor = ''; });
     wire();
+    resetMine();
     showPlan(null);
     setStep(1);
     map.once('idle', () => { window.__mapIdle = true; });
@@ -96,8 +120,15 @@ function wire() {
   $('#walk3d').onclick = open3d;
   $('#w3dClose').onclick = () => { $('#w3d').hidden = true; $('#w3dFrame').src = 'about:blank'; };
   const seen = () => { try { return localStorage.getItem(GUIDE_KEY); } catch { return '1'; } };
+  const closeGuide = (mode) => { $('#guide').hidden = true; try { localStorage.setItem(GUIDE_KEY, '1'); } catch { /* private mode */ } S.step = 1; setMode(mode); };
   $('#help').onclick = () => { $('#guide').hidden = false; };
-  $('#guideGo').onclick = () => { $('#guide').hidden = true; try { localStorage.setItem(GUIDE_KEY, '1'); } catch { /* private mode */ } };
+  $('#guideGo').onclick = () => closeGuide('rover');
+  $('#guideSelf').onclick = () => closeGuide('self');
+  document.querySelectorAll('#who .btn').forEach((b) => b.onclick = () => setMode(b.dataset.mode));
+  $('#mineReset').onclick = () => { resetMine(); apply(); };
+  $('#mineGo').onclick = $('#doneGo').onclick = () => setStep(2);
+  $('#roverLbl').textContent = (100 * S.capCells / S.seenLoop.length).toFixed(1) + '%';
+  wireScratch();
   if (!seen() && !new URLSearchParams(location.search).has('noguide')) $('#guide').hidden = false;
 }
 
@@ -107,27 +138,51 @@ function setStep(n) {
   $('#lyrHeat').checked = n === 2;
   if (n === 1) { S.loop = S.d.rover.loops.length; $('#loop').value = S.loop; }
   $('#card').hidden = true;
+  if (S.mode === 'self' && n >= 2) syncSelf();
   apply();
   frame();
+}
+
+// who scouted: the rover (the page's precomputed result) or the visitor (their own scratched ground, same rules)
+function setMode(m) {
+  S.mode = m; S.start = null; S.dirty = true;
+  if (m === 'self') $('#who').classList.add('used');
+  if (m === 'rover') showPlan(null);
+  setStep(S.step);
+}
+function tgs() { return S.mode === 'self' ? S.myT : S.d.targets.after; }
+function baseIdx() { const b = toXY(S.d.base); const i = xyToIdx(b[0], b[1]); return i >= 0 && isFinite(S.cost.K[i]) ? i : nearestPassable(b[0], b[1]); }
+function syncSelf() {
+  if (!S.dirty) return;
+  S.myT = pickBlocks(S.mySeen); S.dirty = false;
+  showPlan(S.start ? planFrom(S.start.idx) : null);
 }
 
 function frame() {
   const d = S.d, c = d.aoi_corners;
   let pts = [c[0], c[2]];
-  if (S.step === 2) pts = d.rover.loops.flatMap((L) => L.path);
-  if (S.step === 3) pts = S.plan.legs.flatMap((L) => L.path);
+  if (S.step === 2 && S.mode === 'rover') pts = d.rover.loops.flatMap((L) => L.path);
+  if (S.step === 3 && S.plan.legs.length) pts = S.plan.legs.flatMap((L) => L.path);
   const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
-  S.map.fitBounds([[Math.min(...xs), Math.min(...ys)], [Math.max(...xs), Math.max(...ys)]], { padding: { top: 170, bottom: 120, left: 80, right: 80 }, duration: 0, maxZoom: 17 });
+  S.map.fitBounds([[Math.min(...xs), Math.min(...ys)], [Math.max(...xs), Math.max(...ys)]], { padding: innerWidth >= 1100 ? { top: 40, bottom: 70, left: 500, right: S.step === 3 ? 220 : 40 } : { top: Math.min(innerHeight * 0.55, $('#box').getBoundingClientRect().bottom + 16), bottom: 120, left: 24, right: 24 }, duration: 0, maxZoom: 17 });
 }
 
-function drawVeil(k, alpha) {
-  const px = S.veilImg.data, sl = S.seenLoop;
-  for (let i = 0; i < sl.length; i++) {
-    const seen = sl[i] > 0 && sl[i] <= k;
-    px[4 * i] = 0; px[4 * i + 1] = 0; px[4 * i + 2] = 0; px[4 * i + 3] = seen ? 0 : alpha;
-  }
+const scratching = () => S.mode === 'self' && S.step === 1;
+// One pixel of the mask. Not seen = black; seen = clear, or (while scratching) the heat map's own pixel, so the
+// brain score lights up where the visitor scouts.
+function veilPx(i, seen, alpha, heat) {
+  const px = S.veilImg.data, j = 4 * i;
+  if (seen && heat) { const h = S.heatPx; px[j] = h[j]; px[j + 1] = h[j + 1]; px[j + 2] = h[j + 2]; px[j + 3] = h[j + 3]; }
+  else { px[j] = 0; px[j + 1] = 0; px[j + 2] = 0; px[j + 3] = seen ? 0 : alpha; }
+}
+function flushVeil() {
   S.veilCtx.putImageData(S.veilImg, 0, 0);
   const src = S.map.getSource('veil'); if (src) { src.play(); src.pause(); }
+}
+function drawVeil(k) {
+  const sl = S.seenLoop, self = S.mode === 'self', heat = scratching(), alpha = heat ? VEIL_SCRATCH : VEIL;
+  for (let i = 0; i < sl.length; i++) veilPx(i, self ? S.mySeen[i] === 1 : sl[i] > 0 && sl[i] <= k, alpha, heat);
+  flushVeil();
 }
 
 function vis(id, on) { S.map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none'); }
@@ -135,19 +190,26 @@ function vis(id, on) { S.map.setLayoutProperty(id, 'visibility', on ? 'visible' 
 function apply() {
   const d = S.d, m = S.map, n = S.step;
   document.querySelectorAll('.steps .btn').forEach((b) => b.classList.toggle('active', +b.dataset.step === n));
-  $('#ctl1').hidden = n !== 1; $('#ctl3').hidden = n !== 3 || !S.start; $('#walk3d').hidden = n !== 3;
+  const self = S.mode === 'self', scr = scratching();
+  document.querySelectorAll('#who .btn').forEach((b) => b.classList.toggle('active', b.dataset.mode === S.mode));
+  $('#ctl1').hidden = n !== 1; $('#ctlSelf').hidden = !self; $('#ctlRover').hidden = self; $('#loop').hidden = self;
+  $('#ctl3').hidden = n !== 3 || !S.start; $('#walk3d').hidden = n !== 3 || !S.plan.legs.length;
+  document.querySelector('.layers').hidden = scr;
   document.body.classList.toggle('s3', n === 3);
-  $('#hint').textContent = HINT[n];
+  $('#hint').textContent = hint(n);
+  if (scr) { m.dragPan.disable(); m.getCanvas().style.cursor = 'crosshair'; } else { m.dragPan.enable(); m.getCanvas().style.cursor = ''; $('#brush').hidden = true; }
+  ghost(scr && !S.touched);
+  updMine();
   const heat = $('#lyrHeat').checked;
   vis('ortho', $('#lyrImg').checked);
   vis('classes', $('#lyrCls').checked);
-  vis('brain_all', heat);
+  vis('brain_all', heat && !scr);
   // unexplored mask: ground the rover has not seen yet (up to the slider's loop in ①, all loops in ② and ③), black at 50 %
   const k = n === 1 ? S.loop : d.rover.loops.length;
-  const maskOn = $('#lyrMask').checked;
-  if (maskOn) drawVeil(k, 128);
+  const maskOn = scr || $('#lyrMask').checked;
+  if (maskOn) drawVeil(k);
   vis('veil', maskOn);
-  vis('rover', n <= 2); vis('rover-casing', n === 1);
+  vis('rover', !self && n <= 2); vis('rover-casing', !self && n === 1);
   m.setFilter('rover', ['<=', ['get', 'id'], k]);
   m.setFilter('rover-casing', ['<=', ['get', 'id'], k]);
   m.setPaintProperty('rover', 'line-color', n === 1 ? ['case', ['==', ['get', 'id'], k], C_ROVER_NOW, C_ROVER] : C_ROVER);
@@ -157,7 +219,7 @@ function apply() {
   S.map.setFilter('tgt', n === 3 ? ['==', ['get', 'onroute'], true] : null);
   vis('route', n === 3); vis('route-casing', n === 3);
   $('#loopLbl').textContent = k;
-  if (n === 1) {
+  if (n === 1 && !self) {
     let s = 0; for (let i = 0; i < S.seenLoop.length; i++) if (S.seenLoop[i] > 0 && S.seenLoop[i] <= k) s++;
     $('#seenLbl').textContent = (100 * s / S.seenLoop.length).toFixed(1) + '%';
   }
@@ -178,12 +240,12 @@ function markers() {
   mk(d.base, 'base', 'Base');
   if (n === 3 && S.start) mk(S.start.ll, 'start', 'Astronaut start');
   if (n === 2) {
-    d.targets.after.forEach((t) => mk(t.stop, 'tgt', `${t.id} ${t.score.toFixed(2)}`));
+    tgs().forEach((t) => mk(t.stop, 'tgt', `${t.id} ${t.score.toFixed(2)}`));
   }
   if (n === 3) {
     S.plan.legs.forEach((L, i) => {
       if (i === S.plan.legs.length - 1) return;
-      const t = d.targets.after.find((x) => x.id === L.to);
+      const t = tgs().find((x) => x.id === L.to);
       mk(t.stop, 'stop', `${i + 1}`, () => stopCard(i));
     });
   }
@@ -203,10 +265,11 @@ function legend() {
   const d = S.d, n = S.step, it = (sw, t) => `<div class="it">${sw}<span>${t}</span></div>`;
   let h = '';
   if ($('#lyrCls').checked) h += d.classes.map((c, i) => it(`<i style="background:${c.color}"></i>`, CLASS_EN[i] || c.zh)).join('');
-  if ($('#lyrHeat').checked) h += `<div class="it"><span>Brain-terrain score</span></div><div class="ramp"></div><div class="rl"><span>0</span><span>0.5</span><span>1</span></div>`;
-  if ($('#lyrMask').checked) h += it('<i style="background:#000;opacity:.5"></i>', 'Unexplored (not yet seen by the rover)');
-  if (n === 1) h += it(`<i class="ln" style="background:${C_ROVER}"></i>`, 'Rover path') + it(`<i class="ln" style="background:${C_ROVER_NOW}"></i>`, 'Current trip');
-  if (n === 2) h += it(`<i style="border:2px solid ${C_TGT}"></i>`, `${d.targets.after.length} areas picked after scouting (60 m)`);
+  const self = S.mode === 'self', scr = scratching();
+  if ($('#lyrHeat').checked || scr) h += `<div class="it"><span>Brain-terrain score</span></div><div class="ramp"></div><div class="rl"><span>0</span><span>0.5</span><span>1</span></div>`;
+  if ($('#lyrMask').checked || scr) h += it('<i style="background:#000;opacity:.5"></i>', self ? 'Not scouted yet' : 'Unexplored (not yet seen by the rover)');
+  if (n === 1 && !self) h += it(`<i class="ln" style="background:${C_ROVER}"></i>`, 'Rover path') + it(`<i class="ln" style="background:${C_ROVER_NOW}"></i>`, 'Current trip');
+  if (n === 2) h += it(`<i style="border:2px solid ${C_TGT}"></i>`, self ? `${tgs().length} areas picked from your scouting (60 m)` : `${tgs().length} areas picked after scouting (60 m)`);
   if (n === 3) {
     const t = S.plan.total;
     h += it(`<i class="ln" style="background:${C_ROUTE}"></i>`, `Astronaut route: ${S.plan.n_stops} stops, ${(t.distance_m / 1000).toFixed(2)} km, ${Math.round(t.kcal)} kcal`);
@@ -300,7 +363,7 @@ function planFrom(srcIdx) {
   const sr = (srcIdx / C.W) | 0, scc = srcIdx % C.W, wc = Math.round(P.window_m / C.res);
   const box = [Math.max(0, sr - wc), Math.min(C.H - 1, sr + wc), Math.max(0, scc - wc), Math.min(C.W - 1, scc + wc)];
   const sxy = toXY(idxLL(srcIdx));
-  const tg = d.targets.after.map((t) => {
+  const tg = tgs().map((t) => {
     let i = xyToIdx(t.xy[0], t.xy[1]); if (i < 0 || !isFinite(C.K[i])) i = nearestPassable(t.xy[0], t.xy[1]);
     return { id: t.id, idx: i, inWin: Math.max(Math.abs(t.xy[0] - sxy[0]), Math.abs(t.xy[1] - sxy[1])) <= P.window_m, rt: 2 * f0.dist[i] + dw };
   });
@@ -359,11 +422,10 @@ function pyPlan() {
 }
 
 function showPlan(p) {
-  const d = S.d;
-  S.plan = p || pyPlan();
+  S.plan = p || (S.mode === 'self' ? planFrom(baseIdx()) : pyPlan());
   const gj = (features) => ({ type: 'FeatureCollection', features });
   S.map.getSource('route').setData(gj(S.plan.legs.map((L, i) => ({ type: 'Feature', properties: { i }, geometry: { type: 'LineString', coordinates: L.path } }))));
-  S.map.getSource('tgt').setData(gj(d.targets.after.map((t) => ({ type: 'Feature', properties: { id: t.id, onroute: S.plan.visited.includes(t.id) }, geometry: { type: 'Polygon', coordinates: [t.block] } }))));
+  S.map.getSource('tgt').setData(gj(tgs().map((t) => ({ type: 'Feature', properties: { id: t.id, onroute: S.plan.visited.includes(t.id) }, geometry: { type: 'Polygon', coordinates: [t.block] } }))));
 }
 
 function stopCard(i) {
@@ -396,6 +458,103 @@ function setStart(ll) {
   showPlan(p);
   apply();
   showCard('Whole route', S.plan.total);
+}
+
+// ---------------------------------------------------------------------------------------------- scout it yourself
+// The visitor plays the rover: dragging uncovers ground (4 m cells, BRUSH_M radius) up to the area the rover saw.
+// ② then picks areas from that ground with the rule of pipeline/arcadia.py pick_blocks, ③ plans with planFrom().
+function resetMine() {
+  S.mySeen.fill(0); S.nMine = 0; S.dirty = true; S.touched = false; S.last = null;
+  const b = toXY(S.d.base), a = S.d.aoi_local_m;
+  stamp(Math.floor((a[3] - b[1]) / S.gres), Math.floor((b[0] - a[0]) / S.gres), FREE_M / S.gres, true);
+}
+function stamp(r0, c0, R, free) {
+  const W = S.GW, H = S.GH, R2 = R * R, heat = scratching();
+  for (let r = Math.max(0, Math.ceil(r0 - R)); r <= Math.min(H - 1, r0 + R); r++) {
+    for (let c = Math.max(0, Math.ceil(c0 - R)); c <= Math.min(W - 1, c0 + R); c++) {
+      if ((r - r0) ** 2 + (c - c0) ** 2 > R2) continue;
+      const i = r * W + c; if (S.mySeen[i]) continue;
+      if (!free && S.nMine >= S.capCells) return;
+      S.mySeen[i] = 1; S.nMine++; veilPx(i, true, VEIL_SCRATCH, heat);
+    }
+  }
+}
+function stroke(ll) {
+  const a = S.d.aoi_local_m, [x, y] = toXY(ll), R = BRUSH_M / S.gres;
+  const p = [(a[3] - y) / S.gres, (x - a[0]) / S.gres], q = S.last || p;
+  const n = Math.max(1, Math.ceil(Math.hypot(p[0] - q[0], p[1] - q[1]) / (R / 2))), before = S.nMine;
+  for (let k = 1; k <= n; k++) stamp(Math.round(q[0] + (p[0] - q[0]) * k / n), Math.round(q[1] + (p[1] - q[1]) * k / n), R, false);
+  S.last = p;
+  if (S.nMine === before) return;
+  S.dirty = true;
+  if (!S.raf) S.raf = requestAnimationFrame(() => { S.raf = 0; flushVeil(); updMine(); });
+}
+function updMine() {
+  const n = S.seenLoop.length, full = S.nMine >= S.capCells;
+  $('#mineLbl').textContent = (100 * S.nMine / n).toFixed(1) + '%';
+  $('#mineBar').style.width = Math.min(100, 100 * S.nMine / S.capCells) + '%';
+  $('#done').hidden = !(scratching() && full);
+}
+function brushAt(pt) {
+  const b = $('#brush'); if (!scratching()) { b.hidden = true; return; }
+  const p0 = S.map.project(S.d.base), p1 = S.map.project(toLL(S.d.base_xy[0] + BRUSH_M, S.d.base_xy[1]));
+  const d = 2 * Math.abs(p1.x - p0.x);
+  b.style.width = b.style.height = d + 'px'; b.style.left = pt.x + 'px'; b.style.top = pt.y + 'px'; b.hidden = false;
+}
+function ghost(on) {
+  const g = $('#ghost'); g.hidden = !on; if (!on) return;
+  const p = S.map.project(S.d.base); g.style.left = p.x + 'px'; g.style.top = p.y + 'px';
+}
+function wireScratch() {
+  const m = S.map;
+  const down = (e) => { S.down = true; S.last = null; S.touched = true; ghost(false); stroke(e.lngLat); };
+  // mouse: on the map's container, so a drag that starts on a marker (the base label) scratches too
+  const box = m.getContainer(), at = (e) => { const r = box.getBoundingClientRect(), point = [e.clientX - r.left, e.clientY - r.top]; return { point: { x: point[0], y: point[1] }, lngLat: m.unproject(point).toArray() }; };
+  box.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'mouse' || e.button !== 0 || !scratching() || e.target.closest('.maplibregl-ctrl')) return;
+    e.preventDefault(); down(at(e));
+  });
+  box.addEventListener('pointermove', (e) => { if (e.pointerType !== 'mouse') return; const q = at(e); brushAt(q.point); if (S.down && scratching()) stroke(q.lngLat); });
+  box.addEventListener('pointerleave', () => { $('#brush').hidden = true; });
+  window.addEventListener('pointerup', () => { S.down = false; S.last = null; });
+  m.on('touchstart', (e) => { if (scratching() && e.points.length === 1) { e.preventDefault(); down({ lngLat: e.lngLat.toArray() }); } else S.down = false; });
+  m.on('touchmove', (e) => { if (S.down && scratching() && e.points.length === 1) stroke(e.lngLat.toArray()); });
+  m.on('touchend', () => { S.down = false; S.last = null; });
+  m.on('move', () => { if (!$('#ghost').hidden) ghost(true); });
+}
+
+// Area selection, the rule of pipeline/arcadia.py pick_blocks (60 m blocks, >= 50 % seen, top 12 by mean brain score,
+// centres >= 300 m apart, stop = highest-score passable cell), on the 4 m grid with the score read from brain_score.png
+// (1/254 steps). seen: Uint8Array, 1 = seen.
+const PICK = { block_m: 60, seen_min: 0.5, n: 12, min_sep_m: 300 };
+function pickBlocks(seen) {
+  const W = S.GW, H = S.GH, res = S.gres, b = Math.round(PICK.block_m / res), a = S.d.aoi_local_m, sc = S.score, cls = S.cls.g;
+  const cand = [];
+  for (let i = 0; i < Math.floor(H / b); i++) for (let j = 0; j < Math.floor(W / b); j++) {
+    let sum = 0, cnt = 0, sf = 0, ok = false;
+    for (let r = i * b; r < (i + 1) * b; r++) for (let c = j * b; c < (j + 1) * b; c++) {
+      const q = r * W + c; sf += seen[q];
+      if (sc[q] > 0) { cnt++; sum += (sc[q] - 1) / 254; if (cls[q] < 3) ok = true; }
+    }
+    if (cnt && ok && sf / (b * b) >= PICK.seen_min) cand.push([sum / cnt, i, j]);
+  }
+  cand.sort((p, q) => q[0] - p[0] || q[1] - p[1] || q[2] - p[2]);
+  const picks = [];
+  for (const [m, i, j] of cand) {
+    const cy = (i + 0.5) * b, cx = (j + 0.5) * b;
+    if (picks.some((p) => Math.hypot(cy - p.c[0], cx - p.c[1]) * res < PICK.min_sep_m)) continue;
+    let best = -1, br = 0, bc = 0;
+    for (let r = i * b; r < (i + 1) * b; r++) for (let c = j * b; c < (j + 1) * b; c++) {
+      const q = r * W + c, v = sc[q] > 0 && cls[q] < 3 ? sc[q] : -1;
+      if (v > best) { best = v; br = r; bc = c; }
+    }
+    const x = a[0] + (bc + 0.5) * res, y = a[3] - (br + 0.5) * res;
+    const x0 = a[0] + j * PICK.block_m, x1 = x0 + PICK.block_m, y1 = a[3] - i * PICK.block_m, y0 = y1 - PICK.block_m;
+    picks.push({ c: [cy, cx], id: `T${picks.length + 1}`, score: Math.round(m * 1e4) / 1e4, xy: [x, y], stop: toLL(x, y),
+      block: [toLL(x0, y1), toLL(x1, y1), toLL(x1, y0), toLL(x0, y0), toLL(x0, y1)] });
+    if (picks.length === PICK.n) break;
+  }
+  return picks;
 }
 
 // ---------------------------------------------------------------------------------------------- ③ 3D walk
@@ -466,7 +625,7 @@ async function open3d() {
   const { coords, cum, total, kcal_per_l_o2 } = routeCum();
   const levels = coords.slice(0, -1).map((p, i) => levelAt([(p[0] + coords[i + 1][0]) / 2, (p[1] + coords[i + 1][1]) / 2]));
   const waypoints = S.plan.legs.slice(0, -1).map((L, i) => {
-    const t = S.d.targets.after.find((x) => x.id === L.to);
+    const t = tgs().find((x) => x.id === L.to);
     return { n: `Stop ${i + 1} ${t.id}`, coords: t.stop, cls: levelAt(t.stop) };
   });
   localStorage.setItem('marswalker-arcadia-route', JSON.stringify({ coords, levels, waypoints, cum, total, kcal_per_l_o2, created: Date.now() }));
